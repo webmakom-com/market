@@ -1,0 +1,13 @@
+syntax = "proto3";
+package onomyprotocol.market.market;
+
+// this line is used by starport scaffolding # proto/tx/import
+
+option go_package = "github.com/onomyprotocol/market/x/market/types";
+
+// Msg defines the Msg service.
+service Msg {
+    // this line is used by starport scaffolding # proto/tx/rpc
+}
+
+// this line is used by starport scaffolding # proto/tx/message
