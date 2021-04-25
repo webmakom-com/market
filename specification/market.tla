@@ -6,16 +6,23 @@ CONSTANT    COIN,   \* Set of all coins
            
 VARIABLE    book,   \* Order Book
             bonds,  \* AMM Bond Curves
-            wallet  \* User wallets
 
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
+
+Init == /\ PAIR = [c /in Coin, d /in COIN |->
+             IF c != d THEN {c, d}
+             ELSE {}
+        /\ books = [p / PAIR |-> [c \in PAIR |-> 
 
 Book == [amount: Nat, coin: COIN, pair: PAIR, exchrate: Nat]
 
 Bond == [amount: Nat, coin: COIN, pair: PAIR]
 
-SubmitOrder == /\ \E order \in Book \cup Bond
+Order == Book \cup Bond
+
+SubmitOrder == /\ \E o \in Order :
+                  /\ 
 
 
 
