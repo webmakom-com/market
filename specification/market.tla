@@ -10,16 +10,32 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
-Init == /\ books = [c / COIN|-> [d \in COIN - c |-> {}]
+Init ==  /\ books = [c / COIN |-> [d \in COIN - c |-> {}]
+         /\ bonds = [c / COIN |-> [d \in COIN - c |-> {}]
 
-Book == [amount: Nat, coin: COIN, pair: PAIR, exchrate: Nat]
+Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: Nat]
 
-Bond == [amount: Nat, coin: COIN, pair: PAIR]
+Bond == [amount: Nat, bid: COIN, ask: COIN]
 
 Order == Book \cup Bond
 
 SubmitOrder == /\ \E o \in Order :
-                  /\ 
+                  IF o.exchrate != {}
+                  THEN /\ book’ = [book EXCEPT ![o.bid][o.ask] =
+                                  Append(
+                                    book[o.bid][o.ask],
+                                    [
+                                       amount: o.amount,
+                                       exchrate: o.exchrate
+                                    ]
+                                   )]
+                       /\ UNCHANGED bond
+                  ELSE /\ bond’ = [bond EXCEPT ![o.bid][o.ask] =
+                                  Append(
+                                    bond[o.bid][o.ask],
+                                    o.amount
+                                   )]
+                  
 
 
 
