@@ -11,9 +11,13 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
-Order == [amount: Nat, coin: COIN, pair: PAIR, price: Nat]
+Book == [amount: Nat, coin: COIN, pair: PAIR, exchrate: Nat]
 
 Bond == [amount: Nat, coin: COIN, pair: PAIR]
+
+SubmitOrder == /\ \E order \in Book \cup Bond
+
+
 
 =============================================================================
 \* Modification History
