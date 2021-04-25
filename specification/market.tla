@@ -12,6 +12,7 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 Init ==  /\ books = [c / COIN |-> [d \in COIN - c |-> {}]
          /\ bonds = [c / COIN |-> [d \in COIN - c |-> {}]
+         /\ liquid = [c / COIN |-> [d \in COIN - c |-> {}]
 
 Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: Nat]
 
@@ -35,6 +36,9 @@ SubmitOrder == /\ \E o \in Order :
                                     bond[o.bid][o.ask],
                                     o.amount
                                    )]
+
+ProcessPair(c, d) = /\ c != d
+                    /\ 
                   
 
 
