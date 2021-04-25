@@ -10,10 +10,7 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
-Init == /\ PAIR = [c /in Coin, d /in COIN |->
-             IF c != d THEN {c, d}
-             ELSE {}
-        /\ books = [p / PAIR |-> [c \in PAIR |-> 
+Init == /\ books = [c / COIN|-> [d \in COIN - c |-> {}]
 
 Book == [amount: Nat, coin: COIN, pair: PAIR, exchrate: Nat]
 
