@@ -38,26 +38,28 @@ ProcessOrder(pair) =    /\ orderQ[pair] != <<>>
                         \/ /\ o.exchrate != {}
                            
                         \* Stage 1
-                        \* Reconcile with bid side queues
+                        \* Reconcile with bid book queue
                         
                            \* Is book order exchrate greater than
-                           \* the head of the bid queue?
+                           \* the head of the bid book?
                            \/ /\ Head(bids[pair][o.bid]).exchrate 
                                  > o.exchrate
                            
                            \* Is book order exchrate equal to head
-                           \* of the bid queue?
+                           \* of the bid book?
                            \/ /\ Head(bids[pair][o.bid]).exchrate 
                                  = o.exchrate
                            
                          
                         \* Stage 2
-                        \* Reconcile with ask side if exchrate
-                        \* is less than the head of bid queue
+                        \* Reconcile with ask book if exchrate
+                        \* is less than the head of bid book
                            
-                           \* Is bid book for pair not empty?
+                           \* Is ask book for pair not empty?
                            \/ /\ bids[pair][o.ask] != <<>>
                               /\
+                              
+                           \* Well, Is ask book for pair empty?
                            \/ /\ bids[pair][o.ask] = <<>>
                   
 
