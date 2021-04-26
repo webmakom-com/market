@@ -10,7 +10,9 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
-Init ==  
+PAIR == {{c \in COIN, d \in COIN}: c != d}
+
+Init ==  /\ orders = [PAIR |-> ORDER]
          /\ books = [c / COIN |-> [d \in COIN - c |-> {}]
          /\ bonds = [c / COIN |-> [d \in COIN - c |-> {}]
          /\ liquid = [c / COIN |-> [d \in COIN - c |-> {}]
