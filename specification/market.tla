@@ -45,14 +45,14 @@ ProcessOrder(pair) =
             
             \* Stage 1
             \* Reconcile with bid book queue
-        
+            LET lowBid = Head(bids[pair][o.bid]).exchrate
                 \* Is book order exchrate greater than
                 \* the head of the bid book?
-                \/  /\ Head(bids[pair][o.bid]).exchrate > o.exchrate
+                \/  /\ lowBid > o.exchrate
                 
                 \* Is book order exchrate equal to head
                 \* of the bid book?
-                \/  /\ Head(bids[pair][o.bid]).exchrate = o.exchrate
+                \/  lowBid = o.exchrate
                 
             \* Stage 2
             \* Reconcile o with ask book if exchrate
