@@ -21,6 +21,7 @@ Bond == [amount: Nat, bid: COIN, ask: COIN]
 Order == Book \cup Bond
 
 Init ==  /\ orderQ = [PAIR |-> <<>>]
+         /\ bids = [PAIR |-> COIN |-> <<>>]
          /\ liquidity = [PAIR |-> {}]
          
 
@@ -28,10 +29,12 @@ SubmitOrder == /\ \E o \in Order :
                   /\ orderQ’ = [orderQ EXCEPT ![{o.bid, o.ask}] =
                                 Append(@, o)]
                   /\ UNCHANGED liquidity
-
-ProcessOrder({c, d}) =  LET pair = {c, d}
+   
+ProcessOrder({c, d}) =  LET pair = {c, d} IN
                         /\ orderQ[pair] != <<>>
-                        /\ IF Head(orderQ[pair])
+                        /\ Let o = Head(orderQ[pair])
+                        \/ /\ o.exchrate != {}
+                           /\ bids[pair][o.bid]
                   
 
 
