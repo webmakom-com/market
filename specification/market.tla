@@ -20,21 +20,16 @@ Bond == [amount: Nat, bid: COIN, ask: COIN]
 
 Order == Book \cup Bond
 
-Init ==  /\ orders = [PAIR |-> {}]
+Init ==  /\ orderQ = [PAIR |-> <<>>]
          /\ liquidity = [PAIR |-> {}]
          
 
 SubmitOrder == /\ \E o \in Order :
-                  IF o.exchrate != {}
-                  THEN /\ orders’ = [orders EXCEPT ![{o.bid, o.ask}] =
-                                  Append(
-                                    @,
-                                    [
-                                       amount: o.amount,
-                                       exchrate: o.exchrate
-                                    ]
-                                   )]
-                       /\ UNCHANGED bond
+                  /\ orderQ’ = [orderQ EXCEPT ![{o.bid, o.ask}] =
+                                Append(@, o)]
+                  /\ UNCHANGED liquidity
+                   
+                   
                   ELSE /\ bond’ = [bond EXCEPT ![o.bid][o.ask] =
                                   Append(
                                     bond[o.bid][o.ask],
