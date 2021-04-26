@@ -32,11 +32,25 @@ SubmitOrder == /\ \E o \in Order :
    
 ProcessOrder(pair) =    /\ orderQ[pair] != <<>>
                         /\ Let o = Head(orderQ[pair])
+                        
+                        \* Is book order?
+                        \* Check to see if record has exchrate
                         \/ /\ o.exchrate != {}
+                           
+                           \* Stage 1
+                           \* Reconcile with bid side queues
+                        
+                           \* Is book order exchrate greater than
+                           \* the head of the bid queue?
                            \/ /\ Head(bids[pair][o.bid]).exchrate 
                                  > o.exchrate
+                           
+                           \* Is book order exchrate equal to head
+                           \* of the bid queue?
                            \/ /\ Head(bids[pair][o.bid]).exchrate 
                                  = o.exchrate
+                           
+                           \* Is
                            \/ /\ bids[pair][o.ask] != <<>>
                               /\
                            \/ /\ bids[pair][o.ask] = <<>>
