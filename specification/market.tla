@@ -20,47 +20,64 @@ Bond == [amount: Nat, bid: COIN, ask: COIN]
 
 Order == Book \cup Bond
 
+Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
+
 Init ==  /\ orderQ = [PAIR |-> <<>>]
          /\ bids = [PAIR |-> COIN |-> <<>>]
-         /\ liquidity = [PAIR |-> {}]
+         /\ liquidity = [PAIR |-> Pool]
          
 
-SubmitOrder == /\ \E o \in Order :
-                  /\ orderQ’ = [orderQ EXCEPT ![{o.bid, o.ask}] =
-                                Append(@, o)]
-                  /\ UNCHANGED liquidity
+SubmitOrder == 
+    /\ \E o \in Order :
+        /\ orderQ’ = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)
+        /\ UNCHANGED liquidity
    
-ProcessOrder(pair) =    /\ orderQ[pair] != <<>>
-                        /\ Let o = Head(orderQ[pair])
-                        
-                        \* Is book order?
-                        \* Check to see if record has exchrate
-                        \/ /\ o.exchrate != {}
-                           
-                        \* Stage 1
-                        \* Reconcile with bid book queue
-                        
-                           \* Is book order exchrate greater than
-                           \* the head of the bid book?
-                           \/ /\ Head(bids[pair][o.bid]).exchrate 
-                                 > o.exchrate
-                           
-                           \* Is book order exchrate equal to head
-                           \* of the bid book?
-                           \/ /\ Head(bids[pair][o.bid]).exchrate 
-                                 = o.exchrate
-                           
-                         
-                        \* Stage 2
-                        \* Reconcile with ask book if exchrate
-                        \* is less than the head of bid book
-                           
-                           \* Is ask book for pair not empty?
-                           \/ /\ bids[pair][o.ask] != <<>>
-                              /\
-                              
-                           \* Well, Is ask book for pair empty?
-                           \/ /\ bids[pair][o.ask] = <<>>
+ProcessOrder(pair) =    
+    \* Are there orders to process for this pair of coins?
+    /\ orderQ[pair] != <<>>
+
+
+    /\ LET o = Head(orderQ[pair]) IN
+    
+        \* Is o a book order?
+        \* Check to see if record has exchrate
+        \/  /\ o.exchrate != {}
+            
+            \* Stage 1
+            \* Reconcile with bid book queue
+        
+                \* Is book order exchrate greater than
+                \* the head of the bid book?
+                \/  /\ Head(bids[pair][o.bid]).exchrate 
+                        > o.exchrate
+                
+                \* Is book order exchrate equal to head
+                \* of the bid book?
+                \/  /\ Head(bids[pair][o.bid]).exchrate 
+                        = o.exchrate
+                
+                
+            \* Stage 2
+            \* Reconcile o with ask book if exchrate
+            \* is less than the head of bid book.
+                
+                \* Is ask book for pair not empty?
+                \/ /\ bids[pair][o.ask] != <<>>
+                    /\
+                    
+                \* Well, Is ask book for pair empty?
+                \/ /\ bids[pair][o.ask] = <<>>
+        
+        \* Is o a bond order?
+        \* Order has empty exchrate field
+        \/  /\ o.exchrate = {}
+
+            \* Is there liquidity?
+            /\ LET l == CHOOSE l \in liquidity[pair] :
+
+            \* Let askAmount be the amount of ask coin
+            \* corresponding to the amount of bid coin
+            /\ LET askAmount = 
                   
 
 
