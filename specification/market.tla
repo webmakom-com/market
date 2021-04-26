@@ -24,7 +24,7 @@ Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
 
 Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
          /\ bids = [p \in PAIR |-> c \in p |-> <<>>]
-         /\ liquidity = [p \in PAIR |-> c \in p |-> NoVal]
+         /\ bonds = [p \in PAIR |-> c \in p |-> NoVal]
          
 
 SubmitOrder == 
@@ -46,6 +46,7 @@ ProcessOrder(pair) =
             \* Stage 1
             \* Reconcile with bid book queue
             LET lowBid = Head(bids[pair][o.bid]).exchrate
+            IN  
                 \* Is book order exchrate greater than
                 \* the head of the bid book?
                 \/  /\ lowBid > o.exchrate
@@ -70,18 +71,19 @@ ProcessOrder(pair) =
         \/  /\ o.exchrate = {}
 
             \* Is there liquidity?
-            /\  LET liqAsk == liquidity[pair][o.ask]
-                    liqBid == liquidity[pair][o.bid]
-                IN LET askAmount == (liqAsk * o.amount) \div liqBid
-                IN  \* Is there enough liquidity?
-                    /\ askAmount < liqAsk
-                    \* Exchange liquidity
-                    /\ liquidity' = [liquidity EXCEPT ![pair][o.ask] = @ - liqAsk]
-
-
-            \* Let askAmount be the amount of ask coin
-            \* corresponding to the amount of bid coin
-            /\ LET askAmount = 
+            /\  LET bondAsk == bonds[pair][o.ask]
+                    bondBid == bonds[pair][o.bid]
+                IN  
+                    \* Let askAmount be the amount of ask coin
+                    \* corresponding to the amount of bid coin
+                    LET askAmount == (bondAsk * o.amount) \div bondBid
+                    IN  \* Is there enough liquidity on ask bond?
+                        /\ askAmount < bondAsk
+                        \* Exchange liquidity
+                        /\ bonds' = 
+                            [bonds EXCEPT ![pair][o.ask] = @ - bondAsk]
+                        /\ orders' = [orders EXCEPT ![pair][o.ask] = ]
+ 
                   
 
 
