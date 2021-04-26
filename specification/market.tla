@@ -29,8 +29,9 @@ SubmitOrder == /\ \E o \in Order :
                                 Append(@, o)]
                   /\ UNCHANGED liquidity
 
-ProcessPair(c, d) = /\ c != d
-                    /\ 
+ProcessOrder({c, d}) =  LET pair = {c, d}
+                        /\ orderQ[pair] != <<>>
+                        /\ IF Head(orderQ[pair])
                   
 
 
