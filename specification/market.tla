@@ -30,13 +30,13 @@ SubmitOrder == /\ \E o \in Order :
                                 Append(@, o)]
                   /\ UNCHANGED liquidity
    
-ProcessOrder({c, d}) =  LET pair = {c, d} IN
-                        /\ orderQ[pair] != <<>>
+ProcessOrder(pair) =    /\ orderQ[pair] != <<>>
                         /\ Let o = Head(orderQ[pair])
                         \/ /\ o.exchrate != {}
                            \/ /\ Head(bids[pair][o.bid]).exchrate 
                                  > o.exchrate
-                           \/ /\ 
+                           \/ /\ Head(bids[pair][o.bid]).exchrate 
+                                 = o.exchrate
                            \/ /\ bids[pair][o.ask] != <<>>
                               /\
                            \/ /\ bids[pair][o.ask] = <<>>
