@@ -14,7 +14,7 @@ PAIR == {{c \in COIN, d \in COIN}: c != d}
 
 Type ==
 
-Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: Nat]
+Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: <Nat, Nat>]
 
 Bond == [amount: Nat, bid: COIN, ask: COIN]
 
@@ -28,13 +28,6 @@ SubmitOrder == /\ \E o \in Order :
                   /\ orderQ’ = [orderQ EXCEPT ![{o.bid, o.ask}] =
                                 Append(@, o)]
                   /\ UNCHANGED liquidity
-                   
-                   
-                  ELSE /\ bond’ = [bond EXCEPT ![o.bid][o.ask] =
-                                  Append(
-                                    bond[o.bid][o.ask],
-                                    o.amount
-                                   )]
 
 ProcessPair(c, d) = /\ c != d
                     /\ 
