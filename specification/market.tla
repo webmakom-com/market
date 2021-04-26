@@ -12,16 +12,16 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 PAIR == {{c \in COIN, d \in COIN}: c != d}
 
-Init ==  /\ orders = [PAIR |-> ORDER]
-         /\ books = [c / COIN |-> [d \in COIN - c |-> {}]
-         /\ bonds = [c / COIN |-> [d \in COIN - c |-> {}]
-         /\ liquid = [c / COIN |-> [d \in COIN - c |-> {}]
+Type ==
 
 Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: Nat]
 
 Bond == [amount: Nat, bid: COIN, ask: COIN]
 
 Order == Book \cup Bond
+
+Init ==  /\ orders = [PAIR |-> ORDER]
+         /\ liquidity = [PAIR |-> {}]
 
 SubmitOrder == /\ \E o \in Order :
                   IF o.exchrate != {}
