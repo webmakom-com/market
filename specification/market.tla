@@ -22,9 +22,9 @@ Order == Book \cup Bond
 
 Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
 
-Init ==  /\ orderQ = [PAIR |-> <<>>]
-         /\ bids = [PAIR |-> COIN |-> <<>>]
-         /\ liquidity = [PAIR |-> Pool]
+Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
+         /\ bids = [p \in PAIR |-> c \in p |-> <<>>]
+         /\ liquidity = [p \in PAIR |-> c \in p |-> NoVal]
          
 
 SubmitOrder == 
