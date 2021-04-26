@@ -34,7 +34,12 @@ ProcessOrder({c, d}) =  LET pair = {c, d} IN
                         /\ orderQ[pair] != <<>>
                         /\ Let o = Head(orderQ[pair])
                         \/ /\ o.exchrate != {}
-                           /\ bids[pair][o.bid]
+                           \/ /\ Head(bids[pair][o.bid]).exchrate 
+                                 > o.exchrate
+                           \/ /\ 
+                           \/ /\ bids[pair][o.ask] != <<>>
+                              /\
+                           \/ /\ bids[pair][o.ask] = <<>>
                   
 
 
