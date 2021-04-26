@@ -48,14 +48,11 @@ ProcessOrder(pair) =
         
                 \* Is book order exchrate greater than
                 \* the head of the bid book?
-                \/  /\ Head(bids[pair][o.bid]).exchrate 
-                        > o.exchrate
+                \/  /\ Head(bids[pair][o.bid]).exchrate > o.exchrate
                 
                 \* Is book order exchrate equal to head
                 \* of the bid book?
-                \/  /\ Head(bids[pair][o.bid]).exchrate 
-                        = o.exchrate
-                
+                \/  /\ Head(bids[pair][o.bid]).exchrate = o.exchrate
                 
             \* Stage 2
             \* Reconcile o with ask book if exchrate
@@ -73,7 +70,14 @@ ProcessOrder(pair) =
         \/  /\ o.exchrate = {}
 
             \* Is there liquidity?
-            /\ LET l == CHOOSE l \in liquidity[pair] :
+            /\  LET liqAsk == liquidity[pair][o.ask]
+                    liqBid == liquidity[pair][o.bid]
+                IN LET askAmount == (liqAsk * o.amount) \div liqBid
+                IN  \* Is there enough liquidity?
+                    /\ askAmount < liqAsk
+                    \* Exchange liquidity
+                    /\ liquidity' = [liquidity EXCEPT ![pair][o.ask] = @ - liqAsk]
+
 
             \* Let askAmount be the amount of ask coin
             \* corresponding to the amount of bid coin
