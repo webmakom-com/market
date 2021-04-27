@@ -77,7 +77,7 @@ ProcessOrder(pair) =
                     LET askAmount == (bondAsk * o.amount) \div bondBid
                     IN  \* Is there enough liquidity on ask bond?
                         /\ askAmount < bondAsk
-                        \* Update bond with order
+                        \* Update bonds
                         /\ bonds' = 
                             [
                              bonds EXCEPT ![pair][o.ask] = @ - bondAsk
