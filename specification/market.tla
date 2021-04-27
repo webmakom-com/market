@@ -69,8 +69,6 @@ ProcessOrder(pair) =
         \* Is o a bond order?
         \* Order has empty exchrate field
         \/  /\ o.exchrate = {}
-
-            \* Is there liquidity?
             /\  LET bondAsk == bonds[pair][o.ask]
                     bondBid == bonds[pair][o.bid]
                 IN  
@@ -79,9 +77,12 @@ ProcessOrder(pair) =
                     LET askAmount == (bondAsk * o.amount) \div bondBid
                     IN  \* Is there enough liquidity on ask bond?
                         /\ askAmount < bondAsk
-                        \* Exchange liquidity
+                        \* Update bond with order
                         /\ bonds' = 
-                            [bonds EXCEPT ![pair][o.ask] = @ - bondAsk]
+                            [
+                             bonds EXCEPT ![pair][o.ask] = @ - bondAsk
+                                          ![pair][o.bid] = @ + bondBid
+                            ]
                         /\ orders' = [orders EXCEPT ![pair][o.ask] = ]
  
                   
