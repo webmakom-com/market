@@ -84,7 +84,7 @@ ProcessOrder(pair) =
                         /\ askAmount < bondAsk
                         \* Reconcile Bonds with Books
                         /\  LET (*******************************************)
-                                (* bookAsk is the sequence of book entries *)
+                                (* bookAsk: The sequence of book entries   *)
                                 (* where the user has deposited the        *)
                                 (* "bid coin" in return for the for the    *) 
                                 (* "ask coin" at a given exchange rate     *)
@@ -115,13 +115,20 @@ ProcessOrder(pair) =
                                     (***************************************)
                                     (*              Case 1                 *)                         
                                     (* Head of bookAsk exchange rate       *)
-                                    (* greater than the updated bond       *)
+                                    (* greater than or equal to the        *)
+                                    (* updated bond exchange rate          *)
+                                    (***************************************)
+                                    \/  /\ bookAsk(i).exchrate >= (bondAskUpd \div bondBidUpd)
+                                        /\ 
+                                        \* For each book entry in the bid book
+                                    (***************************************)
+                                    (*              Case 2                 *)                         
+                                    (* Head of bookAsk exchange rate       *)
+                                    (* less than the updated bond          *)
                                     (* exchange rate                       *)
                                     (***************************************)
                                     \/  /\ bookAsk(i).exchrate > (bondAskUpd \div bondBidUpd)
-                                        /\ 
-                                        \* For each book entry in the bid book
-                                    \/  LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
+                                        LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
 
                                     IN G[Len(bookBid)]
                                 IN F[Len(bookAsk)]
