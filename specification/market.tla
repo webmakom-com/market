@@ -85,6 +85,7 @@ ProcessOrder(pair) =
                                 (* "ask coin" at a given exchange rate     *)
                                 (*******************************************)
                                 bookAsk == books[pair][o.ask]
+                                
                                 (*******************************************)
                                 (* bookBid is the sequence of book entries *)
                                 (* where the user has deposited the        *)
@@ -92,7 +93,17 @@ ProcessOrder(pair) =
                                 (* "bid coin" at a given exchange rate     *)
                                 (*******************************************)
                                 bookBid == books[pair][o.bid]
+                                
+                                (*******************************************)
+                                (* bookAskUpd: The initial update to       *)
+                                (* bond "ask coin" balance                 *)
+                                (*******************************************)
                                 bondAskUpd = bondAsk - askAmount
+
+                                (*******************************************)
+                                (* bookBidUpd: The initial update to       *)
+                                (* bond "ask coin" balance                 *)
+                                (*******************************************)
                                 bondBidUpd = bondBid + o.amount
                             IN  \* For each book entry in ask book 
                                 LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
