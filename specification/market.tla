@@ -23,7 +23,9 @@ Order == Book \cup Bond
 Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
 
 Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
+         \* order books bid sequences
          /\ bids = [p \in PAIR |-> c \in p |-> <<>>]
+         \* liquidity balances for each pair
          /\ bonds = [p \in PAIR |-> c \in p |-> NoVal]
          
 
@@ -31,6 +33,9 @@ SubmitOrder ==
     /\ \E o \in Order :
         /\ orderQ’ = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)
         /\ UNCHANGED liquidity
+
+BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
+    (bondAskBal * bidAmount) \div bondBidBal
    
 ProcessOrder(pair) =    
     \* Are there orders to process for this pair of coins?
@@ -74,7 +79,7 @@ ProcessOrder(pair) =
                 IN  
                     \* Let askAmount be the amount of ask coin
                     \* corresponding to the amount of bid coin
-                    LET askAmount == (bondAsk * o.amount) \div bondBid
+                    LET askAmount == BondAskAmount(bondAsk, bondBid, o.amount) 
                     IN  \* Is there enough liquidity on ask bond?  
                         /\ askAmount < bondAsk
                         \* Reconcile Bonds with Books
@@ -102,13 +107,21 @@ ProcessOrder(pair) =
 
                                 (*******************************************)
                                 (* bookBidUpd: The initial update to       *)
-                                (* bond "ask coin" balance                 *)
+                                (* bond "bid coin" balance                 *)
                                 (*******************************************)
                                 bondBidUpd = bondBid + o.amount
                             IN  \* For each book entry in ask book 
                                 LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
-                                    \* For each book entry in the bid book
-                                    LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
+                                    (***************************************)
+                                    (*              Case 1                 *)                         
+                                    (* Head of bookAsk exchange rate       *)
+                                    (* greater than the updated bond       *)
+                                    (* exchange rate                       *)
+                                    (***************************************)
+                                    \/  /\ bookAsk(i).exchrate > (bondAskUpd \div bondBidUpd)
+                                        /\ 
+                                        \* For each book entry in the bid book
+                                    \/  LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
 
                                     IN G[Len(bookBid)]
                                 IN F[Len(bookAsk)]
