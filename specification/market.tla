@@ -75,9 +75,34 @@ ProcessOrder(pair) =
                     \* Let askAmount be the amount of ask coin
                     \* corresponding to the amount of bid coin
                     LET askAmount == (bondAsk * o.amount) \div bondBid
-                    IN  \* Is there enough liquidity on ask bond?
+                    IN  \* Is there enough liquidity on ask bond?  
                         /\ askAmount < bondAsk
-                        \* Update bonds
+                        \* Reconcile Bonds with Books
+                        /\  LET (*******************************************)
+                                (* bookAsk is the sequence of book entries *)
+                                (* where the user has deposited the        *)
+                                (* "bid coin" in return for the for the    *) 
+                                (* "ask coin" at a given exchange rate     *)
+                                (*******************************************)
+                                bookAsk == books[pair][o.ask]
+                                (*******************************************)
+                                (* bookBid is the sequence of book entries *)
+                                (* where the user has deposited the        *)
+                                (* "ask coin in return for the for the     *)
+                                (* "bid coin" at a given exchange rate     *)
+                                (*******************************************)
+                                bookBid == books[pair][o.bid]
+                                bondAskUpd = bondAsk - askAmount
+                                bondBidUpd = bondBid + o.amount
+                            IN  \* For each book entry in ask book 
+                                LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
+                                    \* For each book entry in the bid book
+                                    LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
+
+                                    IN G[Len(bookBid)]
+                                IN F[Len(bookAsk)]
+                    
+
                         /\ bonds' = 
                             [
                              bonds EXCEPT ![pair][o.ask] = @ - bondAsk
