@@ -119,9 +119,13 @@ ProcessOrder(pair) =
                                     (* updated bond exchange rate          *)
                                     (***************************************)
                                     \/  /\ bookAsk(i).exchrate >= (bondAskUpd \div bondBidUpd)
-                                        /\ bondBidUpd = bondBidUpd - bookAsk(i).amount
+                                        \* Bond pays for the ask book order
                                         /\ bondAskUpd = bondAskUpd - bookAsk(i).amount
+                                        \* Bond receives the payment from the ask book
+                                        /\ bondBidUpd = bondBidUpd + bookAsk(i).amount
+                                        \* The ask book order is removed from the head 
                                         /\ bookAsk = Tail(bookAsk)
+                                        \* Loop back
                                         /\ F[Len(bookAsk)]
                                         \* For each book entry in the bid book
                                     (***************************************)
