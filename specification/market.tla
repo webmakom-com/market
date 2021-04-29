@@ -24,7 +24,7 @@ Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
 
 Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
          \* order books bid sequences
-         /\ bids = [p \in PAIR |-> c \in p |-> <<>>]
+         /\ books = [p \in PAIR |-> c \in p |-> <<>>]
          \* liquidity balances for each pair
          /\ bonds = [p \in PAIR |-> c \in p |-> NoVal]
          
@@ -43,18 +43,23 @@ ProcessOrder(pair) =
 
 
     /\ LET o = Head(orderQ[pair]) IN
-    
+        /\  LET bookAsk = books[pair][o.ask]
+                bookBid = books[pair][o.bid]
+                bondAsk = bonds[pair][o.ask]
+                bondBid = bonds[pair][o.bid]
+            IN
         \* Is o a book order?
         \* Check to see if record has exchrate
         \/  /\ o.exchrate != {}
             
             \* Stage 1
             \* Reconcile with bid book queue
-            LET lowBid = Head(bids[pair][o.bid]).exchrate
+            LET lowBid = Head(bookBid).exchrate
             IN  
                 \* Is book order exchrate greater than
                 \* the head of the bid book?
                 \/  /\ lowBid > o.exchrate
+                    /\ 
                 
                 \* Is book order exchrate equal to head
                 \* of the bid book?
@@ -65,18 +70,15 @@ ProcessOrder(pair) =
             \* is less than the head of bid book.
                 
                 \* Is ask book for pair not empty?
-                \/ /\ bids[pair][o.ask] != <<>>
+                \/ /\ books[pair][o.ask] != <<>>
                     /\
                     
                 \* Well, Is ask book for pair empty?
-                \/ /\ bids[pair][o.ask] = <<>>
+                \/ /\ books[pair][o.ask] = <<>>
         
         \* Is o a bond order?
         \* Order has empty exchrate field
         \/  /\ o.exchrate = {}
-            /\  LET bondAsk == bonds[pair][o.ask]
-                    bondBid == bonds[pair][o.bid]
-                IN  
                     \* Let askAmount be the amount of ask coin
                     \* corresponding to the amount of bid coin
                     LET askAmount == BondAskAmount(bondAsk, bondBid, o.amount) 
@@ -158,32 +160,20 @@ ProcessOrder(pair) =
                                         (* exchange rate                       *)
                                         (*                                     *)
                                         (* Processing Complete                 *)
-                                        (* Update bonds and bids states        *)
+                                        (* Update bonds and books states        *)
                                         (***************************************)
                                         \/  /\  bonds' = [
                                                     bonds EXCEPT    
                                                         ![pair][o.bid] = bondBidUpd
                                                         ![pair][o.ask] = bondAskUpd
                                                 ]
-                                            /\  bids' = [
-                                                    bids EXCEPT
+                                            /\  books' = [
+                                                    books EXCEPT
                                                         ![pair][o.bid] = bookBid
                                                         ![pair][o.ask] = bookAsk
                                                 ]
                                     IN G[Len(bookBid)]
                                 IN F[Len(bookAsk)]
-                    
-
-                        /\ bonds' = 
-                            [
-                             bonds EXCEPT ![pair][o.ask] = @ - bondAsk
-                                          ![pair][o.bid] = @ + bondBid
-                            ]
-                        /\ orders' = [orders EXCEPT ![pair][o.ask] = ]
- 
-                  
-
-
 
 =============================================================================
 \* Modification History
