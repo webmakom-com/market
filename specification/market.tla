@@ -89,7 +89,7 @@ ProcessOrder(pair) =
                                 (* "bid coin" in return for the for the    *) 
                                 (* "ask coin" at a given exchange rate     *)
                                 (*******************************************)
-                                bookAsk == books[pair][o.ask]
+                                bookAsk = books[pair][o.ask]
                                 
                                 (*******************************************)
                                 (* bookBid is the sequence of book entries *)
@@ -97,7 +97,7 @@ ProcessOrder(pair) =
                                 (* "ask coin in return for the for the     *)
                                 (* "bid coin" at a given exchange rate     *)
                                 (*******************************************)
-                                bookBid == books[pair][o.bid]
+                                bookBid = books[pair][o.bid]
                                 
                                 (*******************************************)
                                 (* bookAskUpd: The initial update to       *)
@@ -119,7 +119,10 @@ ProcessOrder(pair) =
                                     (* updated bond exchange rate          *)
                                     (***************************************)
                                     \/  /\ bookAsk(i).exchrate >= (bondAskUpd \div bondBidUpd)
-                                        /\ 
+                                        /\ bondBidUpd = bondBidUpd - bookAsk(i).amount
+                                        /\ bondAskUpd = bondAskUpd - bookAsk(i).amount
+                                        /\ bookAsk = Tail(bookAsk)
+                                        /\ F[Len(bookAsk)]
                                         \* For each book entry in the bid book
                                     (***************************************)
                                     (*              Case 2                 *)                         
@@ -129,7 +132,12 @@ ProcessOrder(pair) =
                                     (***************************************)
                                     \/  /\ bookAsk(i).exchrate > (bondAskUpd \div bondBidUpd)
                                         LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
-
+                                        \/ bookAsk(i).exchrate > (bondAskUpd \div bondBidUpd)
+                                            /\
+                                        \/  /\  bonds' = [bonds EXCEPT bondBid = 
+                                            /\  bids' = [bids EXCEPT ![pair][bidCoin]] 
+                                    \/  /\  bonds' = 
+                                        /\  bids'
                                     IN G[Len(bookBid)]
                                 IN F[Len(bookAsk)]
                     
