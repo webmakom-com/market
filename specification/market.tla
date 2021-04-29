@@ -119,29 +119,54 @@ ProcessOrder(pair) =
                                     (* updated bond exchange rate          *)
                                     (***************************************)
                                     \/  /\ bookAsk(i).exchrate >= (bondAskUpd \div bondBidUpd)
-                                        \* Bond pays for the ask book order
+                                        \* Ask Bond pays for the ask book order
                                         /\ bondAskUpd = bondAskUpd - bookAsk(i).amount
-                                        \* Bond receives the payment from the ask book
+                                        \* Bid Bond receives the payment from the ask book
                                         /\ bondBidUpd = bondBidUpd + bookAsk(i).amount
                                         \* The ask book order is removed from the head 
                                         /\ bookAsk = Tail(bookAsk)
                                         \* Loop back
                                         /\ F[Len(bookAsk)]
-                                        \* For each book entry in the bid book
+                                        
                                     (***************************************)
                                     (*              Case 2                 *)                         
                                     (* Head of bookAsk exchange rate       *)
                                     (* less than the updated bond          *)
                                     (* exchange rate                       *)
                                     (***************************************)
-                                    \/  /\ bookAsk(i).exchrate > (bondAskUpd \div bondBidUpd)
+                                    \/  /\ bookAsk(i).exchrate < (bondAskUpd \div bondBidUpd)
                                         LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
-                                        \/ bookAsk(i).exchrate > (bondAskUpd \div bondBidUpd)
-                                            /\
-                                        \/  /\  bonds' = [bonds EXCEPT bondBid = 
-                                            /\  bids' = [bids EXCEPT ![pair][bidCoin]] 
-                                    \/  /\  bonds' = 
-                                        /\  bids'
+                                        (***************************************)
+                                        (*            Case 2.1                 *)                         
+                                        (* Head of bookBid exchange rate       *)
+                                        (* greater than or equal to the        *)
+                                        (* updated bid bond exchange rate      *)
+                                        (***************************************)
+                                        \/ bookBid(i).exchrate >= (bondBidUpd \div bondAskUpd)
+                                            \* Bid Bond pays for the bid book order
+                                            /\ bondBidUpd = bondBidUpd - bookBid(i).amount
+                                            \* Ask Bond receives the payment from the ask book
+                                            /\ bondAskUpd = bondAskUpd + bookBid(i).amount
+                                            \* The Bid Book order is removed from the head 
+                                            /\ bookBid = Tail(bookBid)
+                                            \* Loop back
+                                            /\ F[Len(bookAsk)]
+                                        (***************************************)
+                                        (*            Case 2.2                 *)                         
+                                        (* Head of bookBid exchange rate       *)
+                                        (* less than the updated bid bond      *)
+                                        (* exchange rate                       *)
+                                        (***************************************)
+                                        \/  /\  bonds' = [
+                                                    bonds EXCEPT    
+                                                        ![pair][o.bid] = bondBidUpd
+                                                        ![pair][o.ask] = bondAskUpd
+                                                ]
+                                            /\  bids' = [
+                                                    bids EXCEPT
+                                                        ![pair][o.bid] = bookBid
+                                                        ![pair][o.ask] = bookAsk
+                                                ]
                                     IN G[Len(bookBid)]
                                 IN F[Len(bookAsk)]
                     
