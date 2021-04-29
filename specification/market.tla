@@ -156,6 +156,9 @@ ProcessOrder(pair) =
                                         (* Head of bookBid exchange rate       *)
                                         (* less than the updated bid bond      *)
                                         (* exchange rate                       *)
+                                        (*                                     *)
+                                        (* Processing Complete                 *)
+                                        (* Update bonds and bids states        *)
                                         (***************************************)
                                         \/  /\  bonds' = [
                                                     bonds EXCEPT    
