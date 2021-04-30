@@ -43,27 +43,27 @@ ProcessOrder(pair) =
 
 
     /\ LET o = Head(orderQ[pair]) IN
-        /\  LET bookAsk = books[pair][o.ask]
-                bookBid = books[pair][o.bid]
-                bondAsk = bonds[pair][o.ask]
-                bondBid = bonds[pair][o.bid]
-            IN
-        /\  \* Is o a book order?
+        LET bookAsk = books[pair][o.ask]
+            bookBid = books[pair][o.bid]
+            bondAsk = bonds[pair][o.ask]
+            bondBid = bonds[pair][o.bid]
+        IN  \* Is o a book order?
             \* Check to see if record has exchrate
             \/  /\ o.exchrate != {}
-                
-                \* Stage 1
-                \* Reconcile with bid book queue
-                LET lowBid = Head(bookBid).exchrate
-                IN  
-                    \* Is book order exchrate greater than
-                    \* the head of the bid book?
-                    \/  /\ lowBid > o.exchrate
-                        /\ 
+                \* Is book order exchrate  to head
+                \* of the bid book?
+                \/  /\ Head(bookBid).exchrate >= o.exchrate
+                    \* Case 1
+                    \/ Head(bookBid).amount > o.amount
+                    \* Case 2
+                    \/ Head(bookBid).amount = o.amount
+                    \* Case 3
+                    \/ Head(bookBid).amount < o.amount
+                    /\ bookBid = Tail(bookBid)
                     
-                    \* Is book order exchrate equal to head
-                    \* of the bid book?
-                    \/  lowBid = o.exchrate
+                \* Is book order exchrate equal to head
+                \* of the bid book?
+                \/  lowBid = o.exchrate
                     
                 \* Stage 2
                 \* Reconcile o with ask book if exchrate
@@ -79,39 +79,25 @@ ProcessOrder(pair) =
             \* Is o a bond order?
             \* Order has empty exchrate field
             \/  /\ o.exchrate = {}
-                        \* Let askAmount be the amount of ask coin
-                        \* corresponding to the amount of bid coin
-                        LET askAmount == BondAskAmount(bondAsk, bondBid, o.amount) 
-                        IN  \* Is there enough liquidity on ask bond?  
-                            /\ askAmount < bondAsk
+                    \* Let askAmount be the amount of ask coin
+                    \* corresponding to the amount of bid coin
+                    LET askAmount == BondAskAmount(bondAsk, bondBid, o.amount) 
+                    IN  \* Is there enough liquidity on ask bond?  
+                        /\ askAmount < bondAsk
+                        /\  (*******************************************)
+                            (* bookAskUpd: The initial update to       *)
+                            (* bond "ask coin" balance                 *)
+                            (*******************************************)
+                            bondAsk = bondAsk - askAmount
+                        /\  (*******************************************)
+                            (* bookBidUpd: The initial update to       *)
+                            (* bond "bid coin" balance                 *)
+                            (*******************************************)
+                            bondBid = bondBid + o.amount
             \* Reconcile Bonds with Books
-            \/  /\  LET (*******************************************)
-                        (* bookAsk: The sequence of book entries   *)
-                        (* where the user has deposited the        *)
-                        (* "bid coin" in return for the for the    *) 
-                        (* "ask coin" at a given exchange rate     *)
-                        (*******************************************)
-                        bookAsk = books[pair][o.ask]
+            \/  /\  LET 
                         
-                        (*******************************************)
-                        (* bookBid is the sequence of book entries *)
-                        (* where the user has deposited the        *)
-                        (* "ask coin in return for the for the     *)
-                        (* "bid coin" at a given exchange rate     *)
-                        (*******************************************)
-                        bookBid = books[pair][o.bid]
                         
-                        (*******************************************)
-                        (* bookAskUpd: The initial update to       *)
-                        (* bond "ask coin" balance                 *)
-                        (*******************************************)
-                        bondAskUpd = bondAsk - askAmount
-
-                        (*******************************************)
-                        (* bookBidUpd: The initial update to       *)
-                        (* bond "bid coin" balance                 *)
-                        (*******************************************)
-                        bondBidUpd = bondBid + o.amount
                     IN  \* For each book entry in ask book 
                         LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
                             (***************************************)
