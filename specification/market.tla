@@ -47,7 +47,8 @@ ProcessOrder(pair) =
             bookBid = books[pair][o.bid]
             bondAsk = bonds[pair][o.ask]
             bondBid = bonds[pair][o.bid]
-        IN  \* Is o a book order?
+        IN  \* Case 1
+            \* Book Order
             \* Check to see if record has exchrate
             \/  /\ o.exchrate != {}
                 \* Is book order exchrate  to head
@@ -76,6 +77,7 @@ ProcessOrder(pair) =
                     \* Well, Is ask book for pair empty?
                     \/  /\ books[pair][o.ask] = <<>>
             
+            \* Case 2
             \* Is o a bond order?
             \* Order has empty exchrate field
             \/  /\ o.exchrate = {}
