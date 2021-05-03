@@ -62,10 +62,6 @@ ProcessOrder(pair) =
                     \/ Head(bookBid).amount < o.amount
                     /\ bookBid = Tail(bookBid)
                     
-                \* Is book order exchrate equal to head
-                \* of the bid book?
-                \/  lowBid = o.exchrate
-                    
                 \* Stage 2
                 \* Reconcile o with ask book if exchrate
                 \* is less than the head of bid book.
@@ -97,10 +93,7 @@ ProcessOrder(pair) =
                             (*******************************************)
                             bondBid = bondBid + o.amount
             \* Reconcile Bonds with Books
-            \/  /\  LET 
-                        
-                        
-                    IN  \* For each book entry in ask book 
+            \/  /\  \* For each book entry in ask book 
                         LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
                             (***************************************)
                             (*              Case 1                 *)                         
