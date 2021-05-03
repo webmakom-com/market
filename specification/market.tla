@@ -51,7 +51,7 @@ ProcessOrder(pair) =
             \* Book Order
             \* Check to see if record has exchrate
             \/  /\ o.exchrate != {}
-                \* Case 1
+                \* Case 1.1
                 \* Book bid price greater than bond price
                 \/  /\  (bondAsk * o.amount) / bondBid > o.amount * o.exchrate
                     \* Qualifying Condition
