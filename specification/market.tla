@@ -51,16 +51,24 @@ ProcessOrder(pair) =
             \* Book Order
             \* Check to see if record has exchrate
             \/  /\ o.exchrate != {}
+                
+                \/  /\  (bondAsk * o.amount) / bondBid > o.amount * o.exchrate
+                
                 \* Is book order exchrate  to head
                 \* of the bid book?
-                \/  /\ Head(bookBid).exchrate >= o.exchrate
-                    \* Case 1
-                    \/ Head(bookBid).amount > o.amount
-                    \* Case 2
-                    \/ Head(bookBid).amount = o.amount
-                    \* Case 3
-                    \/ Head(bookBid).amount < o.amount
-                    /\ bookBid = Tail(bookBid)
+                \/  /\ Head(bookBid).exchrate > o.exchrate
+                    
+                    
+                \/  /\ Head(bookBid).exchrate  = o.exchrate
+                        \* Case 1
+                        \/ Head(bookBid).amount > o.amount
+                        \* Case 2
+                        \/ Head(bookBid).amount = o.amount
+                        \* Case 3
+                        \/ Head(bookBid).amount < o.amount
+                        
+                \/  /\ Head(bookBid).exchrate < o.exchrate
+                
                     
                 \* Stage 2
                 \* Reconcile o with ask book if exchrate
