@@ -59,7 +59,8 @@ ProcessOrder(pair) =
                     \* Is book order exchrate  to head
                     \* of the bid book?
                     \/  /\ Head(bookBid).exchrate < o.exchrate
-                        
+                        /\ books’ [books EXCEPT ![pair][o.bid] = 
+                           LET
                         
                     \/  /\ Head(bookBid).exchrate  = o.exchrate
                             \* Case 1
