@@ -54,47 +54,55 @@ ProcessOrder(pair) =
             \* Book Order
             \* Check to see if record has exchrate
             /\  \/  /\ o.exchrate != {}
-                    \* Case 1.1
-                    \* Book bid price greater than bond price
-                    \* *** Review how the less than or equal to would change
-                    \* behavior ***
-                    \/  /\  (bondAsk * orderAmt) / bondBid > orderAmt * o.exchrate
-                        \* Does bond have enough liquidity to handle entire order?
-                        \/  orderAmt <= maxBondOrder
-                            /\  bondAsk == bondAsk - orderAmt
-                            /\  bondBid == bondBid + orderAmt
-                        \* 
-                        \/  orderAmt > maxBondOrder
-                            /\  bondAsk == bondAsk - maxBondOrder
-                            /\  bondBid == bondBid + maxBondOrder
-                            /\  orderAmt == orderAmt - maxBondOrder
+                    
                     
                     \* Is book order exchrate  to head
                     \* of the bid book?
-                    \/  /\ Head(bookBid).exchrate > o.exchrate
+                    \/  /\ Head(bookBid).exchrate < o.exchrate
                         
                         
                     \/  /\ Head(bookBid).exchrate  = o.exchrate
                             \* Case 1
-                            \/ Head(bookBid).amount > o.amount
+                            \/ Head(bookBid).amount > orderAmt
                             \* Case 2
-                            \/ Head(bookBid).amount = o.amount
+                            \/ Head(bookBid).amount = orderAmt
                             \* Case 3
-                            \/ Head(bookBid).amount < o.amount
+                            \/ Head(bookBid).amount < orderAmt
                             
-                    \/  /\ Head(bookBid).exchrate < o.exchrate
-                    
+                    \/  /\ Head(bookBid).exchrate > o.exchrate
+                        \* Case 1.1
+                        \* Book bid price greater than bond price
+                        \* *** Review how the less than or equal to would change
+                        \* behavior ***
+                        \/  /\  (bondAsk * orderAmt) / bondBid > orderAmt * o.exchrate
+                            \* Does bond have enough liquidity to handle entire order?
+                            \/  orderAmt <= maxBondOrder
+                                /\  bondAsk == bondAsk - orderAmt
+                                /\  bondBid == bondBid + orderAmt
+                            \* Is order amount above the amount of liquidity
+                            \* available before hitting bookOrder?
+                            \/  orderAmt > maxBondOrder
+                                \* Then settle the maxBondOrder
+                                \* and loop back
+                                /\  bondAsk == bondAsk - maxBondOrder
+                                /\  bondBid == bondBid + maxBondOrder
+                                /\  orderAmt == orderAmt - maxBondOrder
+                                /\  'books = [books EXCEPT ![pair][bid] = 
+                                    Append(
+                                    [amount: orderAmt, exchrate: o.exchrate]
+                                )]
                         
-                    \* Stage 2
-                    \* Reconcile o with ask book if exchrate
-                    \* is less than the head of bid book.
-                        
-                        \* Is ask book for pair not empty?
-                        \/  /\ books[pair][o.ask] != <<>>
-                            /\
                             
-                        \* Well, Is ask book for pair empty?
-                        \/  /\ books[pair][o.ask] = <<>>
+                        \* Stage 2
+                        \* Reconcile o with ask book if exchrate
+                        \* is less than the head of bid book.
+                            
+                            \* Is ask book for pair not empty?
+                            \/  /\ books[pair][o.ask] != <<>>
+                                /\
+                                
+                            \* Well, Is ask book for pair empty?
+                            \/  /\ books[pair][o.ask] = <<>>
                 
                 \* Case 2
                 \* Is o a bond order?
