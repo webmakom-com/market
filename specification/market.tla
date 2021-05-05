@@ -27,6 +27,17 @@ Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
          /\ books = [p \in PAIR |-> c \in p |-> <<>>]
          \* liquidity balances for each pair
          /\ bonds = [p \in PAIR |-> c \in p |-> NoVal]
+
+InsertAt(s, i, e) ==
+  (**************************************************************************)
+  (* Inserts element e at the position i moving the original element to i+1 *)
+  (* and so on.  In other words, a sequence t s.t.:                         *)
+  (*   /\ Len(t) = Len(s) + 1                                               *)
+  (*   /\ t[i] = e                                                          *)
+  (*   /\ \A j \in 1..(i - 1): t[j] = s[j]                                  *)
+  (*   /\ \A k \in (i + 1)..Len(s): t[k + 1] = s[k]                         *)
+  (**************************************************************************)
+  SubSeq(s, 1, i-1) \o <<e>> \o SubSeq(s, i, Len(s))
          
 
 SubmitOrder == 
@@ -60,7 +71,15 @@ ProcessOrder(pair) =
                     \* of the bid book?
                     \/  /\ Head(bookBid).exchrate < o.exchrate
                         /\ books’ [books EXCEPT ![pair][o.bid] = 
-                           LET
+                            LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
+                            \/ bookBid(i).exchrate > o.exchrate
+                                /\ bookBid == InsertAt(
+                                    bookBid, 
+                                    i, 
+                                    [amount: orderAmt, exchrate: o.exchrate]
+                                )
+                            \/ bookBid >= o.exchrate
+                                /\ F
                         
                     \/  /\ Head(bookBid).exchrate  = o.exchrate
                             \* Case 1
@@ -136,11 +155,11 @@ ProcessOrder(pair) =
                     (***************************************)
                     \/  /\ bookAsk(i).exchrate >= (bondAskUpd \div bondBidUpd)
                         \* Ask Bond pays for the ask book order
-                        /\ bondAskUpd = bondAskUpd - bookAsk(i).amount
+                        /\ bondAskUpd == bondAskUpd - bookAsk(i).amount
                         \* Bid Bond receives the payment from the ask book
-                        /\ bondBidUpd = bondBidUpd + bookAsk(i).amount
+                        /\ bondBidUpd == bondBidUpd + bookAsk(i).amount
                         \* The ask book order is removed from the head 
-                        /\ bookAsk = Tail(bookAsk)
+                        /\ bookAsk == Tail(bookAsk)
                         \* Loop back
                         /\ F[Len(bookAsk)]
                         
