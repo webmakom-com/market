@@ -78,18 +78,20 @@ ProcessOrder(pair) =
                                 )
                             \/ bookBid >= o.exchrate
                                 /\ F
+                    
                     \*  Case 1.2
                     \*  Book order exchrate equal to head
                     \/  /\ Head(bookBid).exchrate  = o.exchrate
-                            \* Case 1
+                            \* Case 1.2.1
                             \/ Head(bookBid).amount > orderAmt
-                            \* Case 2
+                            \* Case 1.2.2
                             \/ Head(bookBid).amount = orderAmt
-                            \* Case 3
+                            \* Case 1.2.3
                             \/ Head(bookBid).amount < orderAmt
-                            
+                    
+                    \*  Case 1.3
                     \/  /\ Head(bookBid).exchrate > o.exchrate
-                        \* Case 1.1
+                        \* Case 1.3.1
                         \* Book bid price greater than bond price
                         \* *** Review how the less than or equal to would change
                         \* behavior ***
