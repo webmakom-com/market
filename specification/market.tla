@@ -59,15 +59,19 @@ ProcessOrder(pair) =
             orderAmt == o.amount
             maxBondOrder == (bondAsk - askBid.exchrate * bondBid) /
                             (1 + askBid.exchrate)
-        IN  \* Case 1
-            \* Book Order
-            \* Check to see if record has exchrate
+        IN  
+            (*************************** Case 1 ****************************)
+            (* Order is a Book / Limit Order                               *)
+            (* Order is a Book / Limit Order if the record has exchrate    *)
+            (* limit.                                                      *)
+            (***************************************************************)
             /\  \/  /\ o.exchrate != {}
                     
-                    \*  Case 1.1
-                    \*  Book order exchrate greater than head
-                    \*  of the bid book?
-                    \/  /\ Head(bookBid).exchrate < o.exchrate
+                    (********************** Case 1.1 ***********************)
+                    (*  Book order exchrate greater than head of the       *)
+                    (*  bid book?                                          *)
+                    (*******************************************************)
+                    \/  /\ o.exchrate > Head(bookBid).exchrate
                         /\ books’ [books EXCEPT ![pair][o.bid] = 
                             LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
                             \/ bookBid(i).exchrate > o.exchrate
@@ -78,10 +82,10 @@ ProcessOrder(pair) =
                                 )
                             \/ bookBid >= o.exchrate
                                 /\ F
-                    
-                    \*  Case 1.2
-                    \*  Book order exchrate equal to head
-                    \/  /\ Head(bookBid).exchrate  = o.exchrate
+                    (********************** Case 1.2 ***********************)
+                    (*  Book order exchrate equal to head                  *)
+                    (*******************************************************)  
+                    \/  /\  o.exchrate = Head(bookBid).exchrate
                             \* Case 1.2.1
                             \/ Head(bookBid).amount > orderAmt
                             \* Case 1.2.2
@@ -89,8 +93,11 @@ ProcessOrder(pair) =
                             \* Case 1.2.3
                             \/ Head(bookBid).amount < orderAmt
                     
-                    \*  Case 1.3
-                    \/  /\ Head(bookBid).exchrate > o.exchrate
+                    (********************** Case 1.3 ***********************)
+                    (*  Book order exchrate less than head of bid    *)
+                    (*  book                                               *)
+                    (*******************************************************)
+                    \/  /\ o.exchrate < Head(bookBid).exchrate
                         \* Case 1.3.1
                         \* Book bid price greater than bond price
                         \* *** Review how the less than or equal to would change
@@ -125,7 +132,12 @@ ProcessOrder(pair) =
                             \* Well, Is ask book for pair empty?
                             \/  /\ books[pair][o.ask] = <<>>
                 
-                \* Case 2
+                (*************************** Case 2 ****************************)
+                (* Order is a Bond / AMM Order                                 *)
+                (* Order is a Bond / AMM Order if the record does not have     *)
+                (* a value in the exchrate field                               *)
+                (***************************************************************)
+                
                 \* Is o a bond order?
                 \* Order has empty exchrate field
                 \/  /\ o.exchrate = {}
