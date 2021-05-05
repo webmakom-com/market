@@ -51,8 +51,6 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
 ProcessOrder(pair) =    
     \* Are there orders to process for this pair of coins?
     /\ orderQ[pair] != <<>>
-
-
     /\ LET o = Head(orderQ[pair]) IN
         LET bookAsk == books[pair][o.ask]
             bookBid == books[pair][o.bid]
@@ -66,9 +64,9 @@ ProcessOrder(pair) =
             \* Check to see if record has exchrate
             /\  \/  /\ o.exchrate != {}
                     
-                    
-                    \* Is book order exchrate  to head
-                    \* of the bid book?
+                    \*  Case 1.1
+                    \*  Book order exchrate greater than head
+                    \*  of the bid book?
                     \/  /\ Head(bookBid).exchrate < o.exchrate
                         /\ books’ [books EXCEPT ![pair][o.bid] = 
                             LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
@@ -80,7 +78,8 @@ ProcessOrder(pair) =
                                 )
                             \/ bookBid >= o.exchrate
                                 /\ F
-                        
+                    \*  Case 1.2
+                    \*  Book order exchrate equal to head
                     \/  /\ Head(bookBid).exchrate  = o.exchrate
                             \* Case 1
                             \/ Head(bookBid).amount > orderAmt
