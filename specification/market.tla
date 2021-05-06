@@ -6,7 +6,6 @@ CONSTANT    COIN,   \* Set of all coins
            
 VARIABLE    book,   \* Order Book
             bonds,  \* AMM Bond Curves
-
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
@@ -188,17 +187,17 @@ ProcessOrder(pair) =
                                     )
                                 /\  Process()
                 
-                (************************ Case 2 **************************)
-                (* Order is a Bond / AMM Order                            *)
-                (* Order is a Bond / AMM Order if the record does not have*)
-                (* a value in the exchrate field                          *)
-                (**********************************************************)
+                (************************ Case 2 ***************************)
+                (* Order is a Bond / AMM Order                             *)
+                (* Order is a Bond / AMM Order if the record does not have *)
+                (* a value in the exchrate field                           *)
+                (***********************************************************)
                 \/  /\ o.exchrate = {}
 
-                        (******************* Case 2.1 *********************)
-                        (* Order amount is less than or equal to the      *) 
-                        (* maxBondBid                                     *)
-                        (**************************************************)
+                        (******************* Case 2.1 **********************)
+                        (* Order amount is less than or equal to the       *) 
+                        (* maxBondBid                                      *)
+                        (***************************************************)
                         \/  orderAmt <= maxBondBid
                             /\  bondAsk == bondAsk - BondAskAmount(
                                     bondAsk, 
@@ -207,10 +206,10 @@ ProcessOrder(pair) =
                                 )
                             /\  bondBid == bondBid + orderAmt
 
-                        (******************* Case 2.2 *******************)
-                        (* Order amount is greater than maxBondBid      *)
-                        (* the maxBondBid                               *) 
-                        (************************************************)
+                        (******************* Case 2.2 **********************)
+                        (* Order amount is greater than maxBondBid         *)
+                        (* the maxBondBid                                  *) 
+                        (***************************************************)
                         \/  orderAmt > maxBondBid
                             /\  bondAsk == bondAsk - BondAskAmount(
                                     bondAsk, 
@@ -224,22 +223,26 @@ ProcessOrder(pair) =
                                 [amount: orderAmt, exchrate: o.exchrate]
                             )]
 
-            (***************************** Stage 2 ************************)
-            (* Iteratively reconcile books records with bonds amounts     *)
-            (*                                                            *)
-            (* Bond amounts are balanced with the ask and bid books such  *)
-            (* that effective price of bonded liquidity is within the ask *) 
-            (* bid bookspread                                             *)
-            (**************************************************************)   
-                \* Reconcile Bonds with Books
-            /\  \* For each book entry in ask book 
+            (************************** Stage 2 ****************************)
+            (* Iteratively reconcile books records with bonds amounts      *)
+            (*                                                             *)
+            (* Bond amounts are balanced with the ask and bid books such   *)
+            (* that effective price of bonded liquidity is within the ask  *) 
+            (* bid bookspread                                              *)
+            (***************************************************************)   
+            /\  
+                (********************** Iteration **************************)
+                (* Iterate over the bookAsk sequence processing bond       *)
+                (* purchases until bookAsk record with exchrate less than  *) 
+                (* the bond price is reached                               *)
+                (***********************************************************)
                 LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
-                    (***************************************)
-                    (*              Case 1                 *)                         
-                    (* Head of bookAsk exchange rate       *)
-                    (* greater than or equal to the        *)
-                    (* updated bond exchange rate          *)
-                    (***************************************)
+
+                    (*********************** Case 1 ************************)                         
+                    (* Head of bookAsk exchange rate                       *)
+                    (* greater than or equal to the                        *)
+                    (* updated bond exchange rate                          *)
+                    (*******************************************************)
                     \/  /\ bookAsk(i).exchrate >= (bondAsk \div bondBid)
                         \* Ask Bond pays for the ask book order
                         /\ bondAsk == bondAsk - bookAsk(i).amount
@@ -250,20 +253,26 @@ ProcessOrder(pair) =
                         \* Loop back
                         /\ F[Len(bookAsk)]
                         
-                    (***************************************)
-                    (*              Case 2                 *)                         
-                    (* Head of bookAsk exchange rate       *)
-                    (* less than the updated bond          *)
-                    (* exchange rate                       *)
-                    (***************************************)
+                    (*********************** Case 2 ************************)
+                    (* Head of bookAsk exchange rate                       *)
+                    (* less than the updated bond                          *)
+                    (* exchange rate                                       *)
+                    (*******************************************************)
                     \/  /\ bookAsk(i).exchrate < (bondAsk \div bondBid)
+                        
+                        (******************** Iteration ********************)
+                        (* Iterate over the bookBid sequence processing    *)
+                        (* purchases until bookBid record with exchrate    *) 
+                        (* the bond price is reached                       *)
+                        (***************************************************)
                         LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
-                        (***************************************)
-                        (*            Case 2.1                 *)                         
-                        (* Head of bookBid exchange rate       *)
-                        (* greater than or equal to the        *)
-                        (* updated bid bond exchange rate      *)
-                        (***************************************)
+                        
+                        (***************************************************)
+                        (*            Case 2.1                             *)                         
+                        (* Head of bookBid exchange rate                   *)
+                        (* greater than or equal to the                    *)
+                        (* updated bid bond exchange rate                  *)
+                        (***************************************************)
                         \/ bookBid(i).exchrate >= (bondBid \div bondAsk)
                             \* Bid Bond pays for the bid book order
                             /\ bondBid = bondBid - bookBid(i).amount
@@ -273,15 +282,16 @@ ProcessOrder(pair) =
                             /\ bookBid = Tail(bookBid)
                             \* Loop back
                             /\ F[Len(bookAsk)]
-                        (***************************************)
-                        (*            Case 2.2                 *)                         
-                        (* Head of bookBid exchange rate       *)
-                        (* less than the updated bid bond      *)
-                        (* exchange rate                       *)
-                        (*                                     *)
-                        (* Processing Complete                 *)
-                        (* Update bonds and books states        *)
-                        (***************************************)
+                        
+                        (**************************************************)
+                        (*            Case 2.2                            *)                         
+                        (* Head of bookBid exchange rate                  *)
+                        (* less than the updated bid bond                 *)
+                        (* exchange rate                                  *)
+                        (*                                                *)
+                        (* Processing Complete                            *)
+                        (* Update bonds and books states                  *)
+                        (**************************************************)
                         \/  /\  bonds' = [
                                     bonds EXCEPT    
                                         ![pair][o.bid] = bondBid
