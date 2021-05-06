@@ -156,7 +156,7 @@ ProcessOrder(pair) =
                             
                             (*************** Case 1.2.1.1 ******************)
                             (* Order amount is less than or equal to the   *) 
-                            (* maxBondBid                                *)
+                            (* maxBondBid                                  *)
                             (***********************************************)
                             \/  orderAmt <= maxBondBid
                                 /\  bondAsk == bondAsk - BondAskAmount(
@@ -168,7 +168,7 @@ ProcessOrder(pair) =
 
                             (*************** Case 1.2.1.2 ******************)
                             (* Order amount is above the amount of         *)
-                            (* the maxBondBid                            *) 
+                            (* the maxBondBid                              *) 
                             (***********************************************)
                             \/  orderAmt > maxBondBid
                                 \* Then settle the maxBondBid
@@ -194,18 +194,18 @@ ProcessOrder(pair) =
                 (* a value in the exchrate field                          *)
                 (**********************************************************)
                 \/  /\ o.exchrate = {}
-                            (*************** Case 1.2.1.1 ******************)
-                            (* Order amount is less than or equal to the   *) 
-                            (* maxBondBid                                *)
-                            (***********************************************)
+                            (*************** Case 1.2.1.1 *****************)
+                            (* Order amount is less than or equal to the  *) 
+                            (* maxBondBid                                 *)
+                            (**********************************************)
                             \/  orderAmt <= maxBondBid
                                 /\  bondAsk == bondAsk - orderAmt
                                 /\  bondBid == bondBid + orderAmt
 
-                            (*************** Case 1.2.1.2 ******************)
-                            (* Order amount is above the amount of         *)
-                            (* the maxBondBid                            *) 
-                            (***********************************************)
+                            (*************** Case 1.2.1.2 *****************)
+                            (* Order amount is above the amount of        *)
+                            (* the maxBondBid                             *) 
+                            (**********************************************)
                             \/  orderAmt > maxBondBid
                                 /\  bondAsk == bondAsk - BondAskAmount(
                                         bondAsk, 
@@ -219,10 +219,10 @@ ProcessOrder(pair) =
                                     [amount: orderAmt, exchrate: o.exchrate]
                                 )]
                         \* Is there enough liquidity on ask bond?  
-                        (********************* Case 2.1 *******************)
-                        (* Order is a bond order                          *)
-                        (* Order has empty exchrate field                 *)
-                        (**************************************************)
+                        (********************* Case 2.1 ******************)
+                        (* Order is a bond order                         *)
+                        (* Order has empty exchrate field                *)
+                        (*************************************************)
                             \* Does bond have enough liquidity to handle entire order?
                             \/  orderAmt <= maxBondBid
                                 /\  bondAsk == bondAsk - BondAskAmount(
@@ -232,23 +232,23 @@ ProcessOrder(pair) =
                                     )
                                 /\  bondBid == bondBid + orderAmt
                                   
-                                (*******************************************)
-                                (* bookAskUpd: The initial update to       *)
-                                (* bond "ask coin" balance                 *)
-                                (*******************************************)
+                                (******************************************)
+                                (* bookAskUpd: The initial update to      *)
+                                (* bond "ask coin" balance                *)
+                                (******************************************)
                                 /\  bondAsk == bondAsk - askAmount
-                                (*******************************************)
-                                (* bookBidUpd: The initial update to       *)
-                                (* bond "bid coin" balance                 *)
-                                (*******************************************)
+                                (******************************************)
+                                (* bookBidUpd: The initial update to      *)
+                                (* bond "bid coin" balance                *)
+                                (******************************************)
                                 /\  bondBid == bondBid + o.amount
-            (***************************** Stage 2 *************************)
-            (* Iteratively reconcile books records with bonds amounts      *)
-            (*                                                             *)
-            (* Bond amounts are balanced with the ask and bid books such   *)
-            (* that effective price of bonded liquidity is within the ask  *) 
-            (* bid bookspread                                              *)
-            (***************************************************************)   
+            (***************************** Stage 2 ************************)
+            (* Iteratively reconcile books records with bonds amounts     *)
+            (*                                                            *)
+            (* Bond amounts are balanced with the ask and bid books such  *)
+            (* that effective price of bonded liquidity is within the ask *) 
+            (* bid bookspread                                             *)
+            (**************************************************************)   
                 \* Reconcile Bonds with Books
             /\  \* For each book entry in ask book 
                 LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
