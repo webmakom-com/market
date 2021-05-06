@@ -91,6 +91,7 @@ ProcessOrder(pair) =
                     books[pair][o.bid]).exchrate
                 ) - bondBid) / 2
         IN  
+            
             (***************************************************************)
             (* Define Process() to allow for loop back                     *)
             (***************************************************************)
@@ -141,14 +142,13 @@ ProcessOrder(pair) =
                             IN  F[Len(bookBid)]
                     
                     (********************** Case 1.2 ***********************)
-                    (*  Book order exchrate less than head of bid          *)
-                    (*  book                                               *)
+                    (*  Book order exchrate less than head of bid book     *)
                     (*******************************************************)
                     \/  /\ o.exchrate < Head(bookBid).exchrate
 
                         (***************** Case 1.2.1 **********************)
                         (* Book bid price greater than bond price          *)
-                        (*  Review how the less than or equal to would     *)
+                        (**  Review how the less than or equal to would    *)
                         (** change behavior                                *)
                         (***************************************************)
                         \/  /\  (bondAsk * orderAmt) / bondBid > 
@@ -194,54 +194,36 @@ ProcessOrder(pair) =
                 (* a value in the exchrate field                          *)
                 (**********************************************************)
                 \/  /\ o.exchrate = {}
-                            (*************** Case 1.2.1.1 *****************)
-                            (* Order amount is less than or equal to the  *) 
-                            (* maxBondBid                                 *)
-                            (**********************************************)
-                            \/  orderAmt <= maxBondBid
-                                /\  bondAsk == bondAsk - orderAmt
-                                /\  bondBid == bondBid + orderAmt
 
-                            (*************** Case 1.2.1.2 *****************)
-                            (* Order amount is above the amount of        *)
-                            (* the maxBondBid                             *) 
-                            (**********************************************)
-                            \/  orderAmt > maxBondBid
-                                /\  bondAsk == bondAsk - BondAskAmount(
-                                        bondAsk, 
-                                        bondBid, 
-                                        maxBondBid
-                                    )
-                                /\  bondBid == bondBid + maxBondBid
-                                /\  orderAmt == orderAmt - maxBondBid
-                                /\  'books = [books EXCEPT ![pair][bid] = 
-                                    Append(
-                                    [amount: orderAmt, exchrate: o.exchrate]
-                                )]
-                        \* Is there enough liquidity on ask bond?  
-                        (********************* Case 2.1 ******************)
-                        (* Order is a bond order                         *)
-                        (* Order has empty exchrate field                *)
-                        (*************************************************)
-                            \* Does bond have enough liquidity to handle entire order?
-                            \/  orderAmt <= maxBondBid
-                                /\  bondAsk == bondAsk - BondAskAmount(
-                                        bondAsk, 
-                                        bondBid, 
-                                        orderAmt
-                                    )
-                                /\  bondBid == bondBid + orderAmt
-                                  
-                                (******************************************)
-                                (* bookAskUpd: The initial update to      *)
-                                (* bond "ask coin" balance                *)
-                                (******************************************)
-                                /\  bondAsk == bondAsk - askAmount
-                                (******************************************)
-                                (* bookBidUpd: The initial update to      *)
-                                (* bond "bid coin" balance                *)
-                                (******************************************)
-                                /\  bondBid == bondBid + o.amount
+                        (******************* Case 2.1 *********************)
+                        (* Order amount is less than or equal to the      *) 
+                        (* maxBondBid                                     *)
+                        (**************************************************)
+                        \/  orderAmt <= maxBondBid
+                            /\  bondAsk == bondAsk - BondAskAmount(
+                                    bondAsk, 
+                                    bondBid, 
+                                    orderAmt
+                                )
+                            /\  bondBid == bondBid + orderAmt
+
+                        (******************* Case 2.2 *******************)
+                        (* Order amount is greater than maxBondBid      *)
+                        (* the maxBondBid                               *) 
+                        (************************************************)
+                        \/  orderAmt > maxBondBid
+                            /\  bondAsk == bondAsk - BondAskAmount(
+                                    bondAsk, 
+                                    bondBid, 
+                                    maxBondBid
+                                )
+                            /\  bondBid == bondBid + maxBondBid
+                            /\  orderAmt == orderAmt - maxBondBid
+                            /\  'books = [books EXCEPT ![pair][bid] = 
+                                Append(
+                                [amount: orderAmt, exchrate: o.exchrate]
+                            )]
+
             (***************************** Stage 2 ************************)
             (* Iteratively reconcile books records with bonds amounts     *)
             (*                                                            *)
