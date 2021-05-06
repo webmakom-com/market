@@ -50,11 +50,16 @@ SubmitOrder ==
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
    
-ProcessOrder(pair) =    
+ProcessOrder(pair) =
+
     (************************** Qualifying Condition ***********************)
     (* Order queue is not empty                                            *)
     (***********************************************************************)
     /\ orderQ[pair] != <<>>
+    
+    (*************************** Internal Variables ************************)
+    (* Order queue is not empty                                            *)
+    (***********************************************************************)
     /\ LET o = Head(orderQ[pair]) IN
         LET bookAsk == books[pair][o.ask]
             bookBid == books[pair][o.bid]
@@ -63,12 +68,14 @@ ProcessOrder(pair) =
             orderAmt == o.amount
             maxBondOrder == (bondAsk - askBid.exchrate * bondBid) /
                             (1 + askBid.exchrate)
-        IN  
+        IN
+        
             (***************************** Stage 1 *************************)
             (* Process the order and update the state of the affected       )
             (* books or bonds variables                                     )
             (***************************************************************)
-            /\  
+            /\
+            
                 (************************** Case 1 *************************)
                 (* Order is a Book / Limit Order                           *)
                 (* Order is a Book / Limit Order if the record has exchrate*)
