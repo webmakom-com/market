@@ -95,23 +95,68 @@ ProcessOrder(pair) =
                                     /\  F[i-1]
                             IN  F[Len(bookBid)]
                     
-                    (********************** Case 1.3 ***********************)
+                    (********************** Case 1.2 ***********************)
                     (*  Book order exchrate less than head of bid          *)
                     (*  book                                               *)
                     (*******************************************************)
                     \/  /\ o.exchrate < Head(bookBid).exchrate
-                        (***************** Case 1.3.1 **********************)
+
+                        (***************** Case 1.2.1 **********************)
                         (* Book bid price greater than bond price          *)
                         (*  Review how the less than or equal to would     *)
                         (** change behavior                                *)
                         (***************************************************)
-                        \/  /\  (bondAsk * orderAmt) / bondBid > orderAmt * o.exchrate
-                            \* Does bond have enough liquidity to handle entire order?
+                        \/  /\  (bondAsk * orderAmt) / bondBid > 
+                                orderAmt * o.exchrate
+                            
+                            (*************** Case 1.2.1.1 ******************)
+                            (* Order amount is less than or equal to the   *) 
+                            (* maxBondOrder                                *)
+                            (***********************************************)
                             \/  orderAmt <= maxBondOrder
                                 /\  bondAsk == bondAsk - orderAmt
                                 /\  bondBid == bondBid + orderAmt
-                            \* Is order amount above the amount of liquidity
-                            \* available before hitting bookOrder?
+
+                            (*************** Case 1.2.1.2 ******************)
+                            (* Order amount is above the amount of         *)
+                            (* the maxBondOrder                            *) 
+                            (***********************************************)
+                            \/  orderAmt > maxBondOrder
+                                \* Then settle the maxBondOrder
+                                \* and loop back
+                                /\  bondAsk == bondAsk - BondAskAmount(
+                                        bondAsk, 
+                                        bondBid, 
+                                        maxBondOrder
+                                    )
+                                /\  bondBid == bondBid + maxBondOrder
+                                /\  orderAmt == orderAmt - maxBondOrder
+                                /\  bookBid == Append(
+                                        [
+                                            amount: orderAmt, 
+                                            exchrate: o.exchrate
+                                        ]
+                                    )
+                                /\  Add Loop Back Logic!!!
+                
+                (************************ Case 2 **************************)
+                (* Order is a Bond / AMM Order                            *)
+                (* Order is a Bond / AMM Order if the record does not have*)
+                (* a value in the exchrate field                          *)
+                (**********************************************************)
+                \/  /\ o.exchrate = {}
+                            (*************** Case 1.2.1.1 ******************)
+                            (* Order amount is less than or equal to the   *) 
+                            (* maxBondOrder                                *)
+                            (***********************************************)
+                            \/  orderAmt <= maxBondOrder
+                                /\  bondAsk == bondAsk - orderAmt
+                                /\  bondBid == bondBid + orderAmt
+
+                            (*************** Case 1.2.1.2 ******************)
+                            (* Order amount is above the amount of         *)
+                            (* the maxBondOrder                            *) 
+                            (***********************************************)
                             \/  orderAmt > maxBondOrder
                                 \* Then settle the maxBondOrder
                                 \* and loop back
@@ -126,17 +171,9 @@ ProcessOrder(pair) =
                                     Append(
                                     [amount: orderAmt, exchrate: o.exchrate]
                                 )]
-                
-                (************************ Case 2 **************************)
-                (* Order is a Bond / AMM Order                            *)
-                (* Order is a Bond / AMM Order if the record does not have*)
-                (* a value in the exchrate field                          *)
-                (**********************************************************)
-                \/  /\ o.exchrate = {}
-                         
                         \* Is there enough liquidity on ask bond?  
                         (********************* Case 2.1 *******************)
-                        (* Is o a bond order?                             *)
+                        (* Order is a bond order                          *)
                         (* Order has empty exchrate field                 *)
                         (**************************************************)
                             \* Does bond have enough liquidity to handle entire order?
