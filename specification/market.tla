@@ -29,14 +29,14 @@ Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
          /\ bonds = [p \in PAIR |-> c \in p |-> NoVal]
 
 InsertAt(s, i, e) ==
-  (**************************************************************************)
-  (* Inserts element e at the position i moving the original element to i+1 *)
-  (* and so on.  In other words, a sequence t s.t.:                         *)
-  (*   /\ Len(t) = Len(s) + 1                                               *)
-  (*   /\ t[i] = e                                                          *)
-  (*   /\ \A j \in 1..(i - 1): t[j] = s[j]                                  *)
-  (*   /\ \A k \in (i + 1)..Len(s): t[k + 1] = s[k]                         *)
-  (**************************************************************************)
+  (*************************************************************************)
+  (* Inserts element e at the position i moving the original element to    *)
+  (* i+1 and so on.  In other words, a sequence t s.t.:                    *)
+  (*   /\ Len(t) = Len(s) + 1                                              *)
+  (*   /\ t[i] = e                                                         *)
+  (*   /\ \A j \in 1..(i - 1): t[j] = s[j]                                 *)
+  (*   /\ \A k \in (i + 1)..Len(s): t[k + 1] = s[k]                        *)
+  (*************************************************************************)
   SubSeq(s, 1, i-1) \o <<e>> \o SubSeq(s, i, Len(s))
          
 
@@ -60,33 +60,38 @@ ProcessOrder(pair) =
             maxBondOrder == (bondAsk - askBid.exchrate * bondBid) /
                             (1 + askBid.exchrate)
         IN  
-            (***************************** Stage 1 *****************************)
-            (* Process the order and update the state of the affected          *)
-            (* books or bonds variables                                        *)
-            (*******************************************************************)
+            (***************************** Stage 1 *************************)
+            (* Process the order and update the state of the affected       )
+            (* books or bonds variables                                     )
+            (***************************************************************)
             /\  
-                (************************** Case 1 *****************************)
-                (* Order is a Book / Limit Order                               *)
-                (* Order is a Book / Limit Order if the record has exchrate    *)
-                (* limit.                                                      *)
-                (***************************************************************)    
+                (************************** Case 1 *************************)
+                (* Order is a Book / Limit Order                           *)
+                (* Order is a Book / Limit Order if the record has exchrate*)
+                (* limit.                                                  *)
+                (***********************************************************)    
                 \/  /\ o.exchrate != {}
                     
                     (********************** Case 1.1 ***********************)
                     (*  Book order exchrate greater than head of the       *)
-                    (*  bid book?                                          *)
+                    (*  bid book                                           *)
                     (*******************************************************)
                     \/  /\ o.exchrate > Head(bookBid).exchrate
                         /\ books’ [books EXCEPT ![pair][o.bid] = 
                             LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
-                            \/ bookBid(i).exchrate > o.exchrate
-                                /\ bookBid == InsertAt(
-                                    bookBid, 
-                                    i, 
-                                    [amount: orderAmt, exchrate: o.exchrate]
-                                )
-                            \/ bookBid >= o.exchrate
-                                /\ F
+                                IF  i = 0 THEN bookBid ELSE
+                                \/  /\  o.ecxchrate < bookBid(i).exchrate
+                                    /\  bookBid == InsertAt(
+                                            bookBid, 
+                                            i, 
+                                            [
+                                                amount: orderAmt, 
+                                                exchrate: o.exchrate
+                                            ]
+                                        )
+                                \/  /\  o.exchrate <= bookBid
+                                    /\  F[i-1]
+                            IN  F[Len(bookBid)]
                     (********************** Case 1.2 ***********************)
                     (*  Book order exchrate equal to head                  *)
                     (*******************************************************)  
@@ -161,12 +166,13 @@ ProcessOrder(pair) =
                                 (* bond "bid coin" balance                 *)
                                 (*******************************************)
                                 /\  bondBid == bondBid + o.amount
-            (***************************** Stage 2 *****************************)
-            (* Iteratively reconcile books with bonds e                        *)
-            (* Bond amounts are balanced with the ask and bid books such that  *)
-            (* effective price of bonded liquidity is within the ask bid book  *)
-            (* spread                                                          *)
-            (*******************************************************************)   
+            (***************************** Stage 2 *************************)
+            (* Iteratively reconcile books records with bonds amounts      *)
+            (*                                                             *)
+            (* Bond amounts are balanced with the ask and bid books such   *)
+            (* that effective price of bonded liquidity is within the ask  *) 
+            (* bid bookspread                                              *)
+            (***************************************************************)   
                 \* Reconcile Bonds with Books
             /\  \* For each book entry in ask book 
                 LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
