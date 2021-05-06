@@ -147,8 +147,8 @@ ProcessOrder(pair) =
                     \/  /\ o.exchrate < Head(bookBid).exchrate
 
                         (***************** Case 1.2.1 **********************)
-                        (* Book bid price greater than bond price          *)
-                        (**  Review how the less than or equal to would    *)
+                        (* Book order exchrate greater than bond exchrate  *)
+                        (**  Review how the greater than or equal would    *)
                         (** change behavior                                *)
                         (***************************************************)
                         \/  /\  (bondAsk * orderAmt) / bondBid > 
@@ -240,11 +240,11 @@ ProcessOrder(pair) =
                     (* greater than or equal to the        *)
                     (* updated bond exchange rate          *)
                     (***************************************)
-                    \/  /\ bookAsk(i).exchrate >= (bondAskUpd \div bondBidUpd)
+                    \/  /\ bookAsk(i).exchrate >= (bondAsk \div bondBid)
                         \* Ask Bond pays for the ask book order
-                        /\ bondAskUpd == bondAskUpd - bookAsk(i).amount
+                        /\ bondAsk == bondAsk - bookAsk(i).amount
                         \* Bid Bond receives the payment from the ask book
-                        /\ bondBidUpd == bondBidUpd + bookAsk(i).amount
+                        /\ bondBid == bondBid + bookAsk(i).amount
                         \* The ask book order is removed from the head 
                         /\ bookAsk == Tail(bookAsk)
                         \* Loop back
@@ -256,7 +256,7 @@ ProcessOrder(pair) =
                     (* less than the updated bond          *)
                     (* exchange rate                       *)
                     (***************************************)
-                    \/  /\ bookAsk(i).exchrate < (bondAskUpd \div bondBidUpd)
+                    \/  /\ bookAsk(i).exchrate < (bondAsk \div bondBid)
                         LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
                         (***************************************)
                         (*            Case 2.1                 *)                         
@@ -264,11 +264,11 @@ ProcessOrder(pair) =
                         (* greater than or equal to the        *)
                         (* updated bid bond exchange rate      *)
                         (***************************************)
-                        \/ bookBid(i).exchrate >= (bondBidUpd \div bondAskUpd)
+                        \/ bookBid(i).exchrate >= (bondBid \div bondAsk)
                             \* Bid Bond pays for the bid book order
-                            /\ bondBidUpd = bondBidUpd - bookBid(i).amount
+                            /\ bondBid = bondBid - bookBid(i).amount
                             \* Ask Bond receives the payment from the ask book
-                            /\ bondAskUpd = bondAskUpd + bookBid(i).amount
+                            /\ bondAsk = bondAsk + bookBid(i).amount
                             \* The Bid Book order is removed from the head 
                             /\ bookBid = Tail(bookBid)
                             \* Loop back
@@ -284,8 +284,8 @@ ProcessOrder(pair) =
                         (***************************************)
                         \/  /\  bonds' = [
                                     bonds EXCEPT    
-                                        ![pair][o.bid] = bondBidUpd
-                                        ![pair][o.ask] = bondAskUpd
+                                        ![pair][o.bid] = bondBid
+                                        ![pair][o.ask] = bondAsk
                                 ]
                             /\  books' = [
                                     books EXCEPT
