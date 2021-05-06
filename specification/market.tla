@@ -90,7 +90,10 @@ ProcessOrder(pair) =
             maxBondBid ==  (bondAsk/Head(
                     books[pair][o.bid]).exchrate
                 ) - bondBid) / 2
-        IN 
+        IN  
+            (***************************************************************)
+            (* Define Process() to allow for loop back                     *)
+            (***************************************************************)
             LET Process == 
         
             (***************************** Stage 1 *************************)
@@ -111,7 +114,17 @@ ProcessOrder(pair) =
                     (*  head of the bid book                               *)
                     (*******************************************************)
                     \/  /\ o.exchrate >= Head(bookBid).exchrate
-                        /\ books’ [books EXCEPT ![pair][o.bid] = 
+                        /\ books’ [books EXCEPT ![pair][o.bid] =
+
+                            (**************** Iteration ********************)
+                            (* Iterate over the bookBid sequence until bid *)
+                            (* book order price of element selected in     *)
+                            (* bookBid is greater than order exchrate      *)
+                            (*                                             *)
+                            (* Then insert the current order in the        *)
+                            (* sequence before the first book order whose  *)
+                            (* exchrate is greater than the active order   *)
+                            (***********************************************)
                             LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
                                 IF  i = 0 THEN bookBid ELSE
                                 \/  /\  o.ecxchrate < bookBid(i).exchrate
@@ -143,9 +156,9 @@ ProcessOrder(pair) =
                             
                             (*************** Case 1.2.1.1 ******************)
                             (* Order amount is less than or equal to the   *) 
-                            (* moxBondBid                                *)
+                            (* maxBondBid                                *)
                             (***********************************************)
-                            \/  orderAmt <= moxBondBid
+                            \/  orderAmt <= maxBondBid
                                 /\  bondAsk == bondAsk - BondAskAmount(
                                         bondAsk,
                                         bondBid,
@@ -155,18 +168,18 @@ ProcessOrder(pair) =
 
                             (*************** Case 1.2.1.2 ******************)
                             (* Order amount is above the amount of         *)
-                            (* the moxBondBid                            *) 
+                            (* the maxBondBid                            *) 
                             (***********************************************)
-                            \/  orderAmt > moxBondBid
-                                \* Then settle the moxBondBid
+                            \/  orderAmt > maxBondBid
+                                \* Then settle the maxBondBid
                                 \* and loop back
                                 /\  bondAsk == bondAsk - BondAskAmount(
                                         bondAsk, 
                                         bondBid, 
-                                        moxBondBid
+                                        maxBondBid
                                     )
                                 /\  bondBid == bondBid + 
-                                /\  orderAmt == orderAmt - moxBondBid
+                                /\  orderAmt == orderAmt - maxBondBid
                                 /\  bookBid == Append(
                                         [
                                             amount: orderAmt, 
@@ -183,26 +196,24 @@ ProcessOrder(pair) =
                 \/  /\ o.exchrate = {}
                             (*************** Case 1.2.1.1 ******************)
                             (* Order amount is less than or equal to the   *) 
-                            (* moxBondBid                                *)
+                            (* maxBondBid                                *)
                             (***********************************************)
-                            \/  orderAmt <= moxBondBid
+                            \/  orderAmt <= maxBondBid
                                 /\  bondAsk == bondAsk - orderAmt
                                 /\  bondBid == bondBid + orderAmt
 
                             (*************** Case 1.2.1.2 ******************)
                             (* Order amount is above the amount of         *)
-                            (* the moxBondBid                            *) 
+                            (* the maxBondBid                            *) 
                             (***********************************************)
-                            \/  orderAmt > moxBondBid
-                                \* Then settle the moxBondBid
-                                \* and loop back
+                            \/  orderAmt > maxBondBid
                                 /\  bondAsk == bondAsk - BondAskAmount(
                                         bondAsk, 
                                         bondBid, 
-                                        moxBondBid
+                                        maxBondBid
                                     )
-                                /\  bondBid == bondBid + moxBondBid
-                                /\  orderAmt == orderAmt - moxBondBid
+                                /\  bondBid == bondBid + maxBondBid
+                                /\  orderAmt == orderAmt - maxBondBid
                                 /\  'books = [books EXCEPT ![pair][bid] = 
                                     Append(
                                     [amount: orderAmt, exchrate: o.exchrate]
@@ -213,7 +224,7 @@ ProcessOrder(pair) =
                         (* Order has empty exchrate field                 *)
                         (**************************************************)
                             \* Does bond have enough liquidity to handle entire order?
-                            \/  orderAmt <= moxBondBid
+                            \/  orderAmt <= maxBondBid
                                 /\  bondAsk == bondAsk - BondAskAmount(
                                         bondAsk, 
                                         bondBid, 
