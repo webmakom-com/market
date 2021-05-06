@@ -75,10 +75,10 @@ ProcessOrder(pair) =
                 \/  /\ o.exchrate != {}
                     
                     (********************** Case 1.1 ***********************)
-                    (*  Book order exchrate greater than head of the       *)
-                    (*  bid book                                           *)
+                    (*  Book order exchrate greater than or equal to the   *) 
+                    (*  head of the bid book                               *)
                     (*******************************************************)
-                    \/  /\ o.exchrate > Head(bookBid).exchrate
+                    \/  /\ o.exchrate >= Head(bookBid).exchrate
                         /\ books’ [books EXCEPT ![pair][o.bid] = 
                             LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
                                 IF  i = 0 THEN bookBid ELSE
@@ -94,16 +94,6 @@ ProcessOrder(pair) =
                                 \/  /\  o.exchrate <= bookBid
                                     /\  F[i-1]
                             IN  F[Len(bookBid)]
-                    (********************** Case 1.2 ***********************)
-                    (*  Book order exchrate equal to head                  *)
-                    (*******************************************************)  
-                    \/  /\  o.exchrate = Head(bookBid).exchrate
-                            \* Case 1.2.1
-                            \/ Head(bookBid).amount > orderAmt
-                            \* Case 1.2.2
-                            \/ Head(bookBid).amount = orderAmt
-                            \* Case 1.2.3
-                            \/ Head(bookBid).amount < orderAmt
                     
                     (********************** Case 1.3 ***********************)
                     (*  Book order exchrate less than head of bid          *)
