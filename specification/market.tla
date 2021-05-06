@@ -94,7 +94,7 @@ ProcessOrder(pair) =
                             \/ Head(bookBid).amount < orderAmt
                     
                     (********************** Case 1.3 ***********************)
-                    (*  Book order exchrate less than head of bid    *)
+                    (*  Book order exchrate less than head of bid          *)
                     (*  book                                               *)
                     (*******************************************************)
                     \/  /\ o.exchrate < Head(bookBid).exchrate
