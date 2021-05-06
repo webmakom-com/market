@@ -60,12 +60,17 @@ ProcessOrder(pair) =
             maxBondOrder == (bondAsk - askBid.exchrate * bondBid) /
                             (1 + askBid.exchrate)
         IN  
-            (*************************** Case 1 ****************************)
-            (* Order is a Book / Limit Order                               *)
-            (* Order is a Book / Limit Order if the record has exchrate    *)
-            (* limit.                                                      *)
-            (***************************************************************)
-            /\  \/  /\ o.exchrate != {}
+            (***************************** Stage 1 *****************************)
+            (* Process the order and update the state of the affected          *)
+            (* books or bonds variables                                        *)
+            (*******************************************************************)
+            /\  
+                (************************** Case 1 *****************************)
+                (* Order is a Book / Limit Order                               *)
+                (* Order is a Book / Limit Order if the record has exchrate    *)
+                (* limit.                                                      *)
+                (***************************************************************)    
+                \/  /\ o.exchrate != {}
                     
                     (********************** Case 1.1 ***********************)
                     (*  Book order exchrate greater than head of the       *)
@@ -98,10 +103,11 @@ ProcessOrder(pair) =
                     (*  book                                               *)
                     (*******************************************************)
                     \/  /\ o.exchrate < Head(bookBid).exchrate
-                        \* Case 1.3.1
-                        \* Book bid price greater than bond price
-                        \* *** Review how the less than or equal to would change
-                        \* behavior ***
+                        (***************** Case 1.3.1 **********************)
+                        (* Book bid price greater than bond price          *)
+                        (*  Review how the less than or equal to would     *)
+                        (** change behavior                                *)
+                        (***************************************************)
                         \/  /\  (bondAsk * orderAmt) / bondBid > orderAmt * o.exchrate
                             \* Does bond have enough liquidity to handle entire order?
                             \/  orderAmt <= maxBondOrder
@@ -155,7 +161,12 @@ ProcessOrder(pair) =
                                 (* bond "bid coin" balance                 *)
                                 (*******************************************)
                                 /\  bondBid == bondBid + o.amount
-                
+            (***************************** Stage 2 *****************************)
+            (* Iteratively reconcile books with bonds e                        *)
+            (* Bond amounts are balanced with the ask and bid books such that  *)
+            (* effective price of bonded liquidity is within the ask bid book  *)
+            (* spread                                                          *)
+            (*******************************************************************)   
                 \* Reconcile Bonds with Books
             /\  \* For each book entry in ask book 
                 LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
