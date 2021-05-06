@@ -54,7 +54,7 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
    
 ProcessOrder(pair) =
 
-    (************************** Qualifying Condition ***********************)
+    (*************************** Enabling Condition ************************)
     (* Order queue is not empty                                            *)
     (***********************************************************************)
     /\ orderQ[pair] != <<>>
