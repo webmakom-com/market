@@ -22,7 +22,9 @@ Order == Book \cup Bond
 
 Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
 
-Type ==  /\ orderQ = [PAIR -> Seq(Order)]
+Type ==   /\  orderQ = [PAIR -> Seq(Order)]
+          /\  books == [PAIR -> COIN -> Seq(Nat X Nat)]
+         
 
 Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
          \* order books bid sequences
