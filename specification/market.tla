@@ -112,50 +112,49 @@ ProcessOrder(pair) =
                             \/  orderAmt > maxBondOrder
                                 \* Then settle the maxBondOrder
                                 \* and loop back
-                                /\  bondAsk == bondAsk - maxBondOrder
+                                /\  bondAsk == bondAsk - BondAskAmount(
+                                        bondAsk, 
+                                        bondBid, 
+                                        maxBondOrder
+                                    )
                                 /\  bondBid == bondBid + maxBondOrder
                                 /\  orderAmt == orderAmt - maxBondOrder
                                 /\  'books = [books EXCEPT ![pair][bid] = 
                                     Append(
                                     [amount: orderAmt, exchrate: o.exchrate]
                                 )]
-                        
-                            
-                        \* Stage 2
-                        \* Reconcile o with ask book if exchrate
-                        \* is less than the head of bid book.
-                            
-                            \* Is ask book for pair not empty?
-                            \/  /\ books[pair][o.ask] != <<>>
-                                /\
-                                
-                            \* Well, Is ask book for pair empty?
-                            \/  /\ books[pair][o.ask] = <<>>
                 
-                (*************************** Case 2 ****************************)
-                (* Order is a Bond / AMM Order                                 *)
-                (* Order is a Bond / AMM Order if the record does not have     *)
-                (* a value in the exchrate field                               *)
-                (***************************************************************)
-                
-                \* Is o a bond order?
-                \* Order has empty exchrate field
+                (************************ Case 2 **************************)
+                (* Order is a Bond / AMM Order                            *)
+                (* Order is a Bond / AMM Order if the record does not have*)
+                (* a value in the exchrate field                          *)
+                (**********************************************************)
                 \/  /\ o.exchrate = {}
-                        \* Let askAmount be the amount of ask coin
-                        \* corresponding to the amount of bid coin
-                        LET askAmount == BondAskAmount(bondAsk, bondBid, o.amount) 
-                        IN  \* Is there enough liquidity on ask bond?  
-                            /\ askAmount < bondAsk
-                            /\  (*******************************************)
+                         
+                        \* Is there enough liquidity on ask bond?  
+                        (********************* Case 2.1 *******************)
+                        (* Is o a bond order?                             *)
+                        (* Order has empty exchrate field                 *)
+                        (**************************************************)
+                            \* Does bond have enough liquidity to handle entire order?
+                            \/  orderAmt <= maxBondOrder
+                                /\  bondAsk == bondAsk - BondAskAmount(
+                                        bondAsk, 
+                                        bondBid, 
+                                        orderAmt
+                                    )
+                                /\  bondBid == bondBid + orderAmt
+                                  
+                                (*******************************************)
                                 (* bookAskUpd: The initial update to       *)
                                 (* bond "ask coin" balance                 *)
                                 (*******************************************)
-                                bondAsk == bondAsk - askAmount
-                            /\  (*******************************************)
+                                /\  bondAsk == bondAsk - askAmount
+                                (*******************************************)
                                 (* bookBidUpd: The initial update to       *)
                                 (* bond "bid coin" balance                 *)
                                 (*******************************************)
-                                bondBid == bondBid + o.amount
+                                /\  bondBid == bondBid + o.amount
                 
                 \* Reconcile Bonds with Books
             /\  \* For each book entry in ask book 
