@@ -49,7 +49,9 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
    
 ProcessOrder(pair) =    
-    \* Are there orders to process for this pair of coins?
+    (************************** Qualifying Condition ***********************)
+    (* Order queue is not empty                                            *)
+    (***********************************************************************)
     /\ orderQ[pair] != <<>>
     /\ LET o = Head(orderQ[pair]) IN
         LET bookAsk == books[pair][o.ask]
