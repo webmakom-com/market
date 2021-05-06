@@ -58,7 +58,8 @@ ProcessOrder(pair) =
     /\ orderQ[pair] != <<>>
     
     (*************************** Internal Variables ************************)
-    (* Order queue is not empty                                            *)
+    (* Internal variables are used to track intermediate changes to books  *)
+    (* bonds on copy of the working state                                  *)
     (***********************************************************************)
     /\ LET o = Head(orderQ[pair]) IN
         LET bookAsk == books[pair][o.ask]
