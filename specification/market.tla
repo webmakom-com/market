@@ -76,8 +76,8 @@ ProcessOrder(pair) =
             orderAmt == o.amount
             
             (***************************************************************)
-            (* Max Bid that Bond liquidity can handle without effecting    *)
-            (* book orders                                                 *)
+            (* Max Bid that Bond liquidity may exchange without bond price *)
+            (* changing enough to execute book orders                      *)
             (*                                                             *)
             (* Expression origin:                                          *)
             (* (bondAsk - x * k_bidBook) / (bondBid + x) = k_bidBook       *)
