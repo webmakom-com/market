@@ -51,6 +51,11 @@ SubmitOrder ==
 
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
+    
+
+Provision(pair) = \E n \in Nat :
+
+Liquidate(pair) = 
    
 ProcessOrder(pair) =
 
