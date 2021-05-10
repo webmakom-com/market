@@ -2,16 +2,14 @@
 EXTENDS     Naturals, Sequences
 
 CONSTANT    COIN,   \* Set of all coins
-            PAIR   \* Set of all pairs of coins
+            Pair   \* Set of all pairs of coins
            
 VARIABLE    book,   \* Order Book
-            bonds,  \* AMM Bond Curves
+            bonds   \* AMM Bond Curves
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
-PAIR == {{c \in COIN, d \in COIN}: c != d}
-
-Type ==
+Pair == {c \in COIN, d \in COIN}
 
 Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: <Nat, Nat>]
 
@@ -21,16 +19,16 @@ Order == Book \cup Bond
 
 Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
 
-Type == /\  orderQ \in [PAIR -> Seq(Order)]
-        /\  books \in [PAIR -> COIN -> Seq(Nat X Nat)]
-        /\  bonds \in [PAIR -> COIN -> Nat]    
+Type == /\  orderQ \in [Pair -> Seq(Order)]
+        /\  books \in [Pair -> COIN -> Seq(Nat X Nat)]
+        /\  bonds \in [Pair -> COIN -> Nat]    
          
 
-Init ==  /\ orderQ = [p \in PAIR |-> <<>>]
+Init ==  /\ orderQ = [p \in Pair |-> <<>>]
          \* order books bid sequences
-         /\ books = [p \in PAIR |-> c \in p |-> <<>>]
+         /\ books = [p \in Pair |-> c \in p |-> <<>>]
          \* liquidity balances for each pair
-         /\ bonds = [p \in PAIR |-> c \in p |-> NoVal]
+         /\ bonds = [p \in Pair |-> c \in p |-> NoVal]
 
 InsertAt(s, i, e) ==
   (*************************************************************************)
@@ -102,8 +100,8 @@ ProcessOrder(pair) =
             LET Process == 
         
             (***************************** Stage 1 *************************)
-            (* Process the order and update the state of the affected       )
-            (* books or bonds variables                                     )
+            (* Process the order and update the state of the affected      *)
+            (* books or bonds variables                                    *)
             (***************************************************************)
             /\
             
@@ -313,6 +311,7 @@ ProcessOrder(pair) =
 
 =============================================================================
 \* Modification History
+\* Last modified Mon May 10 09:31:46 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
