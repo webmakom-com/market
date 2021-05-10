@@ -43,9 +43,10 @@ InsertAt(s, i, e) ==
          
 
 SubmitOrder == 
-    /\ \E o \in Order :
-        /\ orderQ’ = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)
-        /\ UNCHANGED liquidity
+    /\  \E o \in Order : 
+        /\  o.bid # o.ask
+        /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
+    /\  UNCHANGED <<books, bonds>>
 
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
@@ -316,7 +317,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon May 10 09:56:43 CDT 2021 by cdusek
+\* Last modified Mon May 10 10:09:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
