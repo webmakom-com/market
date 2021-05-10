@@ -21,7 +21,8 @@ Pool == <<{c \in Coin, Nat}, {d \in Coin, Nat}>>
 
 Type == /\  orderQ \in [Pair -> Seq(Order)]
         /\  books \in [Pair -> [Coin -> Seq(Nat \X Nat)]]
-        /\  bonds \in [Pair -> [Coin -> Nat]]    
+        /\  bonds \in [Pair -> [Coin -> Nat]]
+        /\  tokens \in [Pair -> Nat]   
          
 
 Init ==  /\ orderQ = [p \in Pair |-> <<>>]
@@ -52,11 +53,22 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
     
 
-Provision(pair) = \E n \in Nat :
+Provision(pair) ==  \E n \in Nat : 
+                        LET bond == bonds[pair]
+                        IN
+                            LET c == CHOOSE c \in pair : 
+                                bond[c] < bond[pair \ c]
+                                d == pair \ c
+                            IN
+                                /\  bonds' = [ bonds EXCEPT 
+                                        ![pair][d] = @ + n * @ / bonds[pair][c]
+                                        ![pair][c] = @ + n
+                                    ]
+                                /\ tokens' = [ tokens EXCEPT ![pair] = @ + 1
 
-Liquidate(pair) = 
+Liquidate(pair) == 
    
-ProcessOrder(pair) =
+ProcessOrder(pair) ==
 
     (*************************** Enabling Condition ************************)
     (* Order queue is not empty                                            *)
@@ -317,7 +329,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon May 10 10:09:40 CDT 2021 by cdusek
+\* Last modified Mon May 10 14:05:24 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
