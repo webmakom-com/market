@@ -1,7 +1,7 @@
 ------------------------------- MODULE market -------------------------------
 EXTENDS     Naturals, Sequences
 
-CONSTANT    COIN,   \* Set of all coins
+CONSTANT    Coin,   \* Set of all coins
             Pair   \* Set of all pairs of coins
            
 VARIABLE    book,   \* Order Book
@@ -9,26 +9,26 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
-Pair == {c \in COIN, d \in COIN}
+Pair == {c \in Coin, d \in Coin}
 
-Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: <<Nat, Nat>>]
+Book == [amount: Nat, bid: Coin, ask: Coin, exchrate: <<Nat, Nat>>]
 
-Bond == [amount: Nat, bid: COIN, ask: COIN]
+Bond == [amount: Nat, bid: Coin, ask: Coin]
 
 Order == Book \cup Bond
 
-Pool == <<{c \in COIN, Nat}, {d \in COIN, Nat}>>
+Pool == <<{c \in Coin, Nat}, {d \in Coin, Nat}>>
 
 Type == /\  orderQ \in [Pair -> Seq(Order)]
-        /\  books \in [Pair -> COIN -> Seq(Nat X Nat)]
-        /\  bonds \in [Pair -> COIN -> Nat]    
+        /\  books \in [Pair -> [Coin -> Seq(Nat \X Nat)]]
+        /\  bonds \in [Pair -> [Coin -> Nat]]    
          
 
 Init ==  /\ orderQ = [p \in Pair |-> <<>>]
          \* order books bid sequences
-         /\ books = [p \in Pair |-> c \in p |-> <<>>]
+         /\ books = [p \in Pair |-> [c \in p |-> <<>>]]
          \* liquidity balances for each pair
-         /\ bonds = [p \in Pair |-> c \in p |-> NoVal]
+         /\ bonds = [p \in Pair |-> [c \in p |-> NoVal]]
 
 InsertAt(s, i, e) ==
   (*************************************************************************)
@@ -316,7 +316,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon May 10 09:47:35 CDT 2021 by cdusek
+\* Last modified Mon May 10 09:56:43 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
