@@ -11,13 +11,13 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 Pair == {c \in COIN, d \in COIN}
 
-Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: <Nat, Nat>]
+Book == [amount: Nat, bid: COIN, ask: COIN, exchrate: <<Nat, Nat>>]
 
 Bond == [amount: Nat, bid: COIN, ask: COIN]
 
 Order == Book \cup Bond
 
-Pool == { <{c, Nat}, {d, Nat}> : c \in COIN, d \in COIN \ c }
+Pool == <<{c \in COIN, Nat}, {d \in COIN, Nat}>>
 
 Type == /\  orderQ \in [Pair -> Seq(Order)]
         /\  books \in [Pair -> COIN -> Seq(Nat X Nat)]
@@ -309,9 +309,14 @@ ProcessOrder(pair) =
                 IN F[Len(bookAsk)]
             IN  Process()    
 
+Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
+                                                    \/ Provision(p)
+                                                    \/ Liquidate(p)
+        \/ SubmitOrder
+
 =============================================================================
 \* Modification History
-\* Last modified Mon May 10 09:31:46 CDT 2021 by cdusek
+\* Last modified Mon May 10 09:47:35 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
