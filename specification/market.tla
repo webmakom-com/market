@@ -1,5 +1,5 @@
 ------------------------------- MODULE market -------------------------------
-EXTENDS     Naturals, Sequences
+EXTENDS     Naturals, Sequences, Reals
 
 CONSTANT    Coin,   \* Set of all coins
             Pair   \* Set of all pairs of coins
@@ -11,17 +11,17 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 Pair == {c \in Coin, d \in Coin}
 
-Book == [amount: Nat, bid: Coin, ask: Coin, exchrate: <<Nat, Nat>>]
+Book == [amount: Real, bid: Coin, ask: Coin, exchrate: <<Real, Real>>]
 
-Bond == [amount: Nat, bid: Coin, ask: Coin]
+Bond == [amount: Real, bid: Coin, ask: Coin]
 
 Order == Book \cup Bond
 
-Pool == <<{c \in Coin, Nat}, {d \in Coin, Nat}>>
+Pool == {<<c \in Coin, Real>>, <<d \in Coin, Real>>}
 
 Type == /\  orderQ \in [Pair -> Seq(Order)]
-        /\  books \in [Pair -> [Coin -> Seq(Nat \X Nat)]]
-        /\  bonds \in [Pair -> [Coin -> Nat]]
+        /\  books \in [Pair -> [Coin -> Seq(Real \X Real)]]
+        /\  bonds \in [Pair -> [Coin -> Real]]
         /\  tokens \in [Pair -> Nat]   
          
 
@@ -51,22 +51,39 @@ SubmitOrder ==
 
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
-    
 
-Provision(pair) ==  \E n \in Nat : 
+Weaker(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair \ c]
+
+Provision(pair) ==  \E r \in Real : 
                         LET bond == bonds[pair]
                         IN
-                            LET c == CHOOSE c \in pair : 
-                                bond[c] < bond[pair \ c]
+                            LET c == Weaker(pair)
                                 d == pair \ c
                             IN
                                 /\  bonds' = [ bonds EXCEPT 
-                                        ![pair][d] = @ + n * @ / bonds[pair][c]
-                                        ![pair][c] = @ + n
+                                        ![pair][d] = @ + @ * (r / bonds[pair][c]),
+                                        ![pair][c] = @ + r
                                     ]
-                                /\ tokens' = [ tokens EXCEPT ![pair] = @ + 1
+                                /\ tokens' = [ tokens EXCEPT ![pair] = @ + r ]
+                                /\ UNCHANGED << books, orderQ >>
 
-Liquidate(pair) == 
+Liquidate(pair) ==  \E r \in Real : 
+                        /\  r < tokens[pair]
+                        /\  LET 
+                                bond == bonds[pair]
+                            IN
+                                LET 
+                                    c == Weaker(pair)
+                                    d == pair \ c
+                                IN
+                                    /\  bonds' = [ bonds EXCEPT 
+                                            ![pair][d] = @ - @ * (r / bonds[pair][c]),
+                                            ![pair][c] = @ - r
+                                        ]
+                                    
+                                    /\ tokens' = [ tokens EXCEPT ![pair] = @ + r ]
+                                    /\ UNCHANGED << books, orderQ >>
+                       
    
 ProcessOrder(pair) ==
 
@@ -329,7 +346,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon May 10 14:05:24 CDT 2021 by cdusek
+\* Last modified Tue May 11 13:20:09 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
