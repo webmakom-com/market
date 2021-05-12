@@ -196,42 +196,57 @@ ProcessOrder(pair) ==
                         (***************************************************)
                         \/  /\  (bondAsk * orderAmt) / bondBid > 
                                 (orderAmt * o.exchrate)
-                            
-                            (*************** Case 1.2.1.1 ******************)
-                            (* Order amount is less than or equal to the   *) 
-                            (* maxBondBid                                  *)
+                                
+                            (******************           ******************)    
+                            (* Find amount of bond allowed to be sold      *)
+                            (* before it hits the exchrate                 *)
                             (***********************************************)
-                            /\  IF  
-                                    maxBondBid < orderAmt
-                                THEN
-                                    /\  bondAsk = bondAsk - BondAskAmount(
-                                            bondAsk,
-                                            bondBid,
-                                            orderAmt
-                                        )
-                                    /\  bondBid = bondBid + orderAmt
-
-                            (*************** Case 1.2.1.2 ******************)
-                            (* Order amount is above the amount of         *)
-                            (* the maxBondBid                              *) 
-                            (***********************************************)
-                            \/  orderAmt > maxBondBid
-                                \* Then settle the maxBondBid
-                                \* and loop back
-                                /\  bondAsk == bondAsk - BondAskAmount(
-                                        bondAsk, 
-                                        bondBid, 
-                                        maxBondBid
-                                    )
-                                /\  bondBid == bondBid + 
-                                /\  orderAmt == orderAmt - maxBondBid
-                                /\  bookBid == Append(
-                                        [
-                                            amount: orderAmt, 
-                                            exchrate: o.exchrate
-                                        ]
-                                    )
-                                /\  Process()
+                            /\  LET maxBookBid ==
+                                    (bondAsk/o.exchrate - bondBid) / 2
+                                IN
+                                    
+                                    (*************** Case 1.2.1.1 **********)
+                                    (* Order amount is less than or equal  *) 
+                                    (* to the maxBookBid                   *)
+                                    (***************************************)
+                                    \/  /\  maxBookBid < orderAmt
+                                    
+                                        /\  bondAsk = bondAsk - BondAskAmount(
+                                                bondAsk,
+                                                bondBid,
+                                                orderAmt
+                                            )
+                                            
+                                        /\  bondBid = bondBid + orderAmt
+    
+                                    (*************** Case 1.2.1.2 **********)
+                                    (* Order amount is above the amount of *)
+                                    (* the maxBookBid                      *) 
+                                    (***************************************)
+                                    \/  /\  maxBookBid > orderAmt 
+                                        \* Then settle the maxBondBid
+                                        \* and loop back
+                                        /\  bondAsk = bondAsk - BondAskAmount(
+                                                bondAsk, 
+                                                bondBid, 
+                                                maxBondBid
+                                            )
+                                        /\  bondBid = bondBid + maxBookBid
+                                        /\  orderAmt = orderAmt - maxBookBid
+                                        /\  bookBid = Append(
+                                                [
+                                                    amount: orderAmt, 
+                                                    exchrate: o.exchrate
+                                                ]
+                                            )
+                        (***************** Case 1.2.2 **********************)
+                        (* Book order exchrate less than bond exchrate     *)
+                        (**  Review how the greater than or equal would    *)
+                        (** change behavior                                *)
+                        (***************************************************)
+                        \/  /\  (bondAsk * orderAmt) / bondBid <=
+                                (orderAmt * o.exchrate)
+                            /\  Process()
                 
                 (************************ Case 2 ***************************)
                 (* Order is a Bond / AMM Order                             *)
@@ -359,7 +374,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Tue May 11 14:44:36 CDT 2021 by cdusek
+\* Last modified Tue May 11 20:37:01 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
