@@ -191,27 +191,19 @@ ProcessOrder(pair) ==
                     (*******************************************************)
                     \/  /\ o.exchrate < Head(bookBid).exchrate
 
-                        (***************** Case 1.2.1 **********************)
-                        (* Book order exchrate greater than bond exchrate  *)
-                        (**  Review how the greater than or equal would    *)
-                        (** change behavior                                *)
-                        (***************************************************)
-                        \/  /\  (bondAsk * orderAmt) / bondBid > 
-                                (orderAmt * o.exchrate)
-                                
                             (***********************************************)    
                             (* Find amount of bond allowed to be sold      *)
                             (* before it hits the exchrate                 *)
                             (***********************************************)
-                            /\  LET maxBookBid ==
+                            /\  LET maxBondBid ==
                                     (bondAsk/o.exchrate - bondBid) / 2
                                 IN
                                     
-                                    (*************** Case 1.2.1.1 **********)
+                                    (*************** Case 1.2.1 ************)
                                     (* Order amount is less than or equal  *) 
                                     (* to maxBookBid amount                *)
                                     (***************************************)
-                                    \/  /\  maxBookBid < orderAmt
+                                    \/  /\  maxBondBid < orderAmt
                                     
                                         /\  bondAsk = bondAsk - BondAskAmount(
                                                 bondAsk,
@@ -221,14 +213,14 @@ ProcessOrder(pair) ==
                                             
                                         /\  bondBid = bondBid + orderAmt
     
-                                    (*************** Case 1.2.1.2 **********)
+                                    (*************** Case 1.2.2 ************)
                                     (* Order amount is above the amount of *)
                                     (* the maxBookBid                      *) 
                                     (***************************************)
-                                    \/  /\  maxBookBid > orderAmt
+                                    \/  /\  maxBondBid > orderAmt
                                     
                                         (***********************************)
-                                        (*Then settle the maxBookBid       *)
+                                        (* Then settle the maxBookBid      *)
                                         (* amount and place order at exch  *)
                                         (* rate in books                   *)
                                         (***********************************)
@@ -237,22 +229,14 @@ ProcessOrder(pair) ==
                                                 bondBid, 
                                                 maxBondBid
                                             )
-                                        /\  bondBid = bondBid + maxBookBid
-                                        /\  orderAmt = orderAmt - maxBookBid
+                                        /\  bondBid = bondBid + maxBondBid
+                                        /\  orderAmt = orderAmt - maxBondBid
                                         /\  bookBid = Append(
                                                 [
                                                     amount: orderAmt, 
                                                     exchrate: o.exchrate
                                                 ]
                                             )
-                        (***************** Case 1.2.2 **********************)
-                        (* Book order exchrate less than bond exchrate     *)
-                        (**  Review how the greater than or equal would    *)
-                        (** change behavior                                *)
-                        (***************************************************)
-                        \/  /\  (bondAsk * orderAmt) / bondBid <=
-                                (orderAmt * o.exchrate)
-                            /\  Process()
                 
                 (************************ Case 2 ***************************)
                 (* Order is a Bond / AMM Order                             *)
