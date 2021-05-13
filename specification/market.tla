@@ -161,9 +161,9 @@ ProcessOrder(pair) ==
                             (* book order price of element selected in     *)
                             (* bookBid is greater than order exchrate      *)
                             (*                                             *)
-                            (* Then insert the current order in the        *)
-                            (* sequence before the first book order whose  *)
-                            (* exchrate is greater than the active order   *)
+                            (* Then insert the active order before the     *)
+                            (* first book order whose exchrate is greater  *)
+                            (* than the active order                       *)
                             (***********************************************)
                             LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
                                 IF  i = 0 
@@ -238,7 +238,8 @@ ProcessOrder(pair) ==
                                                 [
                                                     amount: orderAmt, 
                                                     exchrate: o.exchrate
-                                                ]
+                                                ],
+                                                bookBid
                                             )
                 
                 (************************ Case 2 ***************************)
