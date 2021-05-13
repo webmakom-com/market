@@ -56,6 +56,8 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
 
 Weaker(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair / c]
 
+(***************************** Step Functions ****************************)
+
 Provision(pair) ==  \E r \in Real : 
                         LET bond == bonds[pair]
                         IN
@@ -63,7 +65,8 @@ Provision(pair) ==  \E r \in Real :
                                 d == pair \ c
                             IN
                                 /\  bonds' = [ bonds EXCEPT 
-                                        ![pair][d] = @ + @ * (r / bonds[pair][c]),
+                                        ![pair][d] = 
+                                          @ + @ * (r / bonds[pair][c]),
                                         ![pair][c] = @ + r
                                     ]
                                 /\ tokens' = [ tokens EXCEPT ![pair] = @ + r ]
@@ -115,11 +118,11 @@ ProcessOrder(pair) ==
             (* book orders                                                 *)
             (*                                                             *)
             (* Expression origin:                                          *)
-            (* (bondAsk - x * kBidBook) / (bondBid + x) = kBidBook       *)
+            (* (bondAsk - x * kBidBook) / (bondBid + x) = kBidBook         *)
             (* k == exchrate or ask_coin/bid_coin                          *)
             (*                                                             *)
             (* Solve for x:                                                *)
-            (* x = (bondAsk/kBook - bondBid)/2                            *)
+            (* x = (bondAsk/kBook - bondBid)/2                             *)
             (***************************************************************)
             maxBondBid ==  
                 LET 
