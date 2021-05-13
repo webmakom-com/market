@@ -30,6 +30,8 @@ Init ==  /\ orderQ = [p \in Pair |-> <<>>]
          /\ books = [p \in Pair |-> [c \in p |-> <<>>]]
          \* liquidity balances for each pair
          /\ bonds = [p \in Pair |-> [c \in p |-> NoVal]]
+         
+(***************************** Helper Functions ****************************)
 
 InsertAt(s, i, e) ==
   (*************************************************************************)
@@ -52,7 +54,7 @@ SubmitOrder ==
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
 
-Weaker(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair \ c]
+Weaker(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair / c]
 
 Provision(pair) ==  \E r \in Real : 
                         LET bond == bonds[pair]
@@ -197,7 +199,7 @@ ProcessOrder(pair) ==
                         \/  /\  (bondAsk * orderAmt) / bondBid > 
                                 (orderAmt * o.exchrate)
                                 
-                            (******************           ******************)    
+                            (***********************************************)    
                             (* Find amount of bond allowed to be sold      *)
                             (* before it hits the exchrate                 *)
                             (***********************************************)
@@ -207,7 +209,7 @@ ProcessOrder(pair) ==
                                     
                                     (*************** Case 1.2.1.1 **********)
                                     (* Order amount is less than or equal  *) 
-                                    (* to the maxBookBid                   *)
+                                    (* to maxBookBid amount                *)
                                     (***************************************)
                                     \/  /\  maxBookBid < orderAmt
                                     
