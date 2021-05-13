@@ -225,9 +225,13 @@ ProcessOrder(pair) ==
                                     (* Order amount is above the amount of *)
                                     (* the maxBookBid                      *) 
                                     (***************************************)
-                                    \/  /\  maxBookBid > orderAmt 
-                                        \* Then settle the maxBondBid
-                                        \* and loop back
+                                    \/  /\  maxBookBid > orderAmt
+                                    
+                                        (***********************************)
+                                        (*Then settle the maxBookBid       *)
+                                        (* amount and place order at exch  *)
+                                        (* rate in books                   *)
+                                        (***********************************)
                                         /\  bondAsk = bondAsk - BondAskAmount(
                                                 bondAsk, 
                                                 bondBid, 
