@@ -114,21 +114,21 @@ ProcessOrder(pair) ==
             orderAmt == o.amount
             
             (***************************************************************)
-            (* Max Bid that Bond pool may sell of ask coin without         *)
+            (* Max amount that Bond pool may sell of ask coin without      *)
             (* executing an ask coin book limit order.                     *)
             (*                                                             *)
             (* Expression origin:                                          *)
-            (* (bondAsk - x * kBidBook) / (bondBid + x) = kBidBook         *)
+            (* (bondAsk - x * kAskBook) / (bondBid + x) = kAskBook         *)
             (* k == exchrate or ask_coin/bid_coin                          *)
             (*                                                             *)
             (* Solve for x:                                                *)
-            (* x = (bondAsk/kBook - bondBid)/2                             *)
+            (* x = (bondAsk/kAskBook - bondBid)/2                          *)
             (***************************************************************)
             maxBondBid ==  
                 LET 
-                    kBidBook == Head(books[pair][o.bid]).exchrate
+                    kAskHead == Head(books[pair][o.ask]).exchrate
                 IN 
-                    (bondAsk/kBidBook - bondBid) / 2
+                    (bondAsk/kAskHead - bondBid) / 2
         IN  
             
             (***************************************************************)
