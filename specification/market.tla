@@ -114,8 +114,8 @@ ProcessOrder(pair) ==
             orderAmt == o.amount
             
             (***************************************************************)
-            (* Max Bid that Bond liquidity can handle without effecting    *)
-            (* book orders                                                 *)
+            (* Max Bid that Bond pool may sell of ask coin without         *)
+            (* executing an ask coin book limit order.                     *)
             (*                                                             *)
             (* Expression origin:                                          *)
             (* (bondAsk - x * kBidBook) / (bondBid + x) = kBidBook         *)
@@ -144,6 +144,7 @@ ProcessOrder(pair) ==
             
                 (************************** Case 1 *************************)
                 (* Order is a Book / Limit Order                           *)
+                (*                      
                 (* Order is a Book / Limit Order if the record has exchrate*)
                 (* limit.                                                  *)
                 (***********************************************************)    
