@@ -197,7 +197,7 @@ ProcessOrder(pair) ==
 
                             (***********************************************)    
                             (* Find amount of bond allowed to be sold      *)
-                            (* before it hits the exchrate                 *)
+                            (* before it hits the order exchrate           *)
                             (***********************************************)
                             /\  LET maxBondBid ==
                                     (bondAsk/o.exchrate - bondBid) / 2
