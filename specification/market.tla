@@ -56,7 +56,7 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
 
 Weaker(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair / c]
 
-(************************** Stage 2 ****************************************)
+(******************************* Reconcile *********************************)
 (* Iteratively reconcile books records with bonds amounts                  *)
 (*                                                                         *)
 (* Bond amounts are balanced with the ask and bid books such               *)
@@ -73,17 +73,21 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
         LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
 
             (*********************** Case 1 ************************)                         
-            (* Head of bookAsk exchange rate                       *)
-            (* greater than or equal to the                        *)
-            (* updated bond exchange rate                          *)
+            (* The order at the Head of bookAsk sequence has an    *)
+            (* exchange rate greater than or equal to the bond     *)
+            (* exchange rate                                       *)
             (*******************************************************)
             \/  /\ bookAsk(i).exchrate >= (bondAsk \div bondBid)
-                \* Ask Bond pays for the ask book order
+                
+                \* Ask Bond pays for the Ask Book order
                 /\ bondAsk == bondAsk - bookAsk(i).amount
-                \* Bid Bond receives the payment from the ask book
+                
+                \* Bid Bond receives the payment from the Ask Book
                 /\ bondBid == bondBid + bookAsk(i).amount
+                
                 \* The ask book order is removed from the head 
                 /\ bookAsk == Tail(bookAsk)
+                
                 \* Loop back
                 /\ F[Len(bookAsk)]
                 
