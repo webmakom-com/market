@@ -56,6 +56,81 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
 
 Weaker(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair / c]
 
+(************************** Stage 2 ****************************************)
+(* Iteratively reconcile books records with bonds amounts                  *)
+(*                                                                         *)
+(* Bond amounts are balanced with the ask and bid books such               *)
+(* that effective price of bonded liquidity is within the ask              *)
+(* bid bookspread                                                          *)
+(***************************************************************************) 
+Reconcile(bondAsk, bondBid, bookAsk, bookBid) == 
+
+        (********************** Iteration **************************)
+        (* Iterate over the bookAsk sequence processing bond       *)
+        (* purchases until bookAsk record with exchrate less than  *) 
+        (* the bond price is reached                               *)
+        (***********************************************************)
+        LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
+
+            (*********************** Case 1 ************************)                         
+            (* Head of bookAsk exchange rate                       *)
+            (* greater than or equal to the                        *)
+            (* updated bond exchange rate                          *)
+            (*******************************************************)
+            \/  /\ bookAsk(i).exchrate >= (bondAsk \div bondBid)
+                \* Ask Bond pays for the ask book order
+                /\ bondAsk == bondAsk - bookAsk(i).amount
+                \* Bid Bond receives the payment from the ask book
+                /\ bondBid == bondBid + bookAsk(i).amount
+                \* The ask book order is removed from the head 
+                /\ bookAsk == Tail(bookAsk)
+                \* Loop back
+                /\ F[Len(bookAsk)]
+                
+            (*********************** Case 2 ************************)
+            (* Head of bookAsk exchange rate                       *)
+            (* less than the updated bond                          *)
+            (* exchange rate                                       *)
+            (*******************************************************)
+            \/  /\ bookAsk(i).exchrate < (bondAsk \div bondBid)
+                
+                (******************** Iteration ********************)
+                (* Iterate over the bookBid sequence processing    *)
+                (* purchases until bookBid record with exchrate    *) 
+                (* the bond price is reached                       *)
+                (***************************************************)
+                LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
+                
+                (***************************************************)
+                (*            Case 2.1                             *)                         
+                (* Head of bookBid exchange rate                   *)
+                (* greater than or equal to the                    *)
+                (* updated bid bond exchange rate                  *)
+                (***************************************************)
+                \/ bookBid(i).exchrate >= (bondBid \div bondAsk)
+                    \* Bid Bond pays for the bid book order
+                    /\ bondBid = bondBid - bookBid(i).amount
+                    \* Ask Bond receives the payment from the ask book
+                    /\ bondAsk = bondAsk + bookBid(i).amount
+                    \* The Bid Book order is removed from the head 
+                    /\ bookBid = Tail(bookBid)
+                    \* Loop back
+                    /\ F[Len(bookAsk)]
+                
+                (**************************************************)
+                (*            Case 2.2                            *)                         
+                (* Head of bookBid exchange rate                  *)
+                (* less than the updated bid bond                 *)
+                (* exchange rate                                  *)
+                (*                                                *)
+                (* Processing Complete                            *)
+                (* Update bonds and books states                  *)
+                (**************************************************)
+                \/ IF bookBid(i) < (bondBid \div bondAsk) THEN 
+                    << bondAsk, bondBid, bookAsk, bookBid >>    
+            IN G[Len(bookBid)]
+        IN F[Len(bookAsk)]
+
 (***************************** Step Functions ****************************)
 
 Provision(pair) ==  \E r \in Real : 
@@ -69,7 +144,8 @@ Provision(pair) ==  \E r \in Real :
                                           @ + @ * (r / bonds[pair][c]),
                                         ![pair][c] = @ + r
                                     ]
-                                /\ tokens' = [ tokens EXCEPT ![pair] = @ + r ]
+                                /\ tokens' = [ tokens EXCEPT 
+                                    ![pair] = @ + r ]
                                 /\ UNCHANGED << books, orderQ >>
 
 Liquidate(pair) ==  \E r \in Real : 
@@ -82,11 +158,13 @@ Liquidate(pair) ==  \E r \in Real :
                                     d == pair \ c
                                 IN
                                     /\  bonds' = [ bonds EXCEPT 
-                                            ![pair][d] = @ - @ * (r / bonds[pair][c]),
+                                            ![pair][d] = @ - @ * 
+                                                (r / bonds[pair][c]),
                                             ![pair][c] = @ - r
                                         ]
                                     
-                                    /\ tokens' = [ tokens EXCEPT ![pair] = @ + r ]
+                                    /\ tokens' = [ tokens EXCEPT 
+                                        ![pair] = @ + r ]
                                     /\ UNCHANGED << books, orderQ >>
                        
    
@@ -242,6 +320,7 @@ ProcessOrder(pair) ==
                                                 ],
                                                 bookBid
                                             )
+                    
                 
                 (************************ Case 2 ***************************)
                 (* Order is a Bond / AMM Order                             *)
@@ -278,7 +357,6 @@ ProcessOrder(pair) ==
                                 Append(
                                 [amount: orderAmt, exchrate: o.exchrate]
                             )]
-
             (************************** Stage 2 ****************************)
             (* Iteratively reconcile books records with bonds amounts      *)
             (*                                                             *)
@@ -286,82 +364,20 @@ ProcessOrder(pair) ==
             (* that effective price of bonded liquidity is within the ask  *) 
             (* bid bookspread                                              *)
             (***************************************************************)   
-            /\  
-                (********************** Iteration **************************)
-                (* Iterate over the bookAsk sequence processing bond       *)
-                (* purchases until bookAsk record with exchrate less than  *) 
-                (* the bond price is reached                               *)
-                (***********************************************************)
-                LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
-
-                    (*********************** Case 1 ************************)                         
-                    (* Head of bookAsk exchange rate                       *)
-                    (* greater than or equal to the                        *)
-                    (* updated bond exchange rate                          *)
-                    (*******************************************************)
-                    \/  /\ bookAsk(i).exchrate >= (bondAsk \div bondBid)
-                        \* Ask Bond pays for the ask book order
-                        /\ bondAsk == bondAsk - bookAsk(i).amount
-                        \* Bid Bond receives the payment from the ask book
-                        /\ bondBid == bondBid + bookAsk(i).amount
-                        \* The ask book order is removed from the head 
-                        /\ bookAsk == Tail(bookAsk)
-                        \* Loop back
-                        /\ F[Len(bookAsk)]
-                        
-                    (*********************** Case 2 ************************)
-                    (* Head of bookAsk exchange rate                       *)
-                    (* less than the updated bond                          *)
-                    (* exchange rate                                       *)
-                    (*******************************************************)
-                    \/  /\ bookAsk(i).exchrate < (bondAsk \div bondBid)
-                        
-                        (******************** Iteration ********************)
-                        (* Iterate over the bookBid sequence processing    *)
-                        (* purchases until bookBid record with exchrate    *) 
-                        (* the bond price is reached                       *)
-                        (***************************************************)
-                        LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
-                        
-                        (***************************************************)
-                        (*            Case 2.1                             *)                         
-                        (* Head of bookBid exchange rate                   *)
-                        (* greater than or equal to the                    *)
-                        (* updated bid bond exchange rate                  *)
-                        (***************************************************)
-                        \/ bookBid(i).exchrate >= (bondBid \div bondAsk)
-                            \* Bid Bond pays for the bid book order
-                            /\ bondBid = bondBid - bookBid(i).amount
-                            \* Ask Bond receives the payment from the ask book
-                            /\ bondAsk = bondAsk + bookBid(i).amount
-                            \* The Bid Book order is removed from the head 
-                            /\ bookBid = Tail(bookBid)
-                            \* Loop back
-                            /\ F[Len(bookAsk)]
-                        
-                        (**************************************************)
-                        (*            Case 2.2                            *)                         
-                        (* Head of bookBid exchange rate                  *)
-                        (* less than the updated bid bond                 *)
-                        (* exchange rate                                  *)
-                        (*                                                *)
-                        (* Processing Complete                            *)
-                        (* Update bonds and books states                  *)
-                        (**************************************************)
-                        \/  /\  bonds' = [
-                                    bonds EXCEPT    
-                                        ![pair][o.bid] = bondBid
-                                        ![pair][o.ask] = bondAsk
-                                ]
-                            /\  books' = [
-                                    books EXCEPT
-                                        ![pair][o.bid] = bookBid
-                                        ![pair][o.ask] = bookAsk
-                                ]
-                    IN G[Len(bookBid)]
-                IN F[Len(bookAsk)]
-            IN  Process()    
-
+            \/  LET  
+                    pairUpdate == Reconcile(bondAsk, bondBid, bookAsk, bookBid)
+                /\  books' = [
+                        books EXCEPT    
+                            ![pair][o.ask] = pairUpdate[0]
+                            ![pair][o.bid] = pairUpdate[1]
+                    ]
+                /\  bonds' = [
+                        bonds EXCEPT
+                            ![pair][o.ask] = pairUpdate[2]
+                            ![pair][o.bid] = pairUpdate[3]
+                    ]
+    IN Process(pair)
+                
 Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
                                                     \/ Provision(p)
                                                     \/ Liquidate(p)
