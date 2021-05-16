@@ -11,13 +11,11 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 Pair == {c \in Coin, d \in Coin}
 
-Book == [amount: Real, bid: Coin, ask: Coin, exchrate: <<Real, Real>>]
+Limit == [amount: Real, bid: Coin, ask: Coin, exchrate: <<Real, Real>>]
 
-Bond == [amount: Real, bid: Coin, ask: Coin]
+Market == [amount: Real, bid: Coin, ask: Coin]
 
-Order == Book \cup Bond
-
-Pool == {<<c \in Coin, Real>>, <<d \in Coin, Real>>}
+Order == Limit \cup Market
 
 Type == /\  orderQ \in [Pair -> Seq(Order)]
         /\  books \in [Pair -> [Coin -> Seq(Real \X Real)]]
@@ -74,7 +72,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
 
             (*********************** Case 1 ************************)                         
             (* The order at the Head of bookAsk sequence has an    *)
-            (* exchange rate greater than or equal to the bond     *)
+            (* exchange rate greater than or equal to the ask bond *)
             (* exchange rate                                       *)
             (*******************************************************)
             \/  /\ bookAsk(i).exchrate >= (bondAsk \div bondBid)
@@ -92,8 +90,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 /\ F[Len(bookAsk)]
                 
             (*********************** Case 2 ************************)
-            (* Head of bookAsk exchange rate                       *)
-            (* less than the updated bond                          *)
+            (* Head of bookAsk exchange rate less than ask bond    *)
             (* exchange rate                                       *)
             (*******************************************************)
             \/  /\ bookAsk(i).exchrate < (bondAsk \div bondBid)
