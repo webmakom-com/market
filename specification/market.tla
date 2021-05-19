@@ -165,7 +165,7 @@ Liquidate(pair) ==  \E r \in Real :
                                         ]
                                     
                                     /\ tokens' = [ tokens EXCEPT 
-                                        ![pair] = @ + r ]
+                                        ![pair] = @ - r ]
                                     /\ UNCHANGED << books, orderQ >>
                        
    
