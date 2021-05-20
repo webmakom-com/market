@@ -81,10 +81,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 /\ bondAsk == bondAsk - bookAsk(i).amount
                 
                 \* Bid Bond receives the payment from the Ask Book
-                /\ bondBid == bondBid + bookAsk(i).amount
+                /\ bondBid = bondBid + bookAsk(i).amount
                 
                 \* The ask book order is removed from the head 
-                /\ bookAsk == Tail(bookAsk)
+                /\ bookAsk = Tail(bookAsk)
                 
                 \* Loop back
                 /\ F[Len(bookAsk)]
@@ -108,11 +108,11 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* greater than or equal to the                    *)
                 (* updated bid bond exchange rate                  *)
                 (***************************************************)
-                \/ bookBid(i).exchrate >= (bondBid \div bondAsk)
+                \/ bookBid(j).exchrate >= (bondBid \div bondAsk)
                     \* Bid Bond pays for the bid book order
-                    /\ bondBid = bondBid - bookBid(i).amount
+                    /\ bondBid = bondBid - bookBid(j).amount
                     \* Ask Bond receives the payment from the ask book
-                    /\ bondAsk = bondAsk + bookBid(i).amount
+                    /\ bondAsk = bondAsk + bookBid(j).amount
                     \* The Bid Book order is removed from the head 
                     /\ bookBid = Tail(bookBid)
                     \* Loop back
@@ -127,8 +127,8 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* Processing Complete                            *)
                 (* Update bonds and books states                  *)
                 (**************************************************)
-                \/ IF bookBid(i) < (bondBid \div bondAsk) THEN 
-                    << bondAsk, bondBid, bookAsk, bookBid >>    
+                \/  /\ bookBid(j) < (bondBid \div bondAsk) 
+                    /\ << bondAsk, bondBid, bookAsk, bookBid >> 
             IN G[Len(bookBid)]
         IN F[Len(bookAsk)]
 
