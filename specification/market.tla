@@ -9,22 +9,24 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
+Amount == r \in Real
+
 ExchRate == <<r \in Real, s \in Real>>
 
 Pair == {c \in Coin, d \in Coin}
 
-Limit == [amount: Real, bid: Coin, ask: Coin, exchrate: ExchRate]
+Limit == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
 
-Market == [amount: Real, bid: Coin, ask: Coin]
+Market == [amount: Amount, bid: Coin, ask: Coin]
 
 Order == Limit \cup Market
 
-Position == [amount: Real, exchrate: ExchRate]
+Position == [amount: Amount, exchrate: ExchRate]
 
 Type == /\  orderQ \in [Pair -> Seq(Order)]
         /\  books \in [Pair -> [Coin -> Seq(Position)]]
-        /\  bonds \in [Pair -> [Coin -> Real]]
-        /\  tokens \in [Pair -> Nat]   
+        /\  bonds \in [Pair -> [Coin -> Amount]]
+        /\  tokens \in [Pair -> Amount]   
          
 
 Init ==  /\ orderQ = [p \in Pair |-> <<>>]
