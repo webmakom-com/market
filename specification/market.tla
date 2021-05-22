@@ -9,16 +9,20 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
+ExchRate == <<r \in Real, s \in Real>>
+
 Pair == {c \in Coin, d \in Coin}
 
-Limit == [amount: Real, bid: Coin, ask: Coin, exchrate: <<Real, Real>>]
+Limit == [amount: Real, bid: Coin, ask: Coin, exchrate: ExchRate]
 
 Market == [amount: Real, bid: Coin, ask: Coin]
 
 Order == Limit \cup Market
 
+Position == [amount: Real, exchrate: ExchRate]
+
 Type == /\  orderQ \in [Pair -> Seq(Order)]
-        /\  books \in [Pair -> [Coin -> Seq(Real \X Real)]]
+        /\  books \in [Pair -> [Coin -> Seq(Position)]]
         /\  bonds \in [Pair -> [Coin -> Real]]
         /\  tokens \in [Pair -> Nat]   
          
@@ -52,7 +56,7 @@ SubmitOrder ==
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
 
-Weaker(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair / c]
+Stronger(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair / c]
 
 (******************************* Reconcile *********************************)
 (* Iteratively reconcile books records with bonds amounts                  *)
@@ -81,7 +85,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 /\ bondAsk == bondAsk - bookAsk(i).amount
                 
                 \* Bid Bond receives the payment from the Ask Book
-                /\ bondBid = bondBid + bookAsk(i).amount
+                /\ bondBid == bondBid + bookAsk(i).amount
                 
                 \* The ask book order is removed from the head 
                 /\ bookAsk = Tail(bookAsk)
