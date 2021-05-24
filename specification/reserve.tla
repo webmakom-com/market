@@ -1,4 +1,4 @@
--—————————— MODULE market -——————————
+-—————————— MODULE reserve -——————————
 EXTENDS     Naturals, Sequences, Reals
 
 CONSTANT    Coin,   \* Set of all coins
@@ -13,6 +13,13 @@ NoVal ==    CHOOSE v : v \notin Nat
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
         /\  tokens \in [Pair -> Amount]
 
-Mint(denom) ==
+(* Deposit NOM into Reserve Account *)
+Deposit(user) == 
+
+(* Burn denom to unbond NOM *)
+Burn(user, denom) ==
+
+(* Mint denom *)
+Mint(denom) == 
 
 
