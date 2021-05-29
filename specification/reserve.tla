@@ -29,11 +29,9 @@ Param == [ratio: Real, flatio: Real]
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
         /\  tokens \in [Pair -> Amount]
             (*****)
-            (* You could think of this as time *)
-            (* The issue is that time is not a thing *)
-            (* In asynchronous environment *)
-            (* will read up on real-time specs but for now *)
-            (* abstract to counter *)
+            (* Time is abstracted to a counter that increments *)
+            (* During an “time increment” step. All other steps *)
+            (* are time stuttering *)
         /\  count \in Nat
         /\  accounts \in {Account}
         /\  params \in [Coin -> Param] 
