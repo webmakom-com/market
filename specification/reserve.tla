@@ -20,6 +20,12 @@ Amount == r \in Real
 (* Denoms: considered as Debits against the Credits *)
 Account == [NOM: Amount, denoms: {[denom: Coin, amount: Amount]}]
 
+(******)
+(* Parameters voted by NOM holders *)
+(* catio: collateralization ratio *)
+(* flatio: flation ratio *)
+Param == [ratio: Real, flatio: Real]
+
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
         /\  tokens \in [Pair -> Amount]
             (*****)
@@ -30,6 +36,7 @@ Type == /\  bonds \in [Pair -> [Coin -> Amount]]
             (* abstract to counter *)
         /\  count \in Nat
         /\  accounts \in {Account}
+        /\  params \in [Coin -> Param] 
 
 
 (* Deposit NOM into Reserve Account *)
