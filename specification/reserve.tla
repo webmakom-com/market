@@ -10,16 +10,19 @@ VARIABLE    book,   \* Order Book
 ——————————————————————————
 NoVal ==    CHOOSE v : v \notin Nat
 
-Type == /\  bonds \in [Pair -> [Coin -> Amount]]
+Type == /\  bonds \in [Pair -> [Coin -> Real]]
         /\  tokens \in [Pair -> Amount]
 
 (* Deposit NOM into Reserve Account *)
-Deposit(user) == 
+Deposit(amt) == 
 
-(* Burn denom to unbond NOM *)
+(* Withdraw NOM from Reserve Account *)
+Withdraw(amt)
+
+(* Burn denom and unbond NOM *)
 Burn(user, denom) ==
 
-(* Mint denom *)
+(* Mint denom and bond NOM *)
 Mint(denom) == 
 
 
