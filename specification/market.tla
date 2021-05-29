@@ -11,7 +11,7 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 Amount == r \in Real
 
-ExchRate == <<r \in Real, s \in Real>>
+ExchRate == r \in Real
 
 Pair == {c \in Coin, d \in Coin}
 
