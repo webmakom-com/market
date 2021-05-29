@@ -16,8 +16,10 @@ Type == /\  bonds \in [Pair -> [Coin -> Real]]
             (* You could think of this as time *)
             (* The issue is that time is not a thing *)
             (* In asynchronous environment *)
-            (* will read up on real-time specs*)
+            (* will read up on real-time specs but for now *)
+            (* abstract to counter *)
         /\  count in\ Nat
+        /\  account \in [Denom -> Real]
 
 
 (* Deposit NOM into Reserve Account *)
