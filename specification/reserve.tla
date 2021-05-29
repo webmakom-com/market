@@ -10,16 +10,20 @@ VARIABLE    book,   \* Order Book
 ——————————————————————————
 NoVal ==    CHOOSE v : v \notin Nat
 
-Type == /\  bonds \in [Pair -> [Coin -> Real]]
-        /\  tokens \in [Pair -> Real]
+Amount == r \in Real
+
+Account == [NOM: Amount, denoms: {[denom: Coin, amount: Amount]}]
+
+Type == /\  bonds \in [Pair -> [Coin -> Amount]]
+        /\  tokens \in [Pair -> Amount]
             (*****)
             (* You could think of this as time *)
             (* The issue is that time is not a thing *)
             (* In asynchronous environment *)
             (* will read up on real-time specs but for now *)
             (* abstract to counter *)
-        /\  count in\ Nat
-        /\  account \in [Denom -> Real]
+        /\  count \in Nat
+        /\  accounts \in {Account}
 
 
 (* Deposit NOM into Reserve Account *)
