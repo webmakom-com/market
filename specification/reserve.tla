@@ -11,7 +11,14 @@ VARIABLE    book,   \* Order Book
 NoVal ==    CHOOSE v : v \notin Nat
 
 Type == /\  bonds \in [Pair -> [Coin -> Real]]
-        /\  tokens \in [Pair -> Amount]
+        /\  tokens \in [Pair -> Real]
+            (*****)
+            (* You could think of this as time *)
+            (* The issue is that time is not a thing *)
+            (* In asynchronous environment *)
+            (* will read up on real-time specs*)
+        /\  count in\ Nat
+
 
 (* Deposit NOM into Reserve Account *)
 Deposit(amt) == 
