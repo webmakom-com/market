@@ -24,15 +24,14 @@ Account == [NOM: Amount, denoms: {[denom: Coin, amount: Amount]}]
 (* Parameters voted by NOM holders *)
 (* catio: collateralization ratio *)
 (* flatio: flation ratio *)
-Param == [ratio: Real, flatio: Real]
+Param == [catio: Real, flatio: Real]
 
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
         /\  tokens \in [Pair -> Amount]
             (*****)
             (* Time is abstracted to a counter that increments *)
-            (* During an “time increment” step. All other steps *)
-            (* are time stuttering *)
-        /\  count \in Nat
+            (* during an “time” step. All other steps are time stuttering *)
+        /\  time \in Nat
         /\  accounts \in {Account}
         /\  params \in [Coin -> Param] 
 
