@@ -12,6 +12,12 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 Amount == r \in Real
 
+(*****)
+(* NOM is the representation of credit in the Onomy Reserve *)
+(* Each account has a single balance of NOM with many *)
+(* balances of minted Denoms *)
+(* NOM: considered as Credits *)
+(* Denoms: considered as Debits against the Credits *)
 Account == [NOM: Amount, denoms: {[denom: Coin, amount: Amount]}]
 
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
