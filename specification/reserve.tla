@@ -18,7 +18,11 @@ Amount == r \in Real
 (* balances of minted Denoms *)
 (* NOM: considered as Credits *)
 (* Denoms: considered as Debits against the Credits *)
-Account == [NOM: Amount, denoms: {[denom: Coin, amount: Amount]}]
+Account == [
+      user: User
+      NOM: Amount, 
+      denoms: {[denom: Coin, amount: Amount]}
+]
 
 (******)
 (* Parameters voted by NOM holders *)
@@ -31,7 +35,7 @@ Type == /\  bonds \in [Pair -> [Coin -> Amount]]
             (*****)
             (* Time is abstracted to a counter that increments *)
             (* during an “time” step. All other steps are time stuttering *)
-        /\  time \in Nat
+        /\  time \in Real
         /\  accounts \in {Account}
         /\  params \in [Coin -> Param] 
 
