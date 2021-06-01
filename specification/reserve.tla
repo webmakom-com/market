@@ -59,23 +59,6 @@ DeParam == [denom: Coin, catio: Real, destatio: Real, flatio: Real]
 Swap == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
 
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
-            (***************************************************************)
-            (* Swaps are used as a tradable index of the basket of         *)
-            (* currencies held in a reserve account.                       *)
-            (*                                                             *)
-            (* The token is denominated in NOM and is redeemable for NOM   *)
-            (* when surrendererd along with the proportional amount of     *)
-            (* indexed currencies.                                         *)
-            (*                                                             *)
-            (* The goal of this feature is to allow for monetization of    *)
-            (* minting rewards without liquidating NOM.  It also allows    *)
-            (* others than the initiator to swap the basket for nom given  *)
-            (* they surrender a purchased token                            *)
-            (*                                                             *)
-            (* It would effectively be a NOM put against the basket of     *)
-            (* denoms minted by the account with a coupon rate dictated    *)
-            (* by the weighted average of flatios of the denoms indexed    *)
-            (***************************************************************)
         /\  swaps \in [User -> Token]
             (***************************************************************)
             (* Time is abstracted to a counter that increments during a    *) 
@@ -101,7 +84,8 @@ Deposit(user) ==    /\ \E r \in Reals :
                         /\ UNCHANGED << bonds, tokens, time, params >>
 
 (* Withdraw NOM from Reserve Account *)
-Withdraw(amt)
+Withdraw(user) == /\ \E r \in Reals : r < account[user].nom :
+                    /\ 
 
 (* Burn denom and unbond NOM *)
 Burn(user, denom) ==
