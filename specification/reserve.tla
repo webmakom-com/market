@@ -1,47 +1,72 @@
--—————————— MODULE reserve -——————————
+------------------------------- MODULE reserve -------------------------------
 EXTENDS     Naturals, Sequences, Reals
 
 CONSTANT    Coin,   \* Set of all coins
-            Pair   \* Set of all pairs of coins
+            Pair,   \* Set of all pairs of coins
+            User,   \* Set of all users
            
 VARIABLE    book,   \* Order Book
             bonds,  \* AMM Bond Curves
             
-——————————————————————————
+-----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
 Amount == r \in Real
 
-(*****)
-(* NOM is the representation of credit in the Onomy Reserve *)
-(* Each account has a single balance of NOM with many *)
-(* balances of minted Denoms *)
-(* NOM: considered as Credits *)
-(* Denoms: considered as Debits against the Credits *)
+(***************************************************************************)
+(* The NOM coin is the representation of credit or a right to mint         *)
+(* by the Onomy Reserve                                                    *)
+(*                                                                         *)
+(* Each user account has a single balance of NOM with potential for many   *)
+(* outstanding balances of minted Denoms                                   *)
+(*                                                                         *)
+(* NOM: Credit                                                             *)
+(* Denoms: Debits                                                          *)
+(***************************************************************************)
 Account == [
-      user: User
-      NOM: Amount, 
-      denoms: {[denom: Coin, amount: Amount]}
+    nom: Amount, 
+    denoms: {[denom: Coin, amount: Amount]}
 ]
 
-(******)
-(* Parameters voted by NOM holders *)
-(* catio: collateralization ratio *)
-(* flatio: flation ratio *)
+(***************************************************************************)
+(* Parameters voted by NOM holders                                         *)
+(* catio: collateralization ratio                                          *)
+(* flatio: (in/de)flation ratio per unit time                              *)
+(***************************************************************************)
 Param == [catio: Real, flatio: Real]
 
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
+            (***************************************************************)
+            (* Tokens are used as a tradable index of the basket of        *)
+            (* currencies held in a reserve account.                       *)
+            (*                                                             *)
+            (* The token is denominated in NOM and is redeemable for NOM   *)
+            (* when redeemed along with the proportional amount of indexed *)
+            (* currencies.                                                 *)
+            (***************************************************************)
         /\  tokens \in [Pair -> Amount]
-            (*****)
-            (* Time is abstracted to a counter that increments *)
-            (* during an “time” step. All other steps are time stuttering *)
+            (***************************************************************)
+            (* Time is abstracted to a counter that increments during a    *) 
+            (* “time” step. All other steps are time stuttering            *)
+            (*                                                             *)
+            (* In blockchain this corresponds to the block                 *)
+            (*                                                             *)
+            (* In asynchronous DAG, like with Equity protocol,             *)
+            (* recurring processes relying on time, such as inflation,     *)
+            (* will be triggered by a timer ran on correct nodes.          *)
+            (*                                                             *)
+            (* Timestamps of recurring DAG process will be the average of  *)
+            (* reported times by nodes for each recurring process          *)
+            (***************************************************************)
         /\  time \in Real
-        /\  accounts \in {Account}
-        /\  params \in [Coin -> Param] 
+        /\  accounts \in [User -> Account]
+        /\  params \in [Coin -> Param]
 
 
 (* Deposit NOM into Reserve Account *)
-Deposit(amt) == 
+Deposit(user) ==    /\ \E r \in Reals :
+                        /\ 'accounts = [accounts EXCEPT ![user] = @.nom + r]
+                        /\ UNCHANGED << bonds, tokens, time, params >>
 
 (* Withdraw NOM from Reserve Account *)
 Withdraw(amt)
