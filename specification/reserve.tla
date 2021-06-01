@@ -29,15 +29,38 @@ Account == [
 ]
 
 (***************************************************************************)
-(* Parameters voted by NOM holders                                         *)
-(* catio: collateralization ratio                                          *)
-(* flatio: (in/de)flation ratio per unit time                              *)
+(* Denom Specific Parameters voted by NOM holders                          *)
+(*                                                                         *)
+(* catio: minimum minting collateralization ratio (denom specific)         *)
+(* latio: liquidation collateralization ratio (denom specific)             *)
+(* destatio: percentage of denom staked at validator (denom specific)      *)
 (***************************************************************************)
-Param == [catio: Real, flatio: Real]
+DeParam == [denom: Coin, catio: Real, destatio: Real, flatio: Real]
+
+(***************************************************************************)
+(* Swaps are used as a tradable index of currencies held in a reserve      *)
+(* account.                                                                *)
+(*                                                                         *)
+(* Swaps are tied to specific accounts but are not permissioned            *)
+(*                                                                         *)
+(* The token is denominated in NOM and is redeemable for NOM when          *)
+(* surrenderd along with the proportional amount of indexed currencies.    *)
+(*                                                                         *)
+(* The goal of this feature is to allow for monetization of reserve        *) 
+(* rewards without liquidating NOM collateral. It also allows others than  *)
+(* the account holder to swap the basket index of currencies for nom       *)
+(* given they surrender the amount of swaps corresponding to the amount of *)
+(* NOM redeemed                                                            *)
+(*                                                                         *)
+(* A swap is effectively a NOM put against the basket of denoms minted by  *)
+(* a account with an inflationary coupon rate controlled by percentage of  *) 
+(* NOM supply variable.                                                    *)
+(***************************************************************************)
+Swap == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
 
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
             (***************************************************************)
-            (* Tokens are used as a tradable index of the basket of        *)
+            (* Swaps are used as a tradable index of the basket of         *)
             (* currencies held in a reserve account.                       *)
             (*                                                             *)
             (* The token is denominated in NOM and is redeemable for NOM   *)
@@ -53,7 +76,7 @@ Type == /\  bonds \in [Pair -> [Coin -> Amount]]
             (* denoms minted by the account with a coupon rate dictated    *)
             (* by the weighted average of flatios of the denoms indexed    *)
             (***************************************************************)
-        /\  tokens \in [Pair -> Amount]
+        /\  swaps \in [User -> Token]
             (***************************************************************)
             (* Time is abstracted to a counter that increments during a    *) 
             (* “time” step. All other steps are time stuttering            *)
