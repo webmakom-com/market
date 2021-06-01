@@ -24,7 +24,8 @@ Amount == r \in Real
 (* Denoms: Debits                                                          *)
 (***************************************************************************)
 Account == [
-    nom: Amount, 
+    nom: Amount,
+    bondedNom: Amount, 
     denoms: {[denom: Coin, amount: Amount]}
 ]
 
@@ -44,7 +45,7 @@ DeParam == [denom: Coin, catio: Real, destatio: Real, flatio: Real]
 (* Swaps are tied to specific accounts but are not permissioned            *)
 (*                                                                         *)
 (* The token is denominated in NOM and is redeemable for NOM when          *)
-(* surrenderd along with the proportional amount of indexed currencies.    *)
+(* surrendered along with the proportional amount of indexed currencies.   *)
 (*                                                                         *)
 (* The goal of this feature is to allow for monetization of reserve        *) 
 (* rewards without liquidating NOM collateral. It also allows others than  *)
@@ -79,13 +80,14 @@ Type == /\  bonds \in [Pair -> [Coin -> Amount]]
 
 
 (* Deposit NOM into Reserve Account *)
-Deposit(user) ==    /\ \E r \in Reals :
-                        /\ 'accounts = [accounts EXCEPT ![user] = @.nom + r]
+Deposit(user) ==  /\ \E r \in Reals :
+                        /\ 'accounts = [accounts EXCEPT ![user].nom = @ + r]
                         /\ UNCHANGED << bonds, tokens, time, params >>
 
 (* Withdraw NOM from Reserve Account *)
 Withdraw(user) == /\ \E r \in Reals : r < account[user].nom :
-                    /\ 
+                        /\ ‘accounts = [accounts EXCEPT ![user].nom = @ - r]
+                        /\ UNCHANGED << bonds, tokens, time, params >>
 
 (* Burn denom and unbond NOM *)
 Burn(user, denom) ==
