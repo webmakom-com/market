@@ -78,19 +78,29 @@ Type == /\  bonds \in [Pair -> [Coin -> Amount]]
         /\  accounts \in [User -> Account]
         /\  params \in [Coin -> Param]
 
-
-(* Deposit NOM into Reserve Account *)
+(***************************************************************************)
+(* Deposit NOM into Reserve Account. Add r to balance.                     *)
+(***************************************************************************)
 Deposit(user) ==  /\ \E r \in Reals :
                         /\ 'accounts = [accounts EXCEPT ![user].nom = @ + r]
                         /\ UNCHANGED << bonds, tokens, time, params >>
-
-(* Withdraw NOM from Reserve Account *)
+(***************************************************************************)
+(* Withdraw NOM from Reserve Account. Minus r from balance                 *)
+(***************************************************************************)
 Withdraw(user) == /\ \E r \in Reals : r < account[user].nom :
                         /\ ‘accounts = [accounts EXCEPT ![user].nom = @ - r]
                         /\ UNCHANGED << bonds, tokens, time, params >>
 
-(* Burn denom and unbond NOM *)
-Burn(user, denom) ==
+(***************************************************************************)
+(* Burn denom and unbond NOM                                               *)
+(***************************************************************************)
+Burn(user) == /\ \E r \in Reals : \A a \in { d.amount : d \in accounts[user].denoms } : r < a :
+                /\ 'accounts = [accounts EXCEPT accounts[user] = 
+                    LET update = @
+                    IN  F[e /in SUBSET update] = 
+                        IF e = {} THEN update
+                        ELSE CHOOSE f \in update 
+                    ] 
 
 (* Mint denom and bond NOM *)
 Mint(denom) == 
