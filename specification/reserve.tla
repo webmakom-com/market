@@ -93,13 +93,20 @@ Withdraw(user) == /\ \E r \in Reals : r < account[user].nom :
 
 (***************************************************************************)
 (* Burn denom and unbond NOM                                               *)
+(* Burning Denoms is like a past time, it’s fun.  Users really like doing  *)
+(* it because it allows them to unlock their NOM, which they want to stake *)
+(* with validators rather than mint Denoms.                                *)
+(*                             
 (***************************************************************************)
 Burn(user) == /\ \E r \in Reals : \A a \in { d.amount : d \in accounts[user].denoms } : r < a :
                 /\ 'accounts = [accounts EXCEPT accounts[user] = 
                     LET update = @
-                    IN  F[e /in SUBSET update] = 
+                    IN  LET weak 
+                        F[e /in SUBSET update] ==
                         IF e = {} THEN update
-                        ELSE CHOOSE f \in update 
+                        ELSE CHOOSE denom \in update :
+                              denom < \A other \in {update \ denom} :
+                              
                     ] 
 
 (* Mint denom and bond NOM *)
