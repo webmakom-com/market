@@ -98,7 +98,14 @@ Withdraw(user) == /\ \E r \in Reals : r < account[user].nom :
 (* with validators rather than mint Denoms.                                *)
 (*                             
 (***************************************************************************)
-Burn(user) == /\ \E r \in Reals : \A a \in { d.amount : d \in accounts[user].denoms } : r < a :
+Burn(user) ==   (* There exists r in Reals such that : For every denom     *)
+                (* amount in account : r is less or equal to that amount.  *)
+                (*                                                         *)
+                (***********************************************************)
+                /\ \E r \in Reals : \A amount \in 
+                    { d.amount : d \in accounts[user].denoms } : 
+                    r < amount :
+                        
                 /\ 'accounts = [accounts EXCEPT accounts[user] = 
                     LET update = @
                     IN  LET weak 
