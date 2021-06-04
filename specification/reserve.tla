@@ -14,6 +14,8 @@ NoVal ==    CHOOSE v : v \notin Nat
 
 Amount == r \in Real
 
+Inflation == r \in Real
+
 (***************************************************************************)
 (* The NOM coin is the representation of credit or a right to mint         *)
 (* by the Onomy Reserve                                                    *)
@@ -25,9 +27,12 @@ Amount == r \in Real
 (* Denoms: Debits                                                          *)
 (***************************************************************************)
 Account == [
-    nom: Amount,
-    bondedNom: Amount, 
+    nom: Amount, 
     denoms: {[denom: Coin, amount: Amount]}
+]
+
+Reserve == [
+    nom: Amount
 ]
 
 (***************************************************************************)
@@ -54,10 +59,10 @@ DeParam == [denom: Coin, catio: Real, destatio: Real, flatio: Real]
 (* given they surrender the amount of swaps corresponding to the amount of *)
 (* NOM redeemed                                                            *)
 (*                                                                         *)
-(* A coupon is effectively a Stripped bond that acts as a NOM put against  *)
-(* the basket of denoms minted by a reserve account with an inflationary   *)
-(* coupon rate determined by the global percentage of NOM staked in        *)
-(* reserve control variable.                                               *)
+(* A coupon is the "coupon" of stripped bond that acts as a NOM put        *)
+(* against  the basket of denoms minted by a reserve account with an       *)
+(* inflationary coupon rate determined by the global percentage of NOM     *) 
+(* staked in reserve control variable.                                     *)
 (***************************************************************************)
 Coupon == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
 
@@ -81,47 +86,47 @@ Type == /\  bonds \in [Pair -> [Coin -> Amount]]
         /\  params \in [Coin -> Param]
 
 (***************************************************************************)
-(* Deposit NOM into Reserve Account. Add r to balance.                     *)
+(* Credit NOM to User Account. Add r to balance.                           *)
 (***************************************************************************)
 Deposit(user) ==  /\ \E r \in Reals :
                         /\ 'accounts = [accounts EXCEPT ![user].nom = @ + r]
                         /\ UNCHANGED << bonds, tokens, time, params >>
 (***************************************************************************)
-(* Withdraw NOM from Reserve Account. Minus r from balance                 *)
+(* Debit NOM from User Account. Minus r from balance.                      *)
 (***************************************************************************)
 Withdraw(user) == /\ \E r \in Reals : r < account[user].nom :
                         /\ ‘accounts = [accounts EXCEPT ![user].nom = @ - r]
                         /\ UNCHANGED << bonds, tokens, time, params >>
 
+(* Mint denom and bond NOM *)
+Mint(user) ==  
+    LET nomBal == accounts[user].nom
+    IN 
+        (*********************** Qualifying Condition **********************)
+        (* Nom balance of user account greater than 0                      *)
+        (*******************************************************************)
+        /\ nomBal > 0
+        (*******************************************************************)
+        (* There exists r in Reals such that : r is less than the user     *)
+        (* account nom balance                                             *)
+        (*******************************************************************)
+        /\ \E r \in Reals : r < nomBal :
+            /\ accounts' = [accounts EXCEPT ![user].nom = @ - r]
+            /\ reserve' = reserve + 1
+            /\ 
+    
 (***************************************************************************)
 (* Burn denom and unbond NOM                                               *)
 (* Burning Denoms is like a past time, it’s fun.  Users really like doing  *)
 (* it because it allows them to unlock their NOM, which they want to stake *)
-(* with validators rather than mint Denoms.                                *)
-(*                             
+(* with validators rather than mint Denoms.                                *)                         
 (***************************************************************************)
-Burn(user) ==   (* There exists r in Reals such that : For every denom     *)
-                (* amount in account : r is less or equal to that amount.  *)
+Burn(user) ==   (* There exists r in Reals such that : r is less than      *)
+                (* amount of coupons  *)
                 (*                                                         *)
                 (***********************************************************)
-                /\ \E r \in Reals : \A amount \in 
-                    { d.amount : d \in accounts[user].denoms } : 
-                    r < amount :
-                        
-                /\ 'accounts = [accounts EXCEPT accounts[user] = 
-                    LET update = @
-                    IN  
-                        LET weak == CHOOSE denom \in e :
-                              denom < \A other \in {update \ denom}
-                        IN 
-                              F[e /in SUBSET update] ==
-                                    IF e = {} THEN update
-                                    ELSE CHOOSE f \in e :
-                                          
-                              
-                    ] 
+               /\ coupons[user] != {}
+                /\ CHOOSE coupon \in coupons[user] : { coupon. :coupon /in coupons}
 
-(* Mint denom and bond NOM *)
-Mint(denom) == 
 
 
