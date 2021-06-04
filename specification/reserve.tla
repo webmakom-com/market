@@ -3,6 +3,7 @@ EXTENDS     Naturals, Sequences, Reals
 
 CONSTANT    Coin,   \* Set of all coins
             Pair,   \* Set of all pairs of coins
+            (* User constant is used to limit number of account records.   *)
             User,   \* Set of all users
            
 VARIABLE    book,   \* Order Book
@@ -39,28 +40,29 @@ Account == [
 DeParam == [denom: Coin, catio: Real, destatio: Real, flatio: Real]
 
 (***************************************************************************)
-(* Swaps are used as a tradable index of currencies held in a reserve      *)
+(* NOM coupons are used as a tradable index of currencies held in a reserve*)
 (* account.                                                                *)
 (*                                                                         *)
-(* Swaps are tied to specific accounts but are not permissioned            *)
+(* Coupons are tied to specific accounts but are not permissioned          *)
 (*                                                                         *)
-(* The token is denominated in NOM and is redeemable for NOM when          *)
-(* surrendered along with the proportional amount of indexed currencies.   *)
+(* The coupon is denominated in NOM and is redeemable for NOM when         *)
+(* burned along with the proportional amount of indexed currencies.        *)
 (*                                                                         *)
 (* The goal of this feature is to allow for monetization of reserve        *) 
 (* rewards without liquidating NOM collateral. It also allows others than  *)
-(* the account holder to swap the basket index of currencies for nom       *)
+(* the account holder to swap the basket index of currencies for NOM       *)
 (* given they surrender the amount of swaps corresponding to the amount of *)
 (* NOM redeemed                                                            *)
 (*                                                                         *)
-(* A swap is effectively a NOM put against the basket of denoms minted by  *)
-(* a account with an inflationary coupon rate controlled by percentage of  *) 
-(* NOM supply variable.                                                    *)
+(* A coupon is effectively a Stripped bond that acts as a NOM put against  *)
+(* the basket of denoms minted by a reserve account with an inflationary   *)
+(* coupon rate determined by the global percentage of NOM staked in        *)
+(* reserve control variable.                                               *)
 (***************************************************************************)
-Swap == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
+Coupon == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
 
 Type == /\  bonds \in [Pair -> [Coin -> Amount]]
-        /\  swaps \in [User -> Token]
+        /\  coupons \in [User -> Token]
             (***************************************************************)
             (* Time is abstracted to a counter that increments during a    *) 
             (* “time” step. All other steps are time stuttering            *)
@@ -108,11 +110,14 @@ Burn(user) ==   (* There exists r in Reals such that : For every denom     *)
                         
                 /\ 'accounts = [accounts EXCEPT accounts[user] = 
                     LET update = @
-                    IN  LET weak 
-                        F[e /in SUBSET update] ==
-                        IF e = {} THEN update
-                        ELSE CHOOSE denom \in update :
-                              denom < \A other \in {update \ denom} :
+                    IN  
+                        LET weak == CHOOSE denom \in e :
+                              denom < \A other \in {update \ denom}
+                        IN 
+                              F[e /in SUBSET update] ==
+                                    IF e = {} THEN update
+                                    ELSE CHOOSE f \in e :
+                                          
                               
                     ] 
 
