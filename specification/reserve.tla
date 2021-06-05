@@ -138,16 +138,16 @@ Burn(user) ==   (* If there are coupons in the user's account, then choose *)
                 (* proportional amount of the coupon for NOM.              *)
                 (***********************************************************)
                 /\  coupons[user] # {}
-                /\  CHOOSE coupon \in coupons[user] :
-                    /\  \A denom \in coupon.denoms : 
-                        account[user].denoms[denom].amount # {}
-                    /\  LET 
-                            minDenom == 
+                /\  LET coupon == 
+                            CHOOSE coupon \in coupons[user] :
+                                \A denom \in coupon.denoms : 
+                                account[user].denoms[denom].amount # {}
+                        minDenom ==
                             CHOOSE 
                                 min \in coupon.denoms : 
                                 \A other \in coupon.denoms : 
                                 min.amount <= y.amount
-                            IN
-                                LET burnBasis == \E r \in Real : r < minDenom
-                                IN
+                    IN
+                        LET burnBasis == \E r \in Real : r < minDenom
+                        IN
                                     
