@@ -102,7 +102,7 @@ Deposit(user) ==  /\ \E r \in Reals :
                         /\ accounts' = [accounts EXCEPT ![user].nom = @ + r]
                         /\ UNCHANGED << bonds, tokens, time, params >>
 (***************************************************************************)
-(* Debit NOM from User Account. Minus r from balance.                      *)
+(* Debit NOM from User Account. Sub r from balance.                        *)
 (***************************************************************************)
 Withdraw(user) == /\ \E r \in Reals : 
                         /\ r < account[user].nom
@@ -124,7 +124,7 @@ Mint(user) ==
         /\ \E r \in Reals : 
             /\ r < nomBal
             /\ accounts' = [accounts EXCEPT ![user].nom = @ - r]
-            /\ reserve' = reserve + 1
+            /\ reserve' = reserve + r
     
 (***************************************************************************)
 (* Burn denom and unbond NOM                                               *)
