@@ -43,6 +43,11 @@ Denom == [denom: Coin, amount: Real]
 Coupon == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
 
 (***************************************************************************)
+(* Swap from one currency to another.                                      *)
+(***************************************************************************)
+Swap == [askDenom: Coin, bidDenom: Coin, amount: Real]
+
+(***************************************************************************)
 (* The NOM coin is the representation of credit or a right to mint         *)
 (* by the Onomy Reserve.                                                   *)
 (*                                                                         *)
