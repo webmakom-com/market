@@ -44,13 +44,10 @@ Coupon == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
 
 (***************************************************************************)
 (* The NOM coin is the representation of credit or a right to mint         *)
-(* by the Onomy Reserve                                                    *)
+(* by the Onomy Reserve.                                                   *)
 (*                                                                         *)
 (* Each user account has a single balance of NOM with potential for many   *)
-(* outstanding balances of minted Denoms                                   *)
-(*                                                                         *)
-(* NOM: Credit                                                             *)
-(* Denoms: Debits                                                          *)
+(* balances of denoms and coupons that they may or may not have minted.    *)
 (***************************************************************************)
 Account == [
     nom: Amount, 
@@ -58,6 +55,12 @@ Account == [
     coupons: {Coupon}
 ]
 
+(***************************************************************************)
+(* The Onomy Reserve has only a single balance of NOM                      *)
+(*                                                                         *)
+(* This Global Reserve is the collateral for all denoms minted by the      *)
+(* reserve.                                                                *)
+(***************************************************************************)
 Reserve == [
     nom: Amount
 ]
@@ -73,8 +76,7 @@ DeParam == [catio: Real, destatio: Real, flatio: Real]
 
 
 
-Type == /\  bonds \in [Pair -> [Coin -> Amount]]
-        /\  coupons \in [User -> Token]
+Type == /\  coupons \in [User -> Token]
         /\  deparams \in [Coin -> DeParam]
             (***************************************************************)
             (* Time is abstracted to a counter that increments during a    *) 
@@ -137,7 +139,15 @@ Burn(user) ==   (* If there are coupons in the user's account, then choose *)
                 (***********************************************************)
                 /\  coupons[user] # {}
                 /\  CHOOSE coupon \in coupons[user] :
-                    /\  \A denom \in coupon.denoms : account[user].denoms  
-
-
-
+                    /\  \A denom \in coupon.denoms : 
+                        account[user].denoms[denom].amount # {}
+                    /\  LET 
+                            minDenom == 
+                            CHOOSE 
+                                min \in coupon.denoms : 
+                                \A other \in coupon.denoms : 
+                                min.amount <= y.amount
+                            IN
+                                LET burnBasis == \E r \in Real : r < minDenom
+                                IN
+                                    
