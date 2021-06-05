@@ -44,8 +44,15 @@ Coupon == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
 
 (***************************************************************************)
 (* Swap from one currency to another.                                      *)
+(*                    *)
+(* 
 (***************************************************************************)
-Swap == [askDenom: Coin, bidDenom: Coin, amount: Real]
+Swap == [
+            askDenom: Coin, 
+            bidDenom: Coin, 
+            amount: Real, 
+            exchrate: expire: Real
+        ]
 
 (***************************************************************************)
 (* The NOM coin is the representation of credit or a right to mint         *)
@@ -147,6 +154,7 @@ Burn(user) ==   (* If there are coupons in the user's account, then choose *)
                             CHOOSE coupon \in coupons[user] :
                                 \A denom \in coupon.denoms : 
                                 account[user].denoms[denom].amount # {}
+                    IN
                         minDenom ==
                             CHOOSE 
                                 min \in coupon.denoms : 
