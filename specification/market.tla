@@ -90,10 +90,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 /\ bondBid == bondBid + bookAsk(i).amount
                 
                 \* The ask book order is removed from the head 
-                /\ bookAsk = Tail(bookAsk)
+                /\ bookAskUpdate = Tail(bookAsk)
                 
                 \* Loop back
-                /\ F[Len(bookAsk)]
+                /\ F[Len(Tail(bookAsk)]
                 
             (*********************** Case 2 ************************)
             (* Head of bookAsk exchange rate less than ask bond    *)
@@ -122,7 +122,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                     \* The Bid Book order is removed from the head 
                     /\ bookBid = Tail(bookBid)
                     \* Loop back
-                    /\ F[Len(bookAsk)]
+                    /\ G[Len(Tail(bookBid))]
                 
                 (**************************************************)
                 (*            Case 2.2                            *)                         
