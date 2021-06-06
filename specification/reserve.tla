@@ -153,7 +153,7 @@ Mint(user) ==
             /\  LET desub == CHOOSE desub \in SUBSET Denom : TRUE
                 IN 
                     LET F[d \in SUBSET desub] ==
-                        IF d = {} THEN  ELSE
+                        IF d = {} THEN {} ELSE
 
     
 (***************************************************************************)
