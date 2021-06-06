@@ -1,7 +1,7 @@
 ------------------------------- MODULE reserve -------------------------------
 EXTENDS     Naturals, Sequences, Reals
 
-CONSTANT    Coin,   \* Set of all coins
+CONSTANT    Denom,  \* Set of all denoms
             Pair,   \* Set of all pairs of coins
             (* User constant is used to limit number of account records.   *)
             User    \* Set of all users
@@ -21,7 +21,7 @@ Inflation == r \in Real
 (* a nationalized currency through the Onomy Reserve collateral management *)
 (* system.                                                                 *)
 (***************************************************************************)
-Denom == [denom: Coin, amount: Real]
+Denom == [denom: Denom, amount: Real]
 
 (***************************************************************************)
 (* NOM coupons are redeemable for NOM by the reserve given they are        *)
@@ -43,7 +43,7 @@ Denom == [denom: Coin, amount: Real]
 Coupon ==   [
                 user: User, 
                 amount: Real, 
-                denoms: {[denom: Coin, amount: Amount]}
+                denoms: {[denom: Denom, amount: Amount]}
             ]
 
 (***************************************************************************)
@@ -54,10 +54,12 @@ Coupon ==   [
 (*                                                                         *)
 (* The creating user must specify an expiration date upon which the denoms *)
 (* are returned to the user and the swap is no longer valid.               *)
+(*                                                                         *)
+(* A Forward may be represented by a Swap with the same ask and bid denom. *)
 (***************************************************************************)
 Swap == [
-            askDenom: Coin, 
-            bidDenom: Coin, 
+            askDenom: Denom, 
+            bidDenom: Denom, 
             amountAsk: Real, 
             exchrate: Real
         ]
@@ -71,18 +73,19 @@ Swap == [
 (***************************************************************************)
 Account == [
     nom: Amount, 
-    denoms: [Coin -> Amount],
+    denoms: [Denom -> Amount],
     coupons: {Coupon}
 ]
 
 (***************************************************************************)
-(* The Onomy Reserve has only a single balance of NOM                      *)
+(* The Onomy Reserve                                                       *)
 (*                                                                         *)
-(* This Global Reserve is the collateral for all denoms minted by the      *)
-(* reserve.                                                                *)
+(* This Global Reserve holds the NOM collateral for all denoms minted as   *)
+(* well as Denoms bonded to Swaps                                          *)
 (***************************************************************************)
 Reserve == [
-    nom: Amount
+    nom: Amount,
+    denoms: {[denom: Denom, amount: Real]}
 ]
 
 (***************************************************************************)
@@ -97,7 +100,7 @@ DeParam == [catio: Real, destatio: Real, flatio: Real]
 
 
 Type == /\  coupons \in [User -> Token]
-        /\  deparams \in [Coin -> DeParam]
+        /\  deparams \in [Denom -> DeParam]
             (***************************************************************)
             (* Time is abstracted to a counter that increments during a    *) 
             (* “time” step. All other steps are time stuttering            *)
@@ -113,7 +116,6 @@ Type == /\  coupons \in [User -> Token]
             (***************************************************************)
         /\  time \in Real
         /\  accounts \in [User -> Account]
-        /\  params \in [Coin -> Param]
 
 (***************************************************************************)
 (* Credit NOM to User Account. Add r to balance.                           *)
@@ -145,6 +147,7 @@ Mint(user) ==
             /\ r < nomBal
             /\ accounts' = [accounts EXCEPT ![user].nom = @ - r]
             /\ reserve' = reserve + r
+            /\ CHOOSE d \in Denom : d == true
     
 (***************************************************************************)
 (* Burn denom and unbond NOM                                               *)
