@@ -1,7 +1,7 @@
 ------------------------------- MODULE reserve -------------------------------
 EXTENDS     Naturals, Sequences, Reals
 
-CONSTANT    Coin,   \* Set of all coins
+CONSTANT    Denom,  \* Set of all denoms
             Pair,   \* Set of all pairs of coins
             (* User constant is used to limit number of account records.   *)
             User    \* Set of all users
@@ -21,7 +21,7 @@ Inflation == r \in Real
 (* a nationalized currency through the Onomy Reserve collateral management *)
 (* system.                                                                 *)
 (***************************************************************************)
-Denom == [denom: Coin, amount: Real]
+Denom == [denom: Denom, amount: Real]
 
 (***************************************************************************)
 (* NOM coupons are redeemable for NOM by the reserve given they are        *)
@@ -40,18 +40,28 @@ Denom == [denom: Coin, amount: Real]
 (* is a global function of percentage of the total NOM supply utilized as  *)
 (* denom collateral bonded to the Onomy Reserve.                           *)
 (***************************************************************************)
-Coupon == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
+Coupon ==   [
+                user: User, 
+                amount: Real, 
+                denoms: {[denom: Denom, amount: Amount]}
+            ]
 
 (***************************************************************************)
 (* Swap from one currency to another.                                      *)
-(*                    *)
-(* 
+(*                                                                         *)
+(* Swaps are created by depositing denoms into the Onomy Reserve and are   *)
+(* priced by the user that creates them in the denom of their choice.      *)                                                      *)
+(*                                                                         *)
+(* The creating user must specify an expiration date upon which the denoms *)
+(* are returned to the user and the swap is no longer valid.               *)
+(*                                                                         *)
+(* A Forward may be represented by a Swap with the same ask and bid denom. *)
 (***************************************************************************)
 Swap == [
-            askDenom: Coin, 
-            bidDenom: Coin, 
-            amount: Real, 
-            exchrate: expire: Real
+            askDenom: Denom, 
+            bidDenom: Denom, 
+            amountAsk: Real, 
+            exchrate: Real
         ]
 
 (***************************************************************************)
@@ -63,18 +73,19 @@ Swap == [
 (***************************************************************************)
 Account == [
     nom: Amount, 
-    denoms: [Coin -> Amount],
+    denoms: [Denom -> Amount],
     coupons: {Coupon}
 ]
 
 (***************************************************************************)
-(* The Onomy Reserve has only a single balance of NOM                      *)
+(* The Onomy Reserve                                                       *)
 (*                                                                         *)
-(* This Global Reserve is the collateral for all denoms minted by the      *)
-(* reserve.                                                                *)
+(* This Global Reserve holds the NOM collateral for all denoms minted as   *)
+(* well as Denoms bonded to Swaps                                          *)
 (***************************************************************************)
 Reserve == [
-    nom: Amount
+    nom: Amount,
+    denoms: {[denom: Denom, amount: Real]}
 ]
 
 (***************************************************************************)
@@ -89,7 +100,7 @@ DeParam == [catio: Real, destatio: Real, flatio: Real]
 
 
 Type == /\  coupons \in [User -> Token]
-        /\  deparams \in [Coin -> DeParam]
+        /\  deparams \in [Denom -> DeParam]
             (***************************************************************)
             (* Time is abstracted to a counter that increments during a    *) 
             (* “time” step. All other steps are time stuttering            *)
@@ -105,7 +116,6 @@ Type == /\  coupons \in [User -> Token]
             (***************************************************************)
         /\  time \in Real
         /\  accounts \in [User -> Account]
-        /\  params \in [Coin -> Param]
 
 (***************************************************************************)
 (* Credit NOM to User Account. Add r to balance.                           *)
@@ -137,6 +147,14 @@ Mint(user) ==
             /\ r < nomBal
             /\ accounts' = [accounts EXCEPT ![user].nom = @ - r]
             /\ reserve' = reserve + r
+            (***************************************************************)
+            (* Choose denom in denoms, will extend this to more than one   *)
+            (***************************************************************)
+            /\  LET desub == CHOOSE desub \in SUBSET Denom : TRUE
+                IN 
+                    LET F[d \in SUBSET desub] ==
+                        IF d = {} THEN  ELSE
+
     
 (***************************************************************************)
 (* Burn denom and unbond NOM                                               *)
