@@ -40,18 +40,26 @@ Denom == [denom: Coin, amount: Real]
 (* is a global function of percentage of the total NOM supply utilized as  *)
 (* denom collateral bonded to the Onomy Reserve.                           *)
 (***************************************************************************)
-Coupon == [user: User, amount: Real, denoms: {[denom: Coin, amount: Amount]}]
+Coupon ==   [
+                user: User, 
+                amount: Real, 
+                denoms: {[denom: Coin, amount: Amount]}
+            ]
 
 (***************************************************************************)
 (* Swap from one currency to another.                                      *)
-(*                    *)
-(* 
+(*                                                                         *)
+(* Swaps are created by depositing denoms into the Onomy Reserve and are   *)
+(* priced by the user that creates them in the denom of their choice.      *)                                                      *)
+(*                                                                         *)
+(* The creating user must specify an expiration date upon which the denoms *)
+(* are returned to the user and the swap is no longer valid.               *)
 (***************************************************************************)
 Swap == [
             askDenom: Coin, 
             bidDenom: Coin, 
-            amount: Real, 
-            exchrate: expire: Real
+            amountAsk: Real, 
+            exchrate: Real
         ]
 
 (***************************************************************************)
