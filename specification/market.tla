@@ -1,5 +1,5 @@
 ------------------------------- MODULE market -------------------------------
-EXTENDS     Naturals, Sequences, Reals
+EXTENDS     Naturals, Sequences, SequencesExt, Reals
 
 CONSTANT    Coin,   \* Set of all coins
             Pair   \* Set of all pairs of coins
@@ -9,15 +9,45 @@ VARIABLE    book,   \* Order Book
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
+(*************************** Constant Declarations *************************)
+
+(* All amounts are Real *)
 Amount == r \in Real
 
+(* All exchange rates are Real *)
 ExchRate == r \in Real
 
+(* Pairs of coins are represented as couple sets *)
 Pair == {c \in Coin, d \in Coin}
 
+(******************************* Limit Order *******************************)
+(* The Limit Order is an exchange order that defines an upper limit to the *)
+(* strike exchrate defined as ask/bid.                                     *)
+(*                                                                         *)
+(* Limit Orders are persistent until revoked or fulfilled.  Revoked Limit  *)
+(* Orders will return any portion of the bidAmount that did not execute    *)
+(* back to user account                                                    *)
+(*                                                                         *)
+(* bidAmount <Real>: Amount of Bid Coin                                    *)
+(* bid <Coin>: Bid Coin                                                    *)
+(* ask <Coin>: Ask Coin                                                    *)
+(* exchrate <Real>: Exchange rate (ask/bid) limit                          *)
+(***************************************************************************)
 Limit == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
 
-Market == [amount: Amount, bid: Coin, ask: Coin]
+(******************************* Market Order ******************************)
+(* The Market Order is an exchange order that does not limit the strike    *)
+(* exchrate (ask/bid).  The Market Order pulls the requested amount of ask *)
+(* coin liquidity at the minimum cost based on AMM liquidity pool and      *) 
+(* the limit order books.                                                  *)
+(*                                                                         *)
+(* Limit Orders are fulfilled at the time of order.                        *)
+(*                                                                         *)
+(* bidAmount <Real>: Amount of Bid Coin                                    *)
+(* bid <Coin>: Bid Coin                                                    *)
+(* ask <Coin>: Ask Coin                                                    *)
+(***************************************************************************)
+Market == [bidAmount: Amount, bid: Coin, ask: Coin]
 
 Order == Limit \cup Market
 
