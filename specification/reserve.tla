@@ -163,4 +163,6 @@ Burn(user) ==   (* If there are coupons in the user's account, then choose *)
                     IN
                         LET burnBasis == \E r \in Real : r < minDenom
                         IN
+                              /\ accounts’ = [accounts EXCEPT ![user].denoms =
+                              
                                     
