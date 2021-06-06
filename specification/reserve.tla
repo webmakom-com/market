@@ -147,7 +147,14 @@ Mint(user) ==
             /\ r < nomBal
             /\ accounts' = [accounts EXCEPT ![user].nom = @ - r]
             /\ reserve' = reserve + r
-            /\ CHOOSE d \in Denom : d == true
+            (***************************************************************)
+            (* Choose denom in denoms, will extend this to more than one   *)
+            (***************************************************************)
+            /\  LET desub == CHOOSE desub \in SUBSET Denom : TRUE
+                IN 
+                    LET F[d \in SUBSET desub] ==
+                        IF d = {} THEN  ELSE
+
     
 (***************************************************************************)
 (* Burn denom and unbond NOM                                               *)
