@@ -149,7 +149,21 @@ Minter(deAcct, desub, nomAmount) ==
                     IN  
                         (* Warning: need to add in NOM initialization      *) 
                         (* into bonds in the Market module                 *)
-                        amounts[denom] * bonds[{denom, NOM}]  + 
+                        
+                        (* bonds[{denom, NOM}][denom] : amount of denom in *)
+                        (* the AMM bond for that pair.                     *)
+
+                        (* bonds[{denom, NOM}][NOM] : amount of NOM in     *)
+                        (* the AMM bond for that pair.                     *)
+
+                (* bonds[{denom, NOM}][denom] / bonds[{denom, NOM}][NOM] : *)
+                (* AMM exchrate denom/NOM                                  *)
+
+                        amounts[denom]  * 
+                        (
+                            bonds[{denom, NOM}][denom]  / 
+                            bonds[{denom,NOM}][NOM]
+                        )   + 
                         F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
     IN  
         
