@@ -135,10 +135,10 @@ ReserveInit ==  /\ Mkt!MarketInit
 (***************************************************************************)
 Minter(deAcct, desub, nomAmount) ==
     LET (*******************************************************)
-        (* CHOOSE a set of amounts in all SUBSETs of Real      *)
-        (* numbers, that the amount of denoms * AMM exchrate   *)
-        (* specific to each denom minted sums to the amount of *)
-        (* NOM used to mint the denoms                         *)
+        (* CHOOSE a set of amounts in all SUBSETs of functions *)
+        (* of Denom to Real numbers, that the amount of denoms *)
+        (* times the AMM exchrate specific to each denom minted*)
+        (* sums to the amount of NOM used to mint the denoms   *)
         (*******************************************************)
         denAmounts == CHOOSE denAmounts \in SUBSET {[Denom |-> Real]} : 
             r = LET F[amounts \in SUBSET denAmounts] ==
@@ -151,6 +151,7 @@ Minter(deAcct, desub, nomAmount) ==
                         (* into bonds in the Market module                 *)
                         amounts[denom] * bonds[{denom, NOM}]  + 
                         F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
+    IN  
         
                         
 
