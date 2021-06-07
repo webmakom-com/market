@@ -125,24 +125,27 @@ Type == /\  coupons \in [User -> Token]
 
 (***************************************************************************)
 (* The Minter function takes the denom Account, the set of denoms being    *)
-(* minted and the amount of NOM as inputs.  It outputs the updated denom   *)
-(* *)
+(* minted and the amount of NOM as inputs.  It outputs the updated account *)
+(* coupon and denoms balances                                              *)
+(***************************************************************************)
 Minter(deAcct, desub, nomAmount) ==
-    (***************************************************************)
-    (* Choose denom in denoms, will extend this to more than one   *)
-    (***************************************************************)
-    /\  LET F[denomSet \in SUBSET desub] ==
-            IF denomSet = {} THEN deAcct 
-            ELSE
-                LET 
-                    (*******************************************************)
-                    (* CHOOSE a set of amounts in all SUBSETs of Real      *)
-                    (* numbers, that the amount of denoms * AMM exchrate   *)
-                    (* specific to each denom minted sums to the amount of *)
-                    (* NOM used to mint the denoms                         *)
-                    (*******************************************************)
-                    d == CHOOSE amounts \in SUBSET Real : 
-                IN
+    LET (*******************************************************)
+        (* CHOOSE a set of amounts in all SUBSETs of Real      *)
+        (* numbers, that the amount of denoms * AMM exchrate   *)
+        (* specific to each denom minted sums to the amount of *)
+        (* NOM used to mint the denoms                         *)
+        (*******************************************************)
+        denAmounts == CHOOSE denAmounts \in SUBSET [Denom |-> Real] : 
+            r = LET F[amounts \in SUBSET denAmounts] ==
+                IF amounts = {} THEN 0
+                ELSE 
+                    LET denom == CHOOSE denom \in desub :
+                        TRUE
+                    IN  
+                        amounts[denom] + 
+                        F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
+        
+                        
 
 
 
