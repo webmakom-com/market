@@ -165,7 +165,9 @@ Minter(deAcct, desub, nomAmount) ==
                             bonds[{denom,NOM}][NOM]
                         )   + 
                         F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
-    IN  
+    IN  LET G[amounts \in SUBSET denAmounts] ==
+                IF amounts = {} THEN deAcct
+                ELSE CHOOSE denom 
         
                         
 
