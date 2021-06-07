@@ -22,7 +22,10 @@ Inflation == r \in Real
 (* a nationalized currency through the Onomy Reserve collateral management *)
 (* system.                                                                 *)
 (***************************************************************************)
-Denom == [denom: Denom, amount: Real]
+Denom ==    [  
+                denom: Denom, 
+                amount: Real
+            ]
 
 (***************************************************************************)
 (* NOM coupons are redeemable for NOM by the reserve given they are        *)
