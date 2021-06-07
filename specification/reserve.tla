@@ -122,7 +122,28 @@ Type == /\  coupons \in [User -> Token]
         /\  accounts \in [User -> Account]
 
 (***************************** Helper Functions ****************************)
-Minter(desub, nomAmount) ==
+
+(***************************************************************************)
+(* The Minter function takes the denom Account, the set of denoms being    *)
+(* minted and the amount of NOM as inputs.  It outputs the updated denom   *)
+(* *)
+Minter(deAcct, desub, nomAmount) ==
+    (***************************************************************)
+    (* Choose denom in denoms, will extend this to more than one   *)
+    (***************************************************************)
+    /\  LET F[denomSet \in SUBSET desub] ==
+            IF denomSet = {} THEN deAcct 
+            ELSE
+                LET 
+                    (*******************************************************)
+                    (* CHOOSE a set of amounts in all SUBSETs of Real      *)
+                    (* numbers, that the amount of denoms * AMM exchrate   *)
+                    (* specific to each denom minted sums to the amount of *)
+                    (* NOM used to mint the denoms                         *)
+                    (*******************************************************)
+                    d == CHOOSE amounts \in SUBSET Real : 
+                IN
+
 
 
 (***************************************************************************)
@@ -157,18 +178,10 @@ Mint(user) ==
             /\ r < nomBal
             /\ accounts' =  [accounts EXCEPT 
                                 ![user].nom = @ - r, 
-                                ![user].denoms = Minter(desub, r)
+                                ![user].denoms = Minter(@, desub, r)
                             ]
             /\ reserve' = reserve + r
-            (***************************************************************)
-            (* Choose denom in denoms, will extend this to more than one   *)
-            (***************************************************************)
-            /\  LET F[denomSet \in SUBSET desub] ==
-                    IF denomSet = {} THEN {} 
-                    ELSE
-                        LET 
-                            d == CHOOSE d \in denomSet : TRUE
-                        IN
+            
 
 
 
