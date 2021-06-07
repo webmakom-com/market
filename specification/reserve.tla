@@ -7,9 +7,11 @@ CONSTANT    Denom,  \* Set of all denoms
             User    \* Set of all users
            
 VARIABLE    accounts,
+            bonds,
             coupons,
             deparams
 
+Mkt == INSTANCE Market
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
@@ -121,6 +123,8 @@ Type == /\  coupons \in [User -> Token]
         /\  time \in Real
         /\  accounts \in [User -> Account]
 
+ReserveInit ==  /\ Mkt!MarketInit
+
 (***************************** Helper Functions ****************************)
 
 (***************************************************************************)
@@ -135,14 +139,14 @@ Minter(deAcct, desub, nomAmount) ==
         (* specific to each denom minted sums to the amount of *)
         (* NOM used to mint the denoms                         *)
         (*******************************************************)
-        denAmounts == CHOOSE denAmounts \in SUBSET [Denom |-> Real] : 
+        denAmounts == CHOOSE denAmounts \in SUBSET {[Denom |-> Real]} : 
             r = LET F[amounts \in SUBSET denAmounts] ==
                 IF amounts = {} THEN 0
                 ELSE 
                     LET denom == CHOOSE denom \in desub :
                         TRUE
                     IN  
-                        amounts[denom] + 
+                        amounts[denom] *  + 
                         F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
         
                         

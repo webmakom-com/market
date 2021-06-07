@@ -53,18 +53,20 @@ Order == Limit \cup Market
 
 Position == [amount: Amount, exchrate: ExchRate]
 
-Type == /\  orderQ \in [Pair -> Seq(Order)]
-        /\  books \in [Pair -> [Coin -> Seq(Position)]]
-        /\  bonds \in [Pair -> [Coin -> Amount]]
-        /\  tokens \in [Pair -> Amount]   
-         
+Type == 
+    /\  orderQ \in [Pair -> Seq(Order)]
+    /\  books \in [Pair -> [Coin -> Seq(Position)]]
+    /\  bonds \in [Pair -> [Coin -> Amount]]
+    /\  tokens \in [Pair -> Amount]   
+        
 
-Init ==  /\ orderQ = [p \in Pair |-> <<>>]
-         \* order books bid sequences
-         /\ books = [p \in Pair |-> [c \in p |-> <<>>]]
-         \* liquidity balances for each pair
-         /\ bonds = [p \in Pair |-> [c \in p |-> NoVal]]
-         
+MarketInit ==  
+    /\ orderQ = [p \in Pair |-> <<>>]
+    \* order books bid sequences
+    /\ books = [p \in Pair |-> [c \in p |-> <<>>]]
+    \* liquidity balances for each pair
+    /\ bonds = [p \in Pair |-> [c \in p |-> NoVal]]
+    
 (***************************** Helper Functions ****************************)
 
 InsertAt(s, i, e) ==
