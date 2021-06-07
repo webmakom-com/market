@@ -6,9 +6,10 @@ CONSTANT    Denom,  \* Set of all denoms
             (* User constant is used to limit number of account records.   *)
             User    \* Set of all users
            
-VARIABLE    book,   \* Order Book
-            bonds   \* AMM Bond Curves
-            
+VARIABLE    accounts,
+            coupons,
+            deparams
+
 -----------------------------------------------------------------------------
 NoVal ==    CHOOSE v : v \notin Nat
 
@@ -71,11 +72,11 @@ Swap == [
 (* Each user account has a single balance of NOM with potential for many   *)
 (* balances of denoms and coupons that they may or may not have minted.    *)
 (***************************************************************************)
-Account == [
-    nom: Amount, 
-    denoms: [Denom -> Amount],
-    coupons: {Coupon}
-]
+Account ==  [
+                nom: Amount, 
+                denoms: [Denom -> Amount],
+                coupons: {Coupon}
+            ]
 
 (***************************************************************************)
 (* The Onomy Reserve                                                       *)
@@ -83,10 +84,10 @@ Account == [
 (* This Global Reserve holds the NOM collateral for all denoms minted as   *)
 (* well as Denoms bonded to Swaps                                          *)
 (***************************************************************************)
-Reserve == [
-    nom: Amount,
-    denoms: {[denom: Denom, amount: Real]}
-]
+Reserve ==  [
+                nom: Amount,
+                denoms: {[denom: Denom, amount: Real]}
+            ]
 
 (***************************************************************************)
 (* Denom Specific Parameters voted by NOM holders                          *)
@@ -117,6 +118,10 @@ Type == /\  coupons \in [User -> Token]
         /\  time \in Real
         /\  accounts \in [User -> Account]
 
+(***************************** Helper Functions ****************************)
+Minter(desub, nomAmount) ==
+
+
 (***************************************************************************)
 (* Credit NOM to User Account. Add r to balance.                           *)
 (***************************************************************************)
@@ -133,7 +138,9 @@ Withdraw(user) == /\ \E r \in Reals :
 
 (* Mint denom and bond NOM *)
 Mint(user) ==  
-    LET nomBal == accounts[user].nom
+    LET 
+        nomBal == accounts[user].nom
+        desub == CHOOSE desub \in SUBSET Denom : TRUE
     IN 
         (*********************** Qualifying Condition **********************)
         (* Nom balance of user account greater than 0                      *)
@@ -145,15 +152,22 @@ Mint(user) ==
         (*******************************************************************)
         /\ \E r \in Reals : 
             /\ r < nomBal
-            /\ accounts' = [accounts EXCEPT ![user].nom = @ - r]
+            /\ accounts' =  [accounts EXCEPT 
+                                ![user].nom = @ - r, 
+                                ![user].denoms = Minter(desub, r)
+                            ]
             /\ reserve' = reserve + r
             (***************************************************************)
             (* Choose denom in denoms, will extend this to more than one   *)
             (***************************************************************)
-            /\  LET desub == CHOOSE desub \in SUBSET Denom : TRUE
-                IN 
-                    LET F[d \in SUBSET desub] ==
-                        IF d = {} THEN {} ELSE
+            /\  LET F[denomSet \in SUBSET desub] ==
+                    IF denomSet = {} THEN {} 
+                    ELSE
+                        LET 
+                            d == CHOOSE d \in denomSet : TRUE
+                        IN
+
+
 
     
 (***************************************************************************)
