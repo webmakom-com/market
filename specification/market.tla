@@ -2,7 +2,8 @@
 EXTENDS     Naturals, Sequences, SequencesExt, Reals
 
 CONSTANT    Coin,   \* Set of all coins
-            Pair   \* Set of all pairs of coins
+            Pair,   \* Set of all pairs of coins
+            NOM     \* NOM coin. Single Constant Collateral.
            
 VARIABLE    book,   \* Order Book
             bonds   \* AMM Bond Curves

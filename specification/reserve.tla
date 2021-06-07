@@ -4,7 +4,8 @@ EXTENDS     Naturals, Sequences, Reals
 CONSTANT    Denom,  \* Set of all denoms
             Pair,   \* Set of all pairs of coins
             (* User constant is used to limit number of account records.   *)
-            User    \* Set of all users
+            User,   \* Set of all users
+            NOM     \* NOM coin. Single Constant Coin
            
 VARIABLE    accounts,
             bonds,
@@ -146,7 +147,9 @@ Minter(deAcct, desub, nomAmount) ==
                     LET denom == CHOOSE denom \in desub :
                         TRUE
                     IN  
-                        amounts[denom] *  + 
+                        (* Warning: need to add in NOM initialization      *) 
+                        (* into bonds in the Market module                 *)
+                        amounts[denom] * bonds[{denom, NOM}]  + 
                         F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
         
                         
