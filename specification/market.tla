@@ -3,14 +3,15 @@ EXTENDS     Naturals, Sequences, SequencesExt, Reals
 
 CONSTANT    Coin,   \* Set of all coins
             Pair,   \* Set of all pairs of coins
-            NOM     \* NOM coin. Single Constant Collateral.
+            NOM,    \* NOM coin. Single Constant Collateral.
+            Expire  \* Set of all expirations
            
 VARIABLE    book,   \* Order Book
             bonds   \* AMM Bond Curves
 -----------------------------------------------------------------------------
-NoVal ==    CHOOSE v : v \notin Nat
-
 (*************************** Constant Declarations *************************)
+
+NoVal ==    CHOOSE v : v \notin Nat
 
 (* All amounts are Real *)
 Amount == r \in Real
@@ -48,7 +49,30 @@ Limit == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
 (* bid <Coin>: Bid Coin                                                    *)
 (* ask <Coin>: Ask Coin                                                    *)
 (***************************************************************************)
-Market == [bidAmount: Amount, bid: Coin, ask: Coin]
+Market == [
+    bidAmount: Amount, bid: Coin, ask: Coin]
+
+(***************************************************************************)
+(* Swap from one currency to another.                                      *)
+(*                                                                         *)
+(* Swaps are created by depositing denoms into the Onomy Reserve and are   *)
+(* priced by the user that creates them in the denom of their choice.      *)                                                      *)
+(*                                                                         *)
+(* The creating user must specify an expiration date upon which the denoms *)
+(* are returned to the user and the swap is no longer valid.               *)
+(*                                                                         *)
+(* A Forward may be represented by a Swap with the same ask and bid denom. *)
+(***************************************************************************)
+Swap == [
+            askDenom: Denom, 
+            bidDenom: Denom, 
+            amountAsk: Real, 
+            amountBid: Real,
+            \* Expiration set to constant so as to limit number of Swaps
+            \* for validation purposes.  Expiration time will not be
+            \* limited for implementation
+            expiration: Expire,
+        ]
 
 Order == Limit \cup Market
 
@@ -67,6 +91,7 @@ MarketInit ==
     /\ books = [p \in Pair |-> [c \in p |-> <<>>]]
     \* liquidity balances for each pair
     /\ bonds = [p \in Pair |-> [c \in p |-> NoVal]]
+    /\ swaps = [u \in User |-> {Swap}]
     
 (***************************** Helper Functions ****************************)
 

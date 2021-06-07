@@ -14,6 +14,8 @@ VARIABLE    accounts,
 
 Mkt == INSTANCE Market
 -----------------------------------------------------------------------------
+(*************************** Constant Declarations *************************)
+
 NoVal ==    CHOOSE v : v \notin Nat
 
 Amount == r \in Real
@@ -53,23 +55,7 @@ Coupon ==   [
                 denoms: {[denom: Denom, amount: Amount]}
             ]
 
-(***************************************************************************)
-(* Swap from one currency to another.                                      *)
-(*                                                                         *)
-(* Swaps are created by depositing denoms into the Onomy Reserve and are   *)
-(* priced by the user that creates them in the denom of their choice.      *)                                                      *)
-(*                                                                         *)
-(* The creating user must specify an expiration date upon which the denoms *)
-(* are returned to the user and the swap is no longer valid.               *)
-(*                                                                         *)
-(* A Forward may be represented by a Swap with the same ask and bid denom. *)
-(***************************************************************************)
-Swap == [
-            askDenom: Denom, 
-            bidDenom: Denom, 
-            amountAsk: Real, 
-            exchrate: Real
-        ]
+
 
 (***************************************************************************)
 (* The NOM coin is the representation of credit or a right to mint         *)
