@@ -151,13 +151,34 @@ Minter(deAcct, desub, nomAmount) ==
                             bonds[{denom,NOM}][NOM]
                         )   + 
                         F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
-    (* Add the minted denoms to the user's account                         *)
+    (* Subtract NOM from user account and add the minted denoms and coupons*)
     IN  LET G[amounts \in SUBSET denAmounts] ==
-                IF amounts = {} THEN deAcct
+                IF amounts = {} THEN 
+                    [deAcct EXCEPT 
+                        !.coupons = UNION {
+                            @, 
+                            [
+                                user: user,
+                                nom: r,
+                                denoms: {
+                                    [
+                                        denom: d, 
+                                        amount: denAmounts[d]
+                                    ] : d \in DOMAIN denAmount
+                                }
+                            ]
+                        },
+                        !.nom = @ - r
+                    ]
                 ELSE 
                     LET denom == CHOOSE denom \in desub : TRUE
                     IN  F[SUBSET denAmounts / denAmounts[denom]] = 
-                        [deAcct EXCEPT ![denom] = @ + amounts[denom]  
+                        [deAcct EXCEPT 
+                            !.denoms[denom] = @ + amounts[denom],
+                        ]
+
+                                
+
 
         
                         
@@ -195,8 +216,7 @@ Mint(user) ==
         /\ \E r \in Reals : 
             /\ r < nomBal
             /\ accounts' =  [accounts EXCEPT 
-                                ![user].nom = @ - r, 
-                                ![user].denoms = Minter(@, desub, r)
+                                ![user] = Minter(@, desub, r)
                             ]
             /\ reserve' = reserve + r
             
