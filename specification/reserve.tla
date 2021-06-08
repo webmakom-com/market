@@ -78,7 +78,7 @@ Account ==  [
 (***************************************************************************)
 Reserve ==  [
                 nom: Amount,
-                denoms: {[denom: Denom, amount: Real]}
+                denoms: [Denom -> Real]}
             ]
 
 (***************************************************************************)
@@ -151,9 +151,14 @@ Minter(deAcct, desub, nomAmount) ==
                             bonds[{denom,NOM}][NOM]
                         )   + 
                         F[amounts \in SUBSET denAmounts \ {amounts[denom]}]
+    (* Add the minted denoms to the user's account                         *)
     IN  LET G[amounts \in SUBSET denAmounts] ==
                 IF amounts = {} THEN deAcct
-                ELSE CHOOSE denom 
+                ELSE 
+                    LET denom == CHOOSE denom \in desub : TRUE
+                    IN  F[SUBSET denAmounts / denAmounts[denom]] = 
+                        [deAcct EXCEPT ![denom] = @ + amounts[denom]  
+
         
                         
 
