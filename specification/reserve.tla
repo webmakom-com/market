@@ -119,12 +119,12 @@ ReserveInit ==  /\ Mkt!MarketInit
 (* coupon and denoms balances                                              *)
 (***************************************************************************)
 Minter(deAcct, desub, nomAmount) ==
-    LET (*******************************************************)
-        (* CHOOSE a set of amounts in all SUBSETs of functions *)
-        (* of Denom to Real numbers, that the amount of denoms *)
-        (* times the AMM exchrate specific to each denom minted*)
-        (* sums to the amount of NOM used to mint the denoms   *)
-        (*******************************************************)
+    LET (*******************************************************************)
+        (* CHOOSE a set of functions in all SUBSETs of functions of Denom  *)
+        (* to Real numbers, that the amount of denoms times the AMM        *)
+        (* exchrate specific to each denom minted sums to the amount of    *) 
+        (* NOM used to mint the denoms                                     *)
+        (*******************************************************************)
         denAmounts == CHOOSE denAmounts \in SUBSET {[Denom |-> Real]} : 
             r = LET F[amounts \in SUBSET denAmounts] ==
                 IF amounts = {} THEN 0
