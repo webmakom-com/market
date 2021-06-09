@@ -92,8 +92,7 @@ DeParam == [catio: Real, destatio: Real, flatio: Real]
 
 
 
-Type == /\  coupons \in [User -> Token]
-        /\  deparams \in [Denom -> DeParam]
+Type == /\  deparams \in [Denom -> DeParam]
             (***************************************************************)
             (* Time is abstracted to a counter that increments during a    *) 
             (* “time” step. All other steps are time stuttering            *)
@@ -184,7 +183,9 @@ Redeem(coupon, user) ==
     LET minDenom == CHOOSE  minDenom \in DOMAIN coupon.denoms : 
                             \A other \in DOMAIN coupon.denoms : 
                             coupon.denoms[minDenom] <= coupon.denoms[other]
-    IN  LET burnBasis == \E r \in Real : r < user.denoms[minDenom]
+    IN  LET burnBasis == \E r \in Real : 
+        r < user.denoms[minDenom]
+        r < user.denoms[]
 
 
 (***************************************************************************)
@@ -237,11 +238,11 @@ Burn(user) ==   (* If there are coupons in the user's account, then choose *)
                 (* a coupon that the user has enough denoms to redeem a    *)
                 (* proportional amount of the coupon for NOM.              *)
                 (***********************************************************)
-                /\  coupons[user] # {}
+                /\  accounts.coupons # {}
                 /\  LET coupon == 
                         CHOOSE coupon \in coupons[user] :
                             \A denom \in coupon.denoms : 
-                            account[user].denoms[denom] # {}
+                            account[user].denoms[denom] > coupon.denoms[denom]
                     IN accounts’ = Redeem(coupon, user)
                               
                                     
