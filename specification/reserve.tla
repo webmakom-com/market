@@ -179,13 +179,18 @@ Minter(deAcct, desub, nomAmount) ==
 (***************************************************************************)
 (* Redeem coupon for NOM by surrendering denoms                            *)
 (***************************************************************************)
-Redeem(coupon, user) ==
-    LET minDenom == CHOOSE  minDenom \in DOMAIN coupon.denoms : 
-                            \A other \in DOMAIN coupon.denoms : 
-                            coupon.denoms[minDenom] <= coupon.denoms[other]
-    IN  LET burnBasis == \E r \in Real : 
-        r < user.denoms[minDenom]
-        r < user.denoms[]
+Redeem(coupon, userAcct) ==
+    LET F[denSub \in SUBSET coupon.denoms] ==
+        IF denSub = {} THEN [
+            userAcct EXCEPT 
+            userAcct.coupons = UNION {@, coupon}
+        ] 
+        ELSE 
+            LET denom == CHOOSE denom \in denSub : TRUE
+            IN  F[SUBSET coupon.denoms \ denom] = [
+                userAcct EXCEPT 
+                !.denoms[denom] = @ - coupon.denoms[denom]
+            ]
 
 
 (***************************************************************************)
@@ -243,6 +248,6 @@ Burn(user) ==   (* If there are coupons in the user's account, then choose *)
                         CHOOSE coupon \in coupons[user] :
                             \A denom \in coupon.denoms : 
                             account[user].denoms[denom] > coupon.denoms[denom]
-                    IN accounts’ = Redeem(coupon, user)
+                    IN accounts’ = [accounts EXCEPT ![user] = Redeem(coupon, @)]
                               
                                     
