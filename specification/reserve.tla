@@ -181,20 +181,10 @@ Minter(deAcct, desub, nomAmount) ==
 (* Redeem coupon for NOM by surrendering denoms                            *)
 (***************************************************************************)
 Redeem(coupon, user) ==
-    
-                        minDenom ==
-                            CHOOSE 
-                                min \in coupon.denoms : 
-                                \A other \in coupon.denoms : 
-                                min.amount <= y.amount
-                    IN
-                        LET burnBasis == \E r \in Real : r < minDenom
-                                
-
-
-        
-                        
-
+    LET minDenom == CHOOSE  minDenom \in DOMAIN coupon.denoms : 
+                            \A other \in DOMAIN coupon.denoms : 
+                            coupon.denoms[minDenom] <= coupon.denoms[other]
+    IN  LET burnBasis == \E r \in Real : r < user.denoms[minDenom]
 
 
 (***************************************************************************)
