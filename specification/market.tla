@@ -2,16 +2,18 @@
 EXTENDS     Naturals, Sequences, SequencesExt, Reals
 
 CONSTANT    Coin,   \* Set of all coins
+            Denom,  \* Set of all denoms
             Pair,   \* Set of all pairs of coins
             NOM,    \* NOM coin. Single Constant Collateral.
             Expire  \* Set of all expirations
            
-VARIABLE    book,   \* Order Book
-            bonds   \* AMM Bond Curves
+VARIABLE    books,  \* Order Book
+            bonds,
+            orderQ,   \* AMM Bond Curves
 -----------------------------------------------------------------------------
 (*************************** Constant Declarations *************************)
 
-NoVal ==    CHOOSE v : v \notin Nat
+NoVal == CHOOSE v : v \notin Real
 
 (* All amounts are Real *)
 Amount == r \in Real
@@ -20,7 +22,7 @@ Amount == r \in Real
 ExchRate == r \in Real
 
 (* Pairs of coins are represented as couple sets *)
-Pair == {c \in Coin, d \in Coin}
+Pair == {c \in Coin, d \in Coin \ c}
 
 (******************************* Limit Order *******************************)
 (* The Limit Order is an exchange order that defines an upper limit to the *)
