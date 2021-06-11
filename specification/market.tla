@@ -3,26 +3,30 @@ EXTENDS     Naturals, Sequences, SequencesExt, Reals
 
 CONSTANT    Coin,   \* Set of all coins
             Denom,  \* Set of all denoms
-            Pair,   \* Set of all pairs of coins
             NOM,    \* NOM coin. Single Constant Collateral.
             Expire  \* Set of all expirations
            
 VARIABLE    books,  \* Order Book
-            bonds,
-            orderQ,   \* AMM Bond Curves
+            bonds,  \* AMM Bond Curves
+            orderQ, 
+            tokens
+
+ASSUME Denom \subseteq Coin
 -----------------------------------------------------------------------------
 (*************************** Constant Declarations *************************)
 
 NoVal == CHOOSE v : v \notin Real
 
 (* All amounts are Real *)
-Amount == r \in Real
+Amount == Real
 
 (* All exchange rates are Real *)
-ExchRate == r \in Real
+ExchRate == Real
+\*{<<a, b>> : a \in Nat, b \in Nat}
 
 (* Pairs of coins are represented as couple sets *)
-Pair == {c \in Coin, d \in Coin \ c}
+\* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
+Pair == {{a, b}: a \in Coin, b \in Coin \ {a}}
 
 (******************************* Limit Order *******************************)
 (* The Limit Order is an exchange order that defines an upper limit to the *)
@@ -37,7 +41,8 @@ Pair == {c \in Coin, d \in Coin \ c}
 (* ask <Coin>: Ask Coin                                                    *)
 (* exchrate <Real>: Exchange rate (ask/bid) limit                          *)
 (***************************************************************************)
-Limit == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
+LimitOrder == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
+\* Add in LimitType or MarketType
 
 (******************************* Market Order ******************************)
 (* The Market Order is an exchange order that does not limit the strike    *)
@@ -51,7 +56,7 @@ Limit == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
 (* bid <Coin>: Bid Coin                                                    *)
 (* ask <Coin>: Ask Coin                                                    *)
 (***************************************************************************)
-Market == [
+MarketOrder == [
     bidAmount: Amount, bid: Coin, ask: Coin]
 
 (***************************************************************************)
@@ -76,14 +81,18 @@ Swap == [
             expiration: Expire,
         ]
 
-Order == Limit \cup Market
+OrderType == LimitOrder \cup MarketOrder
 
 Position == [amount: Amount, exchrate: ExchRate]
+
+PairPlusCoin == {<<pair, coin>> \in Pair \X Coin: coin \in pair} 
 
 Type == 
     /\  orderQ \in [Pair -> Seq(Order)]
     /\  books \in [Pair -> [Coin -> Seq(Position)]]
+    \* [Pair \X Coin -> Sequences]
     /\  bonds \in [Pair -> [Coin -> Amount]]
+    /\  swaps = [u \in User |-> {Swap}]
     /\  tokens \in [Pair -> Amount]   
         
 
@@ -97,28 +106,10 @@ MarketInit ==
     
 (***************************** Helper Functions ****************************)
 
-InsertAt(s, i, e) ==
-  (*************************************************************************)
-  (* Inserts element e at the position i moving the original element to    *)
-  (* i+1 and so on.  In other words, a sequence t s.t.:                    *)
-  (*   /\ Len(t) = Len(s) + 1                                              *)
-  (*   /\ t[i] = e                                                         *)
-  (*   /\ \A j \in 1..(i - 1): t[j] = s[j]                                 *)
-  (*   /\ \A k \in (i + 1)..Len(s): t[k + 1] = s[k]                        *)
-  (*************************************************************************)
-  SubSeq(s, 1, i-1) \o <<e>> \o SubSeq(s, i, Len(s))
-         
-
-SubmitOrder == 
-    /\  \E o \in Order : 
-        /\  o.bid # o.ask
-        /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
-    /\  UNCHANGED <<books, bonds>>
-
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
 
-Stronger(pair)    ==  CHOOSE c \in pair :  bond[c] <= bond[pair / c]
+Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 
 (******************************* Reconcile *********************************)
 (* Iteratively reconcile books records with bonds amounts                  *)
@@ -199,6 +190,15 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
         IN F[Len(bookAsk)]
 
 (***************************** Step Functions ****************************)
+
+\* Optional syntax
+(* LET all_limit_orders == Add your stuff in here *)
+(* IN {x \in all_limit_orders: x.bid # x.ask} *)
+SubmitOrder == 
+    /\  \E o \in Order : 
+        /\  o.bid # o.ask
+        /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
+    /\  UNCHANGED <<books, bonds>>
 
 Provision(pair) ==  \E r \in Real : 
                         LET bond == bonds[pair]
