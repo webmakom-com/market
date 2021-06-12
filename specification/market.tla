@@ -1,13 +1,13 @@
 ------------------------------- MODULE market -------------------------------
-EXTENDS     Naturals, Sequences, SequencesExt, Reals
+EXTENDS     Naturals, Sequences, SequencesExt
 
-CONSTANT    Coin,   \* Set of all coins
-            Denom,  \* Set of all denoms
-            NOM,    \* NOM coin. Single Constant Collateral.
-            Expire  \* Set of all expirations
+CONSTANT    Coin,       \* Set of all coins
+            Denom,      \* Set of all denoms
+            NOM,        \* NOM coin. Single Constant Collateral.
+            Expiration  \* Set of all expirations
            
-VARIABLE    books,  \* Order Book
-            bonds,  \* AMM Bond Curves
+VARIABLE    books,      \* Order Book
+            bonds,      \* AMM Bond Curves
             orderQ, 
             tokens
 
@@ -17,12 +17,11 @@ ASSUME Denom \subseteq Coin
 
 NoVal == CHOOSE v : v \notin Real
 
-(* All amounts are Real *)
-Amount == Real
+(* All amounts are represented as numerator/denominator tuples *)
+Amount == { <<a, b>> : a \in Nat, b \in Nat }
 
-(* All exchange rates are Real *)
-ExchRate == Real
-\*{<<a, b>> : a \in Nat, b \in Nat}
+(* All exchange rates are represented as numerator/denominator tuples *)
+ExchRate == { <<a, b>> : a \in Nat, b \in Nat }
 
 (* Pairs of coins are represented as couple sets *)
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
@@ -41,7 +40,12 @@ Pair == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* ask <Coin>: Ask Coin                                                    *)
 (* exchrate <Real>: Exchange rate (ask/bid) limit                          *)
 (***************************************************************************)
-LimitOrder == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
+LimitType == [
+    amount: Amount, 
+    bid: Coin, 
+    ask: Coin, 
+    exchrate: ExchRate
+]
 \* Add in LimitType or MarketType
 
 (******************************* Market Order ******************************)
@@ -56,42 +60,55 @@ LimitOrder == [amount: Amount, bid: Coin, ask: Coin, exchrate: ExchRate]
 (* bid <Coin>: Bid Coin                                                    *)
 (* ask <Coin>: Ask Coin                                                    *)
 (***************************************************************************)
-MarketOrder == [
-    bidAmount: Amount, bid: Coin, ask: Coin]
+MarketType == [
+    bidAmount: Amount, 
+    bid: Coin, 
+    ask: Coin
+]
 
 (***************************************************************************)
 (* Swap from one currency to another.                                      *)
 (*                                                                         *)
 (* Swaps are created by depositing denoms into the Onomy Reserve and are   *)
-(* priced by the user that creates them in the denom of their choice.      *)                                                      *)
+(* priced by the user that creates them in the denom of their choice.      *)
 (*                                                                         *)
 (* The creating user must specify an expiration date upon which the denoms *)
 (* are returned to the user and the swap is no longer valid.               *)
 (*                                                                         *)
 (* A Forward may be represented by a Swap with the same ask and bid denom. *)
 (***************************************************************************)
-Swap == [
-            askDenom: Denom, 
-            bidDenom: Denom, 
-            amountAsk: Real, 
-            amountBid: Real,
-            \* Expiration set to constant so as to limit number of Swaps
-            \* for validation purposes.  Expiration time will not be
-            \* limited for implementation
-            expiration: Expire,
-        ]
+SwapType == [
+    askDenom: Denom, 
+    bidDenom: Denom, 
+    amountAsk: Real, 
+    amountBid: Real,
+    \* Expiration set to constant so as to limit number of Swaps
+    \* for validation purposes.  Expiration time will not be
+    \* limited for implementation
+    expiration: Expiration,
+]
 
-OrderType == LimitOrder \cup MarketOrder
+OrderType == LimitType \cup MarketType \cup SwapType 
 
-Position == [amount: Amount, exchrate: ExchRate]
+Position == [
+    amount: Amount, 
+    exchrate: ExchRate
+]
 
-PairPlusCoin == {<<pair, coin>> \in Pair \X Coin: coin \in pair} 
+(**************************************************************************)
+(* Pair plus Coin Type                                                    *)
+(*                                                                        *)
+(* Each pair is a set with two coins.  Each pair may have variables that  *)
+(* depend on both the pair (set of two coins) as well as one of the coins *)
+(* associated with that particular pair                                   *)
+(**************************************************************************)
+PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair} 
 
 Type == 
     /\  orderQ \in [Pair -> Seq(Order)]
-    /\  books \in [Pair -> [Coin -> Seq(Position)]]
+    /\  books \in [PairPlusCoin -> Seq(Position)]]
     \* [Pair \X Coin -> Sequences]
-    /\  bonds \in [Pair -> [Coin -> Amount]]
+    /\  bonds \in [PairPlusCoin -> Amount]]
     /\  swaps = [u \in User |-> {Swap}]
     /\  tokens \in [Pair -> Amount]   
         
