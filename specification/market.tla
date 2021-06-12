@@ -4,6 +4,7 @@ EXTENDS     Naturals, Sequences, SequencesExt
 CONSTANT    Coin,       \* Set of all coins
             Denom,      \* Set of all denoms
             NOM,        \* NOM coin. Single Constant Collateral.
+            User,       \* Set of all users
             Expiration  \* Set of all expirations
            
 VARIABLE    books,      \* Order Book
@@ -17,11 +18,11 @@ ASSUME Denom \subseteq Coin
 
 NoVal == CHOOSE v : v \notin Real
 
-(* All amounts are represented as numerator/denominator tuples *)
-Amount == { <<a, b>> : a \in Nat, b \in Nat }
+\* All amounts are represented as numerator/denominator tuples
+Amount == {<<a, b>> : a \in Nat, b \in Nat}
 
-(* All exchange rates are represented as numerator/denominator tuples *)
-ExchRate == { <<a, b>> : a \in Nat, b \in Nat }
+\* All exchange rates are represented as numerator/denominator tuples
+ExchRate == {<<a, b>> : a \in Nat, b \in Nat}
 
 (* Pairs of coins are represented as couple sets *)
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
@@ -91,6 +92,7 @@ SwapType == [
 OrderType == LimitType \cup MarketType \cup SwapType 
 
 Position == [
+    user: User,
     amount: Amount, 
     exchrate: ExchRate
 ]
@@ -109,16 +111,16 @@ Type ==
     /\  books \in [PairPlusCoin -> Seq(Position)]]
     \* [Pair \X Coin -> Sequences]
     /\  bonds \in [PairPlusCoin -> Amount]]
-    /\  swaps = [u \in User |-> {Swap}]
+    /\  swaps = [User |-> {Swap}]
     /\  tokens \in [Pair -> Amount]   
         
 
 MarketInit ==  
     /\ orderQ = [p \in Pair |-> <<>>]
     \* order books bid sequences
-    /\ books = [p \in Pair |-> [c \in p |-> <<>>]]
+    /\ books = [ppc \in PairPlusCoin |-> <<>>]
     \* liquidity balances for each pair
-    /\ bonds = [p \in Pair |-> [c \in p |-> NoVal]]
+    /\ bonds = [ppc \in PairPlusCoin |-> NoVal]
     /\ swaps = [u \in User |-> {Swap}]
     
 (***************************** Helper Functions ****************************)
