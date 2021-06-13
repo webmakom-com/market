@@ -4,7 +4,6 @@ EXTENDS     Naturals, Sequences, SequencesExt
 CONSTANT    Coin,       \* Set of all coins
             Denom,      \* Set of all denoms
             NOM,        \* NOM coin. Single Constant Collateral.
-            User,       \* Set of all users
             Expiration  \* Set of all expirations
            
 VARIABLE    books,      \* Order Book
@@ -24,13 +23,13 @@ Amount == {<<a, b>> : a \in Nat, b \in Nat}
 \* All exchange rates are represented as numerator/denominator tuples
 ExchRate == {<<a, b>> : a \in Nat, b \in Nat}
 
-(* Pairs of coins are represented as couple sets *)
+\* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
 Pair == {{a, b}: a \in Coin, b \in Coin \ {a}}
 
 (******************************* Limit Order *******************************)
 (* The Limit Order is an exchange order that defines an upper limit to the *)
-(* strike exchrate defined as ask/bid.                                     *)
+(* strike exchrate defined as ask/bid price.                               *)
 (*                                                                         *)
 (* Limit Orders are persistent until revoked or fulfilled.  Revoked Limit  *)
 (* Orders will return any portion of the bidAmount that did not execute    *)
@@ -109,6 +108,16 @@ MarketInit ==
     /\ bonds = [ppc \in PairPlusCoin |-> NoVal]
     
 (***************************** Helper Functions ****************************)
+
+\* Nat tuple (numerator/denominator) inequality helper functions
+\* All equalities assume Natural increments
+GT
+
+GTE
+
+LT
+
+LTE
 
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
