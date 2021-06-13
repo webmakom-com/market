@@ -10,7 +10,7 @@ CONSTANT    Coin,       \* Set of all coins
 VARIABLE    books,      \* Order Book
             bonds,      \* AMM Bond Curves
             orderQ, 
-            tokens
+            drops
 
 ASSUME Denom \subseteq Coin
 -----------------------------------------------------------------------------
@@ -47,7 +47,6 @@ LimitType == [
     ask: Coin, 
     exchrate: ExchRate
 ]
-\* Add in LimitType or MarketType
 
 (******************************* Market Order ******************************)
 (* The Market Order is an exchange order that does not limit the strike    *)
@@ -67,31 +66,15 @@ MarketType == [
     ask: Coin
 ]
 
-(***************************************************************************)
-(* Swap from one currency to another.                                      *)
-(*                                                                         *)
-(* Swaps are created by depositing denoms into the Onomy Reserve and are   *)
-(* priced by the user that creates them in the denom of their choice.      *)
-(*                                                                         *)
-(* The creating user must specify an expiration date upon which the denoms *)
-(* are returned to the user and the swap is no longer valid.               *)
-(*                                                                         *)
-(* A Forward may be represented by a Swap with the same ask and bid denom. *)
-(***************************************************************************)
-SwapType == [
-    askDenom: Denom, 
-    bidDenom: Denom, 
-    amountAsk: Real, 
-    amountBid: Real,
-    \* Expiration set to constant so as to limit number of Swaps
-    \* for validation purposes.  Expiration time will not be
-    \* limited for implementation
-    expiration: Expiration,
-]
-
 OrderType == LimitType \cup MarketType \cup SwapType 
 
-Position == [
+(**************************************************************************)
+(* Position Type                                                          *)
+(*                                                                        *)
+(* The position type is the order book record that is maintained when a   *)
+(* limit order has an unfulfilled outstanding amount                      *)
+(**************************************************************************)
+PositionType == [
     user: User,
     amount: Amount, 
     exchrate: ExchRate
@@ -108,20 +91,22 @@ PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair}
 
 Type == 
     /\  orderQ \in [Pair -> Seq(Order)]
-    /\  books \in [PairPlusCoin -> Seq(Position)]]
+    /\  drops \in [Pair -> Amount]
+    /\  books \in [PairPlusCoin -> Seq(PositionType)]]
+    \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
     /\  bonds \in [PairPlusCoin -> Amount]]
-    /\  swaps = [User |-> {Swap}]
-    /\  tokens \in [Pair -> Amount]   
+    
+       
         
 
 MarketInit ==  
     /\ orderQ = [p \in Pair |-> <<>>]
+    /\ drops \in [Pair -> Amount]
     \* order books bid sequences
     /\ books = [ppc \in PairPlusCoin |-> <<>>]
     \* liquidity balances for each pair
     /\ bonds = [ppc \in PairPlusCoin |-> NoVal]
-    /\ swaps = [u \in User |-> {Swap}]
     
 (***************************** Helper Functions ****************************)
 
@@ -230,12 +215,12 @@ Provision(pair) ==  \E r \in Real :
                                           @ + @ * (r / bonds[pair][c]),
                                         ![pair][c] = @ + r
                                     ]
-                                /\ tokens' = [ tokens EXCEPT 
+                                /\ drops' = [ drops EXCEPT 
                                     ![pair] = @ + r ]
                                 /\ UNCHANGED << books, orderQ >>
 
 Liquidate(pair) ==  \E r \in Real : 
-                        /\  r < tokens[pair]
+                        /\  r < drops[pair]
                         /\  LET 
                                 bond == bonds[pair]
                             IN
@@ -249,7 +234,7 @@ Liquidate(pair) ==  \E r \in Real :
                                             ![pair][c] = @ - r
                                         ]
                                     
-                                    /\ tokens' = [ tokens EXCEPT 
+                                    /\ drops' = [ drops EXCEPT 
                                         ![pair] = @ - r ]
                                     /\ UNCHANGED << books, orderQ >>
                        

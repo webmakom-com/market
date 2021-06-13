@@ -55,7 +55,27 @@ Coupon ==   [
                 denoms: {[denom: Denom, amount: Amount]}
             ]
 
-
+(***************************************************************************)
+(* Swap from one currency to another.                                      *)
+(*                                                                         *)
+(* Swaps are created by depositing denoms into the Onomy Reserve and are   *)
+(* priced by the user that creates them in the denom of their choice.      *)
+(*                                                                         *)
+(* The creating user must specify an expiration date upon which the denoms *)
+(* are returned to the user and the swap is no longer valid.               *)
+(*                                                                         *)
+(* A Forward may be represented by a Swap with the same ask and bid denom. *)
+(***************************************************************************)
+SwapType == [
+    askDenom: Denom, 
+    bidDenom: Denom, 
+    amountAsk: Real, 
+    amountBid: Real,
+    \* Expiration set to constant so as to limit number of Swaps
+    \* for validation purposes.  Expiration time will not be
+    \* limited for implementation
+    expiration: Expiration,
+]
 
 (***************************************************************************)
 (* The NOM coin is the representation of credit or a right to mint         *)
@@ -80,6 +100,8 @@ Reserve ==  [
                 nom: Amount,
                 denoms: [Denom -> Real]}
             ]
+
+
 
 (***************************************************************************)
 (* Denom Specific Parameters voted by NOM holders                          *)
@@ -108,8 +130,10 @@ Type == /\  deparams \in [Denom -> DeParam]
             (***************************************************************)
         /\  time \in Real
         /\  accounts \in [User -> Account]
+        /\  swaps = [User |-> {Swap}]
 
 ReserveInit ==  /\ Mkt!MarketInit
+                /\ swaps = [u \in User |-> {Swap}]
 
 (***************************** Helper Functions ****************************)
 
