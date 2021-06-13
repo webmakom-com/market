@@ -3,6 +3,7 @@ EXTENDS     Naturals, Sequences, SequencesExt
 
 CONSTANT    Coin,       \* Set of all coins
             Denom,      \* Set of all denoms
+            Denominator,\* Set of all possible denominators
             NOM,        \* NOM coin. Single Constant Collateral.
             Expiration  \* Set of all expirations
            
@@ -12,16 +13,17 @@ VARIABLE    books,      \* Order Book
             drops
 
 ASSUME Denom \subseteq Coin
+ASSUME Denominator \in Nat
 -----------------------------------------------------------------------------
 (*************************** Constant Declarations *************************)
 
-NoVal == CHOOSE v : v \notin Real
+NoVal == CHOOSE v : v \notin Nat
 
 \* All amounts are represented as numerator/denominator tuples
-Amount == {<<a, b>> : a \in Nat, b \in Nat}
+Amount == {<<a, b>> : a \in Nat, b \in Denominator}
 
 \* All exchange rates are represented as numerator/denominator tuples
-ExchRate == {<<a, b>> : a \in Nat, b \in Nat}
+ExchRate == {<<a, b>> : a \in Nat, b \in Denominator}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
