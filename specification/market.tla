@@ -120,9 +120,6 @@ LT(a, b) ==     IF a[1]*b[2] < a[2]*b[1] THEN TRUE ELSE FALSE
 
 LTE(a, b) ==    IF a[1]*b[2] <= a[2]*b[1] THEN TRUE ELSE FALSE
 
-\* Nat tuple operators
-MINUS
-
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
 
@@ -283,17 +280,22 @@ ProcessOrder(pair) ==
             (*                                                             *)
             (* Expression origin:                                          *)
             (* (bondAsk - x * kAskBook) / (bondBid + x) = kAskBook         *)
-            (* k == exchrate or ask_coin/bid_coin                          *)
+            (* erate == exchrate or ask_coin/bid_coin                          *)
             (*                                                             *)
             (* Solve for x:                                                *)
-            (* x = (bondAsk/kAskBook - bondBid)/2                          *)
+            (* x = (bondAsk/erateAskBook - bondBid)/2                          *)
             (***************************************************************)
             maxBondBid ==  
                 LET 
-                    kAskHead == Head(books[pair][o.ask]).exchrate
+                    erateAskHead == Head(books[pair][o.ask]).exchrate
                 IN 
-                    \* (bondAsk / kAskHead - bondBid) / 2
-                    <<MINUS(<<bondAsk, kAskHead>>, bondBid), 2>>
+                    \* (bondAsk / erateAskHead - bondBid) / 2
+                    (
+                        bondAsk \div 
+                        erateAskHead[1] * 
+                        erateAskHead[0] - 
+                        bondBid
+                    ) / 2
         IN  
             
             (***************************************************************)
