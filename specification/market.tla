@@ -4,6 +4,7 @@ EXTENDS     Naturals, Sequences, SequencesExt
 CONSTANT    Coin,       \* Set of all coins
             Denom,      \* Set of all denoms
             Denominator,\* Set of all possible denominators
+            Input,      \* Set of all possible input amounts
             NOM,        \* NOM coin. Single Constant Collateral.
             Expiration  \* Set of all expirations
            
@@ -146,7 +147,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (* exchange rate greater than or equal to the ask bond *)
             (* exchange rate                                       *)
             (*******************************************************)
-            \/  /\ bookAsk(i).exchrate >= (bondAsk \div bondBid)
+            \/  /\ GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>)
                 
                 \* Ask Bond pays for the Ask Book order
                 /\ bondAsk == bondAsk - bookAsk(i).amount
@@ -214,8 +215,9 @@ SubmitOrder ==
         /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
     /\  UNCHANGED <<books, bonds>>
 
-Provision(pair) ==  
-    \E r \in Real : 
+Provision(pair) ==
+    \* Use Input constant to give ability to limit amounts input  
+    \E r \in Nat : r \in Input 
         LET bond == bonds[pair]
         IN
             LET c == Weaker(pair)
@@ -223,15 +225,19 @@ Provision(pair) ==
             IN
                 /\  bonds' = [ bonds EXCEPT 
                         ![pair][d] = 
-                            @ + @ * (r / bonds[pair][c]),
+                            @ + 
+                            @ * 
+                            (r / bonds[pair][c]),
                         ![pair][c] = @ + r
                     ]
-                /\ drops' = [ drops EXCEPT 
-                    ![pair] = @ + r ]
+                /\  drops' = [ drops EXCEPT 
+                        ![pair] = @ + r 
+                    ]
                 /\ UNCHANGED << books, orderQ >>
 
 Liquidate(pair) ==  
-    \E r \in Real : 
+    \E r \in Nat : 
+        \* Qualifying condition
         /\  r < drops[pair]
         /\  LET 
                 bond == bonds[pair]
@@ -295,7 +301,7 @@ ProcessOrder(pair) ==
                         erateAskHead[1] * 
                         erateAskHead[0] - 
                         bondBid
-                    ) / 2
+                    ) \div 2
         IN  
             
             (***************************************************************)
@@ -360,14 +366,19 @@ ProcessOrder(pair) ==
                     (********************** Case 1.2 ***********************)
                     (*  Book order exchrate less than head of bid book     *)
                     (*******************************************************)
-                    \/  /\ o.exchrate < Head(bookBid).exchrate
+                    \/  /\ LT(o.exchrate, Head(bookBid).exchrate)
 
                             (***********************************************)    
                             (* Find amount of bond allowed to be sold      *)
                             (* before it hits the order exchrate           *)
                             (***********************************************)
                             /\  LET maxBondBid ==
-                                    (bondAsk/o.exchrate - bondBid) / 2
+                                    (
+                                        bondAsk \div 
+                                        o.exchrate[0] * 
+                                        o.exchrate[1] - 
+                                        bondBid
+                                    ) \div 2
                                 IN
                                     
                                     (*************** Case 1.2.1 ************)
