@@ -20,9 +20,6 @@ ASSUME Denominator \in Nat
 
 NoVal == CHOOSE v : v \notin Nat
 
-\* All amounts are represented as numerator/denominator tuples
-Amount == Nat
-
 \* All exchange rates are represented as numerator/denominator tuples
 ExchRateType == {<<a, b>> : a \in Nat, b \in Denominator}
 
@@ -38,16 +35,16 @@ PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* Orders will return any portion of the bidAmount that did not execute    *)
 (* back to user account                                                    *)
 (*                                                                         *)
-(* bidAmount <Real>: Amount of Bid Coin                                    *)
+(* bidAmount <Nat>: Amount of Bid Coin                                     *)
 (* bid <Coin>: Bid Coin                                                    *)
 (* ask <Coin>: Ask Coin                                                    *)
 (* exchrate <Real>: Exchange rate (ask/bid) limit                          *)
 (***************************************************************************)
 LimitType == [
-    amount: Amount, 
+    amount: Nat, 
     bid: Coin, 
     ask: Coin, 
-    exchrate: ExchRate
+    exchrate: ExchRateType
 ]
 
 (******************************* Market Order ******************************)
@@ -58,28 +55,30 @@ LimitType == [
 (*                                                                         *)
 (* Limit Orders are fulfilled at the time of order.                        *)
 (*                                                                         *)
-(* bidAmount <Real>: Amount of Bid Coin                                    *)
+(* bidAmount <Nat>: Amount of Bid Coin                                     *)
 (* bid <Coin>: Bid Coin                                                    *)
 (* ask <Coin>: Ask Coin                                                    *)
 (***************************************************************************)
 MarketType == [
-    bidAmount: Amount, 
+    bidAmount: Nat, 
     bid: Coin, 
     ask: Coin
 ]
 
 OrderType == LimitType \cup MarketType \cup SwapType 
 
-(**************************************************************************)
-(* Position Type                                                          *)
-(*                                                                        *)
-(* The position type is the order book record that is maintained when a   *)
-(* limit order has an unfulfilled outstanding amount                      *)
-(**************************************************************************)
+(***************************************************************************)
+(* Position Type                                                           *)
+(*                                                                         *)
+(* The position type is the order book record that is maintained when a    *)
+(* limit order has an unfulfilled outstanding amount                       *)
+(*                                                                         *)
+(* amount <Nat>: Amount of Bid Coin                                        *)
+(* exchrate <ExchRateType>: ExchRate Limit (Ask Coin / Bid Coin)           *)
+(***************************************************************************)
 PositionType == [
-    user: User,
-    amount: Amount, 
-    exchrate: ExchRate
+    amount: Nat, 
+    exchrate: ExchRateType
 ]
 
 (**************************************************************************)
@@ -93,17 +92,17 @@ PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair}
 
 Type == 
     /\  orderQ \in [Pair -> Seq(Order)]
-    /\  drops \in [Pair -> Amount]
+    /\  drops \in [Pair -> Nat]
     /\  books \in [PairPlusCoin -> Seq(PositionType)]]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
-    /\  bonds \in [PairPlusCoin -> Amount]]
+    /\  bonds \in [PairPlusCoin -> Nat]]
     
 (************************** Variable Initialization ************************)       
         
 MarketInit ==  
     /\ orderQ = [p \in Pair |-> <<>>]
-    /\ drops \in [Pair |-> Amount]
+    /\ drops \in [Pair |-> Nat]
     \* order books bid sequences
     /\ books = [ppc \in PairPlusCoin |-> <<>>]
     \* liquidity balances for each pair
