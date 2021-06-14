@@ -15,19 +15,19 @@ VARIABLE    books,      \* Order Book
 ASSUME Denom \subseteq Coin
 ASSUME Denominator \in Nat
 -----------------------------------------------------------------------------
-(*************************** Constant Declarations *************************)
+(***************************** Type Declarations ***************************)
 
 NoVal == CHOOSE v : v \notin Nat
 
 \* All amounts are represented as numerator/denominator tuples
-Amount == {<<a, b>> : a \in Nat, b \in Denominator}
+Amount == Nat
 
 \* All exchange rates are represented as numerator/denominator tuples
-ExchRate == {<<a, b>> : a \in Nat, b \in Denominator}
+ExchRateType == {<<a, b>> : a \in Nat, b \in Denominator}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
-Pair == {{a, b}: a \in Coin, b \in Coin \ {a}}
+PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 
 (******************************* Limit Order *******************************)
 (* The Limit Order is an exchange order that defines an upper limit to the *)
@@ -98,12 +98,11 @@ Type ==
     \* [Pair \X Coin -> Sequences]
     /\  bonds \in [PairPlusCoin -> Amount]]
     
-       
+(************************** Variable Initialization ************************)       
         
-
 MarketInit ==  
     /\ orderQ = [p \in Pair |-> <<>>]
-    /\ drops \in [Pair -> Amount]
+    /\ drops \in [Pair |-> Amount]
     \* order books bid sequences
     /\ books = [ppc \in PairPlusCoin |-> <<>>]
     \* liquidity balances for each pair
@@ -113,13 +112,16 @@ MarketInit ==
 
 \* Nat tuple (numerator/denominator) inequality helper functions
 \* All equalities assume Natural increments
-GT
+GT(a, b) ==     IF a[1]*b[2] > a[2]*b[1] THEN TRUE ELSE FALSE
 
-GTE
+GTE(a, b) ==    IF a[1]*b[2] >= a[2]*b[1] THEN TRUE ELSE FALSE 
 
-LT
+LT(a, b) ==     IF a[1]*b[2] < a[2]*b[1] THEN TRUE ELSE FALSE
 
-LTE
+LTE(a, b) ==    IF a[1]*b[2] <= a[2]*b[1] THEN TRUE ELSE FALSE
+
+\* Nat tuple operators
+MINUS
 
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
@@ -165,7 +167,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (* Head of bookAsk exchange rate less than ask bond    *)
             (* exchange rate                                       *)
             (*******************************************************)
-            \/  /\ bookAsk(i).exchrate < (bondAsk \div bondBid)
+            \/  /\ LT(bookAsk(i).exchrate, (<<bondAsk, bondBid>>)
                 
                 (******************** Iteration ********************)
                 (* Iterate over the bookBid sequence processing    *)
@@ -180,7 +182,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* greater than or equal to the                    *)
                 (* updated bid bond exchange rate                  *)
                 (***************************************************)
-                \/ bookBid(j).exchrate >= (bondBid \div bondAsk)
+                \/ LTE(bookBid(j).exchrate, <<bondBid, bondAsk>>)
                     \* Bid Bond pays for the bid book order
                     /\ bondBid = bondBid - bookBid(j).amount
                     \* Ask Bond receives the payment from the ask book
@@ -199,7 +201,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* Processing Complete                            *)
                 (* Update bonds and books states                  *)
                 (**************************************************)
-                \/  /\ bookBid(j) < (bondBid \div bondAsk) 
+                \/  /\ LT(bookBid(j) , <<bondBid, bondAsk>>))
                     /\ << bondAsk, bondBid, bookAsk, bookBid >> 
             IN G[Len(bookBid)]
         IN F[Len(bookAsk)]
@@ -215,39 +217,41 @@ SubmitOrder ==
         /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
     /\  UNCHANGED <<books, bonds>>
 
-Provision(pair) ==  \E r \in Real : 
-                        LET bond == bonds[pair]
-                        IN
-                            LET c == Weaker(pair)
-                                d == pair \ c
-                            IN
-                                /\  bonds' = [ bonds EXCEPT 
-                                        ![pair][d] = 
-                                          @ + @ * (r / bonds[pair][c]),
-                                        ![pair][c] = @ + r
-                                    ]
-                                /\ drops' = [ drops EXCEPT 
-                                    ![pair] = @ + r ]
-                                /\ UNCHANGED << books, orderQ >>
+Provision(pair) ==  
+    \E r \in Real : 
+        LET bond == bonds[pair]
+        IN
+            LET c == Weaker(pair)
+                d == pair \ c
+            IN
+                /\  bonds' = [ bonds EXCEPT 
+                        ![pair][d] = 
+                            @ + @ * (r / bonds[pair][c]),
+                        ![pair][c] = @ + r
+                    ]
+                /\ drops' = [ drops EXCEPT 
+                    ![pair] = @ + r ]
+                /\ UNCHANGED << books, orderQ >>
 
-Liquidate(pair) ==  \E r \in Real : 
-                        /\  r < drops[pair]
-                        /\  LET 
-                                bond == bonds[pair]
-                            IN
-                                LET 
-                                    c == Weaker(pair)
-                                    d == pair \ c
-                                IN
-                                    /\  bonds' = [ bonds EXCEPT 
-                                            ![pair][d] = @ - @ * 
-                                                (r / bonds[pair][c]),
-                                            ![pair][c] = @ - r
-                                        ]
-                                    
-                                    /\ drops' = [ drops EXCEPT 
-                                        ![pair] = @ - r ]
-                                    /\ UNCHANGED << books, orderQ >>
+Liquidate(pair) ==  
+    \E r \in Real : 
+        /\  r < drops[pair]
+        /\  LET 
+                bond == bonds[pair]
+            IN
+                LET 
+                    c == Weaker(pair)
+                    d == pair \ c
+                IN
+                    /\  bonds' = [ bonds EXCEPT 
+                            ![pair][d] = @ - @ * 
+                                (r / bonds[pair][c]),
+                            ![pair][c] = @ - r
+                        ]
+                    
+                    /\ drops' = [ drops EXCEPT 
+                        ![pair] = @ - r ]
+                    /\ UNCHANGED << books, orderQ >>
                        
    
 ProcessOrder(pair) ==
@@ -288,7 +292,8 @@ ProcessOrder(pair) ==
                 LET 
                     kAskHead == Head(books[pair][o.ask]).exchrate
                 IN 
-                    (bondAsk/kAskHead - bondBid) / 2
+                    \* (bondAsk / kAskHead - bondBid) / 2
+                    <<MINUS(<<bondAsk, kAskHead>>, bondBid), 2>>
         IN  
             
             (***************************************************************)
@@ -314,7 +319,7 @@ ProcessOrder(pair) ==
                     (*  Book order exchrate greater than or equal to the   *) 
                     (*  head of the bid book                               *)
                     (*******************************************************)
-                    \/  /\ o.exchrate >= Head(bookBid).exchrate
+                    \/  /\ GTE(o.exchrate, Head(bookBid).exchrate)
                         /\ books' = [ books EXCEPT ![pair][o.bid] =
 
                             (**************** Iteration ********************)
