@@ -143,9 +143,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
 
             (*********************** Case 1 ************************)                         
             (* The order at the Head of bookAsk sequence has an    *)
-            (* exchange rate greater than or equal to the ask bond *)
-            (* exchange rate                                       *)
+            (* exchange rate (bid/ask) greater than or equal to the*)
+            (* ask bond exchange rate (bid bal/ask Val).           *)
             (*******************************************************)
+            \* need to constrain this. Right now bond is allowed buy too much
             \/  /\ GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>)
                 
                 \* Ask Bond pays for the Ask Book order
