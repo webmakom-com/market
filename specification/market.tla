@@ -120,6 +120,7 @@ LT(a, b) ==     IF a[1]*b[2] < a[2]*b[1] THEN TRUE ELSE FALSE
 
 LTE(a, b) ==    IF a[1]*b[2] <= a[2]*b[1] THEN TRUE ELSE FALSE
 
+\* This division needs
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
     (bondAskBal * bidAmount) \div bondBidBal
 
@@ -280,6 +281,8 @@ ProcessOrder(pair) ==
             (*************************** Order *****************************)
             orderAmt == o.amount
             
+            \* this functions needs to be pulled out and used both here and
+            \* in Reconcile.
             (***************************************************************)
             (* Max amount that Bond pool may sell of ask coin without      *)
             (* executing an ask coin book limit order.                     *)
