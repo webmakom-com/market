@@ -181,9 +181,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 
                             \* Bid Bond receives the payment from the Ask Book
                             /\ bondBid == bondBid + maxBondBid
-                
-                            \* The ask book order is removed from the head 
-                            /\ bookAskUpdate = Tail(bookAsk)
+
+                            \* Need to replace the order with a new order which is
+                            \* Head(bookAskUpdate).amount - maxBondBid
+                            
                         \/ Head(bookAskUpdate).amount < maxBondBid
                             \* Ask Bond pays for the Ask Book order
                             /\ bondAskUpdate == bondAskUpdate - maxBondBid
@@ -192,10 +193,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                             /\ bondBidUpdate == bondBidUpdate + maxBondBid
                 
                             \* The ask book order is removed from the head 
-                            /\ bookAskUpdate = Tail(bookAsk)
+                            /\ bookAskUpdate == Tail(bookAsk)
                 
                 \* Loop back
-                /\ F[Len(Tail(bookAsk)]
+                /\ F[Len(bookAskUpdate)]
                 
             (*********************** Case 2 ************************)
             (* Head of bookAsk exchange rate less than ask bond    *)
