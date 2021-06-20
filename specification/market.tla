@@ -177,14 +177,23 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                     LET maxBondBid == MaxBondBid(bookAskUpdate, bondAsk, bondBid)
                     IN  \/ Head(bookAskUpdate).amount >= maxBondBid
                             \* Ask Bond pays for the Ask Book order
-                            /\ bondAsk == bondAsk - maxBondBid
+                            /\ bondAskUpdate == bondAsk - maxBondBid
                 
                             \* Bid Bond receives the payment from the Ask Book
-                            /\ bondBid == bondBid + maxBondBid
+                            /\ bondBidUpdate == bondBid + maxBondBid
 
-                            \* Need to replace the order with a new order which is
-                            \* Head(bookAskUpdate).amount - maxBondBid
+                            /\  bookAskUpdate == Append(
+                                    [
+                                        amount: Head(bookAskUpdate).amount - maxBondBid,
+                                        exchrate: Head(bookAskUpdate).amount
+                                    ], 
+                                    Tail(bookAskUpdate)
+                                )
+                            \* Do not loop back. Move onto other side of AMM
+                            \* bondBid maxxed out 
                             
+                        \* Order amount is under the AMM bidBond may spend
+                        \* at exchrate
                         \/ Head(bookAskUpdate).amount < maxBondBid
                             \* Ask Bond pays for the Ask Book order
                             /\ bondAskUpdate == bondAskUpdate - maxBondBid
@@ -194,9 +203,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 
                             \* The ask book order is removed from the head 
                             /\ bookAskUpdate == Tail(bookAsk)
-                
-                \* Loop back
-                /\ F[Len(bookAskUpdate)]
+
+                            \* Loop back. bondBid AMM has more to spend
+                            /\  F[Len(bookAskUpdate)]
+                            
                 
             (*********************** Case 2 ************************)
             (* Head of bookAsk exchange rate less than ask bond    *)
