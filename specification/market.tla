@@ -137,9 +137,9 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 (* Solve for x:                                                            *)
 (* x = (bondAsk/erateAskBook - bondBid)/2                                  *)
 (***************************************************************************)
-MaxBondBid(book) ==  
+MaxBondBid(bookAsk, bondAsk, bondBid) ==  
     LET 
-        erateAskHead == Head(books[pair][o.ask]).exchrate
+        erateAskHead == Head(bookAsk).exchrate
     IN 
         \* (bondAsk / erateAskHead - bondBid) / 2
         (
