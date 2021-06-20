@@ -155,7 +155,9 @@ MaxBondBid(bookAsk, bondAsk, bondBid) ==
 (* Bond amounts are balanced with the ask and bid books such               *)
 (* that effective price of bonded liquidity is within the ask              *)
 (* bid bookspread                                                          *)
-(***************************************************************************) 
+(***************************************************************************)
+\* Need to fix some of the state updates such that existing state is not
+\* attempted to be mutated outside of prime definitions
 Reconcile(bondAsk, bondBid, bookAsk, bookBid) == 
 
         (********************** Iteration **************************)
@@ -172,15 +174,25 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (*******************************************************)
             \* need to constrain this. Right now bond is allowed buy too much
             \/  /\ GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>)
+                    LET maxBondBid == MaxBondBid(bookAskUpdate, bondAsk, bondBid)
+                    IN  \/ Head(bookAskUpdate).amount >= maxBondBid
+                            \* Ask Bond pays for the Ask Book order
+                            /\ bondAsk == bondAsk - maxBondBid
                 
-                \* Ask Bond pays for the Ask Book order
-                /\ bondAsk == bondAsk - bookAsk(i).amount
+                            \* Bid Bond receives the payment from the Ask Book
+                            /\ bondBid == bondBid + maxBondBid
                 
-                \* Bid Bond receives the payment from the Ask Book
-                /\ bondBid == bondBid + bookAsk(i).amount
+                            \* The ask book order is removed from the head 
+                            /\ bookAskUpdate = Tail(bookAsk)
+                        \/ Head(bookAskUpdate).amount < maxBondBid
+                            \* Ask Bond pays for the Ask Book order
+                            /\ bondAskUpdate == bondAskUpdate - maxBondBid
                 
-                \* The ask book order is removed from the head 
-                /\ bookAskUpdate = Tail(bookAsk)
+                            \* Bid Bond receives the payment from the Ask Book
+                            /\ bondBidUpdate == bondBidUpdate + maxBondBid
+                
+                            \* The ask book order is removed from the head 
+                            /\ bookAskUpdate = Tail(bookAsk)
                 
                 \* Loop back
                 /\ F[Len(Tail(bookAsk)]
