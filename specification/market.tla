@@ -126,6 +126,29 @@ BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
 
 Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 
+(***************************************************************************)
+(* Max amount that Bond pool may sell of ask coin without                  *)
+(* executing an ask coin book limit order.                                 *)
+(*                                                                         *)
+(* Expression origin:                                                      *)
+(* (bondAsk - x * kAskBook) / (bondBid + x) = kAskBook                     *)
+(* erate == exchrate or ask_coin/bid_coin                                  *)
+(*                                                                         *)
+(* Solve for x:                                                            *)
+(* x = (bondAsk/erateAskBook - bondBid)/2                                  *)
+(***************************************************************************)
+MaxBondBid(book) ==  
+    LET 
+        erateAskHead == Head(books[pair][o.ask]).exchrate
+    IN 
+        \* (bondAsk / erateAskHead - bondBid) / 2
+        (
+            bondAsk \div 
+            erateAskHead[1] * 
+            erateAskHead[0] - 
+            bondBid
+        ) \div 2
+
 (******************************* Reconcile *********************************)
 (* Iteratively reconcile books records with bonds amounts                  *)
 (*                                                                         *)
