@@ -257,14 +257,47 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                         bookBid(j).exchrate, 
                         <<bondBidUpdate, bondAskUpdate>>
                     )
-                    \* Bid Bond pays for the bid book order
-                    /\ bondBidUpdate == bondBidUpdate - bookBidUpdate(j).amount
-                    \* Ask Bond receives the payment from the ask book
-                    /\ bondAskUpdate == bondAskUpdate + bookBidUpdate(j).amount
-                    \* The Bid Book order is removed from the head 
-                    /\ bookBidUpdate = Tail(bookBidUpdate)
-                    \* Loop back
-                    /\ G[Len(Tail(bookBidUpdate))]
+                    \* Find maxBondBid is the Ask direction
+                    LET maxBondBid == MaxBondBid(
+                            bookBidUpdate, 
+                            bondBidUpdate, 
+                            bondAskupdate
+                        )
+                        erate == Head(bookBidUpdate).exchrate
+                    IN
+                        \/ Head(bookBidUpdate).amount >= maxBondBid
+                            \* Bid Bond pays for the Bid Book order
+                            /\ bondBidUpdate == bondBid - maxBondBid
+                
+                            \* Ask Bond receives the payment from the Bid Book
+                            /\ bondAskUpdate == 
+                                bondAskUpdate + 
+                                maxBondBid * 
+                                erate
+
+                            /\  bookBidUpdate == Append(
+                                    [
+                                        amount: Head(bookBidUpdate).amount - maxBondBid,
+                                        exchrate: erate
+                                    ], 
+                                    Tail(bookBidUpdate)
+                                )
+                            \* Loop back to check if AMM has enabled AskBook Order
+                            /\  F[len(bookAskUpdate)]
+                        \* Order amount is under the AMM bidAsk may spend
+                        \* at erate
+                        \/ Head(bookAskUpdate).amount < maxBondBid
+                            \* Ask Bond pays for the Bid Book order
+                            /\ bondBidUpdate == bondBidUpdate - maxBondBid
+                
+                            \* Ask Bond receives the payment from the Bid Book
+                            /\ bondAskUpdate == bondAskUpdate + maxBondBid * erate 
+                
+                            \* The ask book order is removed from the head 
+                            /\ bookAskUpdate == Tail(bookAsk)
+                            
+                            \* Loop back as Bid Bond has more it can spend at erate
+                            /\ G[Len(Tail(bookBidUpdate))]
                 
                 (**************************************************)
                 (*            Case 2.2                            *)                         
@@ -277,7 +310,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (**************************************************)
                 \/  /\  LT(
                             bookBidUpdate(j), 
-                            <<bondBid, bondAsk>>
+                            <<bondBidUpdate, bondAskUpdate>>
                         )
                     /\ << bondAskUpdate, bondBidUpdate, bookAskUpdate, bookBidUpdate >> 
             IN G[Len(bookBidUpdate)]
