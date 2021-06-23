@@ -370,6 +370,8 @@ Liquidate(pair) ==
                        
    
 ProcessOrder(pair) ==
+    \* may be able to just add the book order to the book sequence and then
+    \* reconcile, versus handling 1st step in ProcessOrder
 
     (*************************** Enabling Condition ************************)
     (* Order queue is not empty                                            *)
