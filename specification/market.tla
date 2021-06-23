@@ -172,6 +172,12 @@ MaxBondBid(bookAsk, bondAsk, bondBid) ==
 \* Need to fix some of the state updates such that existing state is not
 \* attempted to be mutated outside of prime definitions
 Reconcile(bondAsk, bondBid, bookAsk, bookBid) == 
+        \* Internal state update variables
+        LET bondAskUpdate == bondAsk
+            bondBidUpdate == bondBid
+            bookAskUpdate == bookAsk
+            bookBidUpdate == bookBid
+        IN
 
         (********************** Iteration **************************)
         (* Iterate over the bookAsk sequence processing bond       *)
@@ -260,7 +266,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* Update bonds and books states                  *)
                 (**************************************************)
                 \/  /\ LT(bookBid(j) , <<bondBid, bondAsk>>))
-                    /\ << bondAsk, bondBid, bookAsk, bookBid >> 
+                    /\ << bondAskUpdate, bondBidUpdate, bookAskUpdate, bookBidUpdate >> 
             IN G[Len(bookBid)]
         IN F[Len(bookAsk)]
 
