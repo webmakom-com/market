@@ -193,7 +193,11 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (*******************************************************)
             \* need to constrain this. Right now bond is allowed buy too much
             \/  /\ GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>)
-                    LET maxBondBid == MaxBondBid(bookAskUpdate, bondAsk, bondBid)
+                    LET maxBondBid == MaxBondBid(
+                            bookAskUpdate, 
+                            bondAskUpdate, 
+                            bondBidupdate
+                        )
                     IN  \/ Head(bookAskUpdate).amount >= maxBondBid
                             \* Ask Bond pays for the Ask Book order
                             /\ bondAskUpdate == bondAsk - maxBondBid
@@ -231,14 +235,17 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (* Head of bookAsk exchange rate less than ask bond    *)
             (* exchange rate                                       *)
             (*******************************************************)
-            \/  /\ LT(bookAsk(i).exchrate, (<<bondAsk, bondBid>>)
+            \/  /\  LT(
+                        bookAsk(i).exchrate, 
+                        (<<bondAskUpdate, bondBidUpdate>>
+                    )
                 
                 (******************** Iteration ********************)
                 (* Iterate over the bookBid sequence processing    *)
                 (* purchases until bookBid record with exchrate    *) 
                 (* the bond price is reached                       *)
                 (***************************************************)
-                LET G[j \in 0 .. Len(bookBid)] == \* 2nd LET
+                LET G[j \in 0 .. Len(bookBidUpdate)] == \* 2nd LET
                 
                 (***************************************************)
                 (*            Case 2.1                             *)                         
@@ -246,15 +253,18 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* greater than or equal to the                    *)
                 (* updated bid bond exchange rate                  *)
                 (***************************************************)
-                \/ LTE(bookBid(j).exchrate, <<bondBid, bondAsk>>)
+                \/  LTE(
+                        bookBid(j).exchrate, 
+                        <<bondBidUpdate, bondAskUpdate>>
+                    )
                     \* Bid Bond pays for the bid book order
-                    /\ bondBid = bondBid - bookBid(j).amount
+                    /\ bondBidUpdate == bondBidUpdate - bookBidUpdate(j).amount
                     \* Ask Bond receives the payment from the ask book
-                    /\ bondAsk = bondAsk + bookBid(j).amount
+                    /\ bondAskUpdate == bondAskUpdate + bookBidUpdate(j).amount
                     \* The Bid Book order is removed from the head 
-                    /\ bookBid = Tail(bookBid)
+                    /\ bookBidUpdate = Tail(bookBidUpdate)
                     \* Loop back
-                    /\ G[Len(Tail(bookBid))]
+                    /\ G[Len(Tail(bookBidUpdate))]
                 
                 (**************************************************)
                 (*            Case 2.2                            *)                         
@@ -265,10 +275,13 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* Processing Complete                            *)
                 (* Update bonds and books states                  *)
                 (**************************************************)
-                \/  /\ LT(bookBid(j) , <<bondBid, bondAsk>>))
+                \/  /\  LT(
+                            bookBidUpdate(j), 
+                            <<bondBid, bondAsk>>
+                        )
                     /\ << bondAskUpdate, bondBidUpdate, bookAskUpdate, bookBidUpdate >> 
-            IN G[Len(bookBid)]
-        IN F[Len(bookAsk)]
+            IN G[Len(bookBidUpdate)]
+        IN F[Len(bookAskUpdate)]
 
 (***************************** Step Functions ****************************)
 
