@@ -145,6 +145,12 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 (*                                                                         *)
 (* MaxBondBid =                                                            *)
 (* bondAsk(initial) - bondBid(initial) * erate(final) ^ 2 / erate(initial) *)
+(*                                                                         *)
+(* erate(intial) = bondAsk / bondBid                                       *)
+(*                                                                         *)
+(* MaxBondBid =                                                            *)
+(* bondAsk(initial) -                                                      *)
+(* bondBid(initial) ^ 2 * erate(final) ^ 2 / (bondAsk(initial)             *)
 (***************************************************************************)
 MaxBondBid(bookAsk, bondAsk, bondBid) ==  
     LET 
@@ -152,9 +158,10 @@ MaxBondBid(bookAsk, bondAsk, bondBid) ==
         erateInitial == bondAsk \div bondBid
     IN 
         \* MaxBondBid = 
-        \* bondAsk(initial) - bondBid(initial) * 
-        \* erate(final) ^ 2 / erate(initial)
-        bondAsk - bondBid * erateFinal^2 \div (bondAsk / bondBid)
+        \* bondAsk(initial) - 
+        \* bondBid(initial)^2 * erate(final) ^ 2 / 
+        \* erate(initial)
+        bondAsk - bondBid^2 * erateFinal^2 \div bondAsk
 
 (******************************* Reconcile *********************************)
 (* Iteratively reconcile books records with bonds amounts                  *)
