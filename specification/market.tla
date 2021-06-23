@@ -154,8 +154,7 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 (***************************************************************************)
 MaxBondBid(bookAsk, bondAsk, bondBid) ==  
     LET 
-        erateFinal == Head(bookAsk).exchrate\
-        erateInitial == bondAsk \div bondBid
+        erateFinal == Head(bookAsk).exchrate
     IN 
         \* MaxBondBid = 
         \* bondAsk(initial) - 
