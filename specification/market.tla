@@ -131,23 +131,31 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 (* executing an ask coin book limit order.                                 *)
 (*                                                                         *)
 (* Expression origin:                                                      *)
-(* (bondAsk - x * kAskBook) / (bondBid + x) = kAskBook                     *)
-(* erate == exchrate or ask_coin/bid_coin                                  *)
+(* bondAsk / bondBid = erate                                               *)
+(* d(bondAsk)/d(bondBid) = d(erate)                                        *)
+(* d(bondAsk)/d(bondBid) = d(bondAsk)/d(bondBid)                           *)
+(* d(bondAsk) = d(bondBid) * d(bondAsk)/d(bondBid)                         *)
+(* d(bondAsk) = d(bondBid) * d(erate)                                      *)
 (*                                                                         *)
-(* Solve for x:                                                            *)
-(* x = (bondAsk/erateAskBook - bondBid)/2                                  *)
+(* Integrate over bondAsk on lhs and bondBid & erate on rhs then           *)
+(* substitute and simplify                                                 *)
+(*                                                                         *)
+
+(* MaxBondBid = bondAsk(initial) - bondAsk(final)                          *)
+(* bondAsk(final) = bondBid(initial) * erate(final)^2 / erate(initial)     *)
+(*                                                                         *)
+(* MaxBondBid =                                                            *)
+(* bondAsk(initial) - bondBid(initial) * erate(final) ^ 2 / erate(initial) *)
 (***************************************************************************)
 MaxBondBid(bookAsk, bondAsk, bondBid) ==  
     LET 
-        erateAskHead == Head(bookAsk).exchrate
+        erateFinal == Head(bookAsk).exchrate\
+        erateInitial == bondAsk \div bondBid
     IN 
-        \* (bondAsk / erateAskHead - bondBid) / 2
-        (
-            bondAsk \div 
-            erateAskHead[1] * 
-            erateAskHead[0] - 
-            bondBid
-        ) \div 2
+        \* MaxBondBid = 
+        \* bondAsk(initial) - bondBid(initial) * 
+        \* erate(final) ^ 2 / erate(initial)
+        bondAsk - bondBid * erateFinal^2 \div (bondAsk / bondBid)
 
 (******************************* Reconcile *********************************)
 (* Iteratively reconcile books records with bonds amounts                  *)
