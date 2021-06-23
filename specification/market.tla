@@ -140,7 +140,6 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 (* Integrate over bondAsk on lhs and bondBid & erate on rhs then           *)
 (* substitute and simplify                                                 *)
 (*                                                                         *)
-
 (* MaxBondBid = bondAsk(initial) - bondAsk(final)                          *)
 (* bondAsk(final) = bondBid(initial) * erate(final)^2 / erate(initial)     *)
 (*                                                                         *)
