@@ -394,30 +394,8 @@ ProcessOrder(pair) ==
             (*************************** Order *****************************)
             orderAmt == o.amount
             
-            \* this functions needs to be pulled out and used both here and
-            \* in Reconcile.
-            (***************************************************************)
-            (* Max amount that Bond pool may sell of ask coin without      *)
-            (* executing an ask coin book limit order.                     *)
-            (*                                                             *)
-            (* Expression origin:                                          *)
-            (* (bondAsk - x * kAskBook) / (bondBid + x) = kAskBook         *)
-            (* erate == exchrate or ask_coin/bid_coin                          *)
-            (*                                                             *)
-            (* Solve for x:                                                *)
-            (* x = (bondAsk/erateAskBook - bondBid)/2                          *)
-            (***************************************************************)
-            maxBondBid ==  
-                LET 
-                    erateAskHead == Head(books[pair][o.ask]).exchrate
-                IN 
-                    \* (bondAsk / erateAskHead - bondBid) / 2
-                    (
-                        bondAsk \div 
-                        erateAskHead[1] * 
-                        erateAskHead[0] - 
-                        bondBid
-                    ) \div 2
+            (*********************** AMM Allowance *************************)
+            maxBondBid == MaxBondBid(bondAsk, bondBid, bookAsk, bookBid)  
         IN  
             
             (***************************************************************)
