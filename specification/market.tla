@@ -463,58 +463,15 @@ ProcessOrder(pair) ==
                     \/  /\ LT(o.exchrate, Head(bookBid).exchrate)
 
                             (***********************************************)    
-                            (* Find amount of bond allowed to be sold      *)
-                            (* before it hits the order exchrate           *)
+                            (* Add book order to head of bid book          *)
                             (***********************************************)
-                            /\  LET maxBondBid ==
-                                    (
-                                        bondAsk \div 
-                                        o.exchrate[0] * 
-                                        o.exchrate[1] - 
-                                        bondBid
-                                    ) \div 2
-                                IN
-                                    
-                                    (*************** Case 1.2.1 ************)
-                                    (* Order amount is less than or equal  *) 
-                                    (* to maxBookBid amount                *)
-                                    (***************************************)
-                                    \/  /\  maxBondBid < orderAmt
-                                    
-                                        /\  bondAsk = bondAsk - BondAskAmount(
-                                                bondAsk,
-                                                bondBid,
-                                                orderAmt
-                                            )
-                                            
-                                        /\  bondBid = bondBid + orderAmt
-    
-                                    (*************** Case 1.2.2 ************)
-                                    (* Order amount is above the amount of *)
-                                    (* the maxBookBid                      *) 
-                                    (***************************************)
-                                    \/  /\  maxBondBid > orderAmt
-                                    
-                                        (***********************************)
-                                        (* Then settle the maxBookBid      *)
-                                        (* amount and place order at exch  *)
-                                        (* rate in books                   *)
-                                        (***********************************)
-                                        /\  bondAsk = bondAsk - BondAskAmount(
-                                                bondAsk, 
-                                                bondBid, 
-                                                maxBondBid
-                                            )
-                                        /\  bondBid = bondBid + maxBondBid
-                                        /\  orderAmt = orderAmt - maxBondBid
-                                        /\  bookBid = Append(
+                            /\  bookBid = Append(
                                                 [
                                                     amount: orderAmt, 
                                                     exchrate: o.exchrate
                                                 ],
                                                 bookBid
                                             )
-                    
                 
                 (************************ Case 2 ***************************)
                 (* Order is a Bond / AMM Order                             *)
