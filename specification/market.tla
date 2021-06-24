@@ -20,8 +20,14 @@ ASSUME Denominator \in Nat
 
 NoVal == CHOOSE v : v \notin Nat
 
+\* Choose the highest natural number
+UpperNatBound == CHOOSE v : v > \A n \in Nat \ v
+
 \* All exchange rates are represented as numerator/denominator tuples
 ExchRateType == {<<a, b>> : a \in Nat, b \in Denominator}
+
+\* Max ExchRate
+MAX == <<UpperNatBound, 1>>
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
@@ -62,10 +68,11 @@ LimitType == [
 MarketType == [
     bidAmount: Nat, 
     bid: Coin, 
-    ask: Coin
+    ask: Coin,
+    exchrate: MAX
 ]
 
-OrderType == LimitType \cup MarketType \cup SwapType 
+OrderType == LimitType \cup MarketType 
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -191,7 +198,6 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (* exchange rate (bid/ask) greater than or equal to the*)
             (* ask bond exchange rate (bid bal/ask Val).           *)
             (*******************************************************)
-            \* need to constrain this. Right now bond is allowed buy too much
             \/  /\ GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>)
                     LET maxBondBid == MaxBondBid(
                             bookAskUpdate, 
@@ -409,13 +415,7 @@ ProcessOrder(pair) ==
             (***************************************************************)
             /\
             
-                (************************** Case 1 *************************)
-                (* Order is a Book / Limit Order                           *)
-                (*                      
-                (* Order is a Book / Limit Order if the record has exchrate*)
-                (* limit.                                                  *)
-                (***********************************************************)    
-                \/  /\ o.exchrate # {}
+                
                     
                     (********************** Case 1.1 ***********************)
                     (*  Book order exchrate greater than or equal to the   *) 
@@ -458,7 +458,8 @@ ProcessOrder(pair) ==
                         
                     
                     (********************** Case 1.2 ***********************)
-                    (*  Book order exchrate less than head of bid book     *)
+                    (* Book order exchrate less than head of bid book      *)
+                    (* exchange rate                                       *)
                     (*******************************************************)
                     \/  /\ LT(o.exchrate, Head(bookBid).exchrate)
 
@@ -472,42 +473,7 @@ ProcessOrder(pair) ==
                                                 ],
                                                 bookBid
                                             )
-                
-                (************************ Case 2 ***************************)
-                (* Order is a Bond / AMM Order                             *)
-                (* Order is a Bond / AMM Order if the record does not have *)
-                (* a value in the exchrate field                           *)
-                (***********************************************************)
-                \/  /\ o.exchrate = {}
 
-                        (******************* Case 2.1 **********************)
-                        (* Order amount is less than or equal to the       *) 
-                        (* maxBondBid                                      *)
-                        (***************************************************)
-                        \/  orderAmt <= maxBondBid
-                            /\  bondAsk == bondAsk - BondAskAmount(
-                                    bondAsk, 
-                                    bondBid, 
-                                    orderAmt
-                                )
-                            /\  bondBid == bondBid + orderAmt
-
-                        (******************* Case 2.2 **********************)
-                        (* Order amount is greater than maxBondBid         *)
-                        (* the maxBondBid                                  *) 
-                        (***************************************************)
-                        \/  orderAmt > maxBondBid
-                            /\  bondAsk == bondAsk - BondAskAmount(
-                                    bondAsk, 
-                                    bondBid, 
-                                    maxBondBid
-                                )
-                            /\  bondBid == bondBid + maxBondBid
-                            /\  orderAmt == orderAmt - maxBondBid
-                            /\  'books = [books EXCEPT ![pair][bid] = 
-                                Append(
-                                [amount: orderAmt, exchrate: o.exchrate]
-                            )]
             (************************** Stage 2 ****************************)
             (* Iteratively reconcile books records with bonds amounts      *)
             (*                                                             *)
