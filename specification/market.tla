@@ -45,7 +45,19 @@ PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* bid <Coin>: Bid Coin                                                    *)
 (* ask <Coin>: Ask Coin                                                    *)
 (* exchrate <Real>: Exchange rate (ask/bid) limit                          *)
+(*                                                                         *)
+(* Cosmos-SDK type                                                         *)
+(*                                                                         *)
+(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
+(* type LimitType struct {                                                 *) 
+(*      Account     uint64                                                 *)
+(*      Amount      CoinDec                                                *)
+(*      bid         Coin                                                   *)
+(*      ask         Coin                                                   *)
+(*      exchrate    Dec                                                    *)
+(* }                                                                       *)
 (***************************************************************************)
+
 LimitType == [
     amount: Nat, 
     bid: Coin, 
@@ -64,6 +76,17 @@ LimitType == [
 (* bidAmount <Nat>: Amount of Bid Coin                                     *)
 (* bid <Coin>: Bid Coin                                                    *)
 (* ask <Coin>: Ask Coin                                                    *)
+(*                                                                         *)
+(* Cosmos-SDK types (Same as Limit Order with exchrate max Dec             *)
+(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
+(*                                                                         *)
+(* type MarketType struct {                                                *) 
+(*      Account     uint64                                                 *)
+(*      Amount      CoinDec                                                *)
+(*      bid         Coin                                                   *)
+(*      ask         Coin                                                   *)
+(*      exchrate    Dec (MAX decimal value)                                *)
+(* }                                                                       *)
 (***************************************************************************)
 MarketType == [
     bidAmount: Nat, 
@@ -71,6 +94,19 @@ MarketType == [
     ask: Coin,
     exchrate: MAX
 ]
+
+(***************************************************************************)
+(* Cosmos-SDK types (Same as Limit Order with exchrate max Dec             *)
+(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
+(*                                                                         *)
+(* type OrderType struct {                                                 *) 
+(*      Account     uint64                                                 *)
+(*      Amount      CoinDec                                                *)
+(*      bid         Coin                                                   *)
+(*      ask         Coin                                                   *)
+(*      exchrate    Dec                                                    *)
+(* }                                                                       *)
+(***************************************************************************)
 
 OrderType == LimitType \cup MarketType 
 
@@ -82,6 +118,15 @@ OrderType == LimitType \cup MarketType
 (*                                                                         *)
 (* amount <Nat>: Amount of Bid Coin                                        *)
 (* exchrate <ExchRateType>: ExchRate Limit (Ask Coin / Bid Coin)           *)
+(*                                                                         *)
+(* Cosmos-SDK types                                                        *)
+(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
+(*                                                                         *)
+(* type PositionType struct {                                              *) 
+(*      Account     uint64                                                 *)
+(*      Amount      CoinDec                                                *)
+(*      exchrate    Dec                                                    *)
+(* }                                                                       *)
 (***************************************************************************)
 PositionType == [
     amount: Nat, 
