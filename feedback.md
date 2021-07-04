@@ -116,6 +116,10 @@ CASE x < y -> Stuff
   [] x > y -> Stuff
 ```
 
+```
+Action: Changed all \/ /\ to CASE
+```
+
 ## Top Level Actions
 
 `SubmitOrder`, `Liquidate` and `Provision` all have top level existentials, like this:

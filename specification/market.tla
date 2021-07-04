@@ -241,13 +241,13 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (* exchange rate (bid/ask) greater than or equal to the*)
             (* ask bond exchange rate (bid bal/ask Val).           *)
             (*******************************************************)
-            \/  /\ GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>)
+            CASE  GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>) ->
                     LET maxBondBid == MaxBondBid(
                             bookAskUpdate, 
                             bondAskUpdate, 
                             bondBidupdate
                         )
-                    IN  \/ Head(bookAskUpdate).amount >= maxBondBid
+                    IN  CASE Head(bookAskUpdate).amount >= maxBondBid ->
                             \* Ask Bond pays for the Ask Book order
                             /\ bondAskUpdate == bondAsk - maxBondBid
                 
@@ -266,7 +266,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                             
                         \* Order amount is under the AMM bidBond may spend
                         \* at exchrate
-                        \/ Head(bookAskUpdate).amount < maxBondBid
+                        [] Head(bookAskUpdate).amount < maxBondBid
                             \* Ask Bond pays for the Ask Book order
                             /\ bondAskUpdate == bondAskUpdate - maxBondBid
                 
@@ -284,10 +284,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
             (* Head of bookAsk exchange rate less than ask bond    *)
             (* exchange rate                                       *)
             (*******************************************************)
-            \/  /\  LT(
+            []  LT(
                         bookAsk(i).exchrate, 
                         (<<bondAskUpdate, bondBidUpdate>>
-                    )
+                    ) ->
                 
                 (******************** Iteration ********************)
                 (* Iterate over the bookBid sequence processing    *)
@@ -302,10 +302,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* greater than or equal to the                    *)
                 (* updated bid bond exchange rate                  *)
                 (***************************************************)
-                \/  LTE(
+                CASE  LTE(
                         bookBid(j).exchrate, 
                         <<bondBidUpdate, bondAskUpdate>>
-                    )
+                    ) ->
                     \* Find maxBondBid is the Ask direction
                     LET maxBondBid == MaxBondBid(
                             bookBidUpdate, 
@@ -314,7 +314,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                         )
                         erate == Head(bookBidUpdate).exchrate
                     IN
-                        \/ Head(bookBidUpdate).amount >= maxBondBid
+                        CASE Head(bookBidUpdate).amount >= maxBondBid ->
                             \* Bid Bond pays for the Bid Book order
                             /\ bondBidUpdate == bondBid - maxBondBid
                 
@@ -335,7 +335,7 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                             /\  F[len(bookAskUpdate)]
                         \* Order amount is under the AMM bidAsk may spend
                         \* at erate
-                        \/ Head(bookAskUpdate).amount < maxBondBid
+                        [] Head(bookAskUpdate).amount < maxBondBid ->
                             \* Ask Bond pays for the Bid Book order
                             /\ bondBidUpdate == bondBidUpdate - maxBondBid
                 
@@ -357,10 +357,10 @@ Reconcile(bondAsk, bondBid, bookAsk, bookBid) ==
                 (* Processing Complete                            *)
                 (* Update bonds and books states                  *)
                 (**************************************************)
-                \/  /\  LT(
+                []  LT(
                             bookBidUpdate(j), 
                             <<bondBidUpdate, bondAskUpdate>>
-                        )
+                        ) ->
                     /\ << bondAskUpdate, bondBidUpdate, bookAskUpdate, bookBidUpdate >> 
             IN G[Len(bookBidUpdate)]
         IN F[Len(bookAskUpdate)]
@@ -457,14 +457,11 @@ ProcessOrder(pair) ==
             (* books or bonds variables                                    *)
             (***************************************************************)
             /\
-            
-                
-                    
                     (********************** Case 1.1 ***********************)
                     (*  Book order exchrate greater than or equal to the   *) 
                     (*  head of the bid book                               *)
                     (*******************************************************)
-                    \/  /\ GTE(o.exchrate, Head(bookBid).exchrate)
+                    CASE  GTE(o.exchrate, Head(bookBid).exchrate) ->
                         /\ books' = [ books EXCEPT ![pair][o.bid] =
 
                             (**************** Iteration ********************)
@@ -504,7 +501,7 @@ ProcessOrder(pair) ==
                     (* Book order exchrate less than head of bid book      *)
                     (* exchange rate                                       *)
                     (*******************************************************)
-                    \/  /\ LT(o.exchrate, Head(bookBid).exchrate)
+                    []  LT(o.exchrate, Head(bookBid).exchrate)
 
                             (***********************************************)    
                             (* Add book order to head of bid book          *)
@@ -524,7 +521,7 @@ ProcessOrder(pair) ==
             (* that effective price of bonded liquidity is within the ask  *) 
             (* bid bookspread                                              *)
             (***************************************************************)   
-            \/  LET  
+            /\  LET  
                     pairUpdate == Reconcile(bondAsk, bondBid, bookAsk, bookBid)
                 /\  books' = [
                         books EXCEPT    
