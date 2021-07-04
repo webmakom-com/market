@@ -140,7 +140,7 @@ PositionType == [
 (**************************************************************************)
 PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair} 
 
-Type == 
+TypeInvariant == 
     /\  orderQ \in [Pair -> Seq(Order)]
     /\  drops \in [Pair -> Nat]
     /\  books \in [PairPlusCoin -> Seq(PositionType)]]

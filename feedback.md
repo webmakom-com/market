@@ -9,7 +9,9 @@ This is based on the version I downloaded on [June 17](https://github.com/onomyp
 
 5: What is `Denom` short for? Denominations?
 
-Removed Denom
+```
+Action: Removed Denom
+```
 ---
 
 17: You have 
@@ -28,21 +30,40 @@ Because `Denominator` is a set (based on comments of `6`).
 
 ---
 
+```
+Action: Proposed change made
+```
+
 43: Does `LimitType` require different `ask` and `bid` coins? If so, we can restrict that in the type too.
+
+```
+Action: will be updating the Order Type to make more flexible.
+```
 
 ---
 
 68: `SwapType` was removed from this version, but is still in `Ordertype`.
 
+```
+Action: Removed SwapType
+```
 ---
 
 79: `PositionType` implies there exists a **channel invariant** in the code, which is a bit complex to write here so I'm making a note to discuss it nextime we pair.
 
 Can two limit orders be identical?
 
+```
+Identical limit orders are allowed, but each order will be tied to a specific balance in a wallet.
+``` 
+
 ---
 
 93: Call this `TypeInvariant` for clarity.
+
+```
+Action: Added Invariate to Type
+```
 
 * Potential channel invariant: 
 
