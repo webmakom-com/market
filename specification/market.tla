@@ -12,7 +12,7 @@ VARIABLE    books,      \* Order Book
             orderQ, 
             drops
 
-ASSUME Denominator \in Nat
+ASSUME Denominator \subseteq Nat
 -----------------------------------------------------------------------------
 (***************************** Type Declarations ***************************)
 
