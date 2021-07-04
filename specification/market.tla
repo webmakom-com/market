@@ -2,7 +2,6 @@
 EXTENDS     Naturals, Sequences, SequencesExt
 
 CONSTANT    Coin,       \* Set of all coins
-            Denom,      \* Set of all denoms
             Denominator,\* Set of all possible denominators
             Input,      \* Set of all possible input amounts
             NOM,        \* NOM coin. Single Constant Collateral.
@@ -13,7 +12,6 @@ VARIABLE    books,      \* Order Book
             orderQ, 
             drops
 
-ASSUME Denom \subseteq Coin
 ASSUME Denominator \in Nat
 -----------------------------------------------------------------------------
 (***************************** Type Declarations ***************************)

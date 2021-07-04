@@ -9,6 +9,7 @@ This is based on the version I downloaded on [June 17](https://github.com/onomyp
 
 5: What is `Denom` short for? Denominations?
 
+Removed Denom
 ---
 
 17: You have 
