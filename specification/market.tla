@@ -7,7 +7,8 @@ CONSTANT    Coin,       \* Set of all coins
             NOM,        \* NOM coin. Single Constant Collateral.
             Expiration  \* Set of all expirations
            
-VARIABLE    books,      \* Order Book
+VARIABLE    limitBooks, \* Limit Order Books
+            stopBooks,  \* Stop Loss Order Books
             bonds,      \* AMM Bond Curves
             orderQ, 
             drops
@@ -31,13 +32,46 @@ MAX == <<UpperNatBound, 1>>
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
 PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 
-(******************************* Limit Order *******************************)
-(* The Limit Order is an exchange order that defines an upper limit to the *)
-(* strike exchrate defined as ask/bid price.                               *)
+(***************************************************************************)
+(* Position Type                                                           *)
 (*                                                                         *)
-(* Limit Orders are persistent until revoked or fulfilled.  Revoked Limit  *)
-(* Orders will return any portion of the bidAmount that did not execute    *)
-(* back to user account                                                    *)
+(* The position type is the order book record that is maintained when a    *)
+(* limit order has an unfulfilled outstanding amount                       *)
+(*                                                                         *)
+(* amount <Nat>: Amount of Bid Coin                                        *)
+(* exchrate <ExchRateType>: ExchRate Limit (Ask Coin / Bid Coin)           *)
+(*                                                                         *)
+(* Cosmos-SDK types                                                        *)
+(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
+(*                                                                         *)
+(* type PositionType struct {                                              *) 
+(*      Account     uint64                                                 *)
+(*      Amount      CoinDec                                                *)
+(*      exchrate    Dec                                                    *)
+(* }                                                                       *)
+(***************************************************************************)
+PositionType == [
+    ask:
+    limit: ExchRateType,
+    loss: ExchRateType
+]
+
+(****************************** Pending Order ******************************)
+(* The Pending Order is a collateralized exchange order that is valid until*)
+(* either executed by the exchange or closed by the user                   *)
+(*                                                                         *)
+(* Pending Orders that are closed by the initiator will return any portion *)
+(* of the bidAmount that did not execute back to user account.             *)                                                    *)
+(*                                                                         *)
+(* Pending Orders have one bid coin and may have many positions.           *)
+(* Pending Orders may have any number of positions.                        *)
+(* Each position corresponds to a single ask coin                          *)
+(* There may only be one position per ask coin                             *)
+(* A position defines the Limit and a Stop for a particular ask coin       *)
+(* The bid coin amount is deposited to the Onomy Exchange                  *)
+(* Each unique Pending Order corresponds to the amount deposited for thie  *)
+(* order.                                                                  *)
+(*                                                                         *)
 (*                                                                         *)
 (* bidAmount <Nat>: Amount of Bid Coin                                     *)
 (* bid <Coin>: Bid Coin                                                    *)
@@ -56,11 +90,10 @@ PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* }                                                                       *)
 (***************************************************************************)
 
-LimitType == [
+PendingType == [
     amount: Nat, 
     bid: Coin, 
-    ask: Coin, 
-    exchrate: ExchRateType
+    positions: SUBSET PositionType
 ]
 
 (******************************* Market Order ******************************)
@@ -106,30 +139,9 @@ MarketType == [
 (* }                                                                       *)
 (***************************************************************************)
 
-OrderType == LimitType \cup MarketType 
+OrderType == PendingType \cup MarketType 
 
-(***************************************************************************)
-(* Position Type                                                           *)
-(*                                                                         *)
-(* The position type is the order book record that is maintained when a    *)
-(* limit order has an unfulfilled outstanding amount                       *)
-(*                                                                         *)
-(* amount <Nat>: Amount of Bid Coin                                        *)
-(* exchrate <ExchRateType>: ExchRate Limit (Ask Coin / Bid Coin)           *)
-(*                                                                         *)
-(* Cosmos-SDK types                                                        *)
-(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
-(*                                                                         *)
-(* type PositionType struct {                                              *) 
-(*      Account     uint64                                                 *)
-(*      Amount      CoinDec                                                *)
-(*      exchrate    Dec                                                    *)
-(* }                                                                       *)
-(***************************************************************************)
-PositionType == [
-    amount: Nat, 
-    exchrate: ExchRateType
-]
+
 
 (**************************************************************************)
 (* Pair plus Coin Type                                                    *)
