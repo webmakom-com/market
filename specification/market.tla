@@ -46,23 +46,23 @@ PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (*                                                                         *)
 (* type PositionType struct {                                              *) 
-(*      Account     uint64                                                 *)
+(*      Order       uint64                                                 *)
 (*      Amount      CoinDec                                                *)
-(*      exchrate    Dec                                                    *)
+(*      limit       Dec                                                    *)
+(*      loss        Dec                                                    *)
 (* }                                                                       *)
 (***************************************************************************)
 PositionType == [
+    order: Nat,
     amount: Nat,
     limit: ExchRateType,
     loss: ExchRateType
 ]
 
-(*************************** Exchange Order Type ***************************)
-(* The Exchange Order is a collateralized order that is valid until either *)
-(* executed by the exchange or closed by the user                          *)
-(*                                                                         *)
-(* Pending Orders that are closed by the initiator will return any portion *)
-(* of the bidAmount that did not execute back to user account.             *)                                                    *)
+(***************************** Exchange Account ****************************)
+(* The Exchange Account holds active exchange balances with their          *)
+(* associated order positions.                                             *)
+(*                                                                         *)                                               *)
 (*                                                                         *)
 (* Pending Orders have one bid coin and may have many positions.           *)
 (* Pending Orders may have any number of positions.                        *)
@@ -110,14 +110,17 @@ PositionType == [
 (* }                                                                       *)
 (***************************************************************************)
 
-OrderType == [
-    amount: Nat, 
-    bid: Coin,
-    \* Positions are sequenced by ExchRate
-    \* One position per ExchRate
-    \* Sum of amounts in sequence of positions for a particular Coin must
-    \* be lower than or equal to the total order amount. 
-    positions: [Coin |-> Seq(PositionType)]
+AccountType == [
+    id: Nat,
+    balances: 
+        SUBSET {
+            amount: Coin
+            \* Positions are sequenced by ExchRate
+            \* One position per ExchRate
+            \* Sum of amounts in sequence of positions for a particular Coin must
+            \* be lower than or equal to the total order amount.
+            positions: SUBSET PositionType
+        }
 ]
 
 
