@@ -19,18 +19,21 @@ ASSUME Denominator \subseteq Nat
 
 NoVal == CHOOSE v : v \notin Nat
 
-\* Choose the highest natural number
-UpperNatBound == CHOOSE v : v > \A n \in Nat \ v
-
 \* All exchange rates are represented as numerator/denominator tuples
-ExchRateType == {<<a, b>> : a \in Nat, b \in Denominator}
-
-\* Max ExchRate
-MAX == <<UpperNatBound, 1>>
+ExchRateType == <<a \in Nat, b \in Denominator>>
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
 PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
+
+(**************************************************************************)
+(* Pair plus Coin Type                                                    *)
+(*                                                                        *)
+(* Each pair is a set with two coins.  Each pair may have variables that  *)
+(* depend on both the pair (set of two coins) as well as one of the coins *)
+(* associated with that particular pair                                   *)
+(**************************************************************************)
+PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair} 
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -62,26 +65,17 @@ PositionType == [
 (***************************** Exchange Account ****************************)
 (* The Exchange Account holds active exchange balances with their          *)
 (* associated order positions.                                             *)
-(*                                                                         *)                                               *)
 (*                                                                         *)
-(* Pending Orders have one bid coin and may have many positions.           *)
-(* Pending Orders may have any number of positions.                        *)
-(* Each position corresponds to a single ask coin                          *)
-(* There may only be one position per ask coin                             *)
-(* A position defines the Limit and a Stop for a particular ask coin       *)
-(* The bid coin amount is deposited to the Onomy Exchange                  *)
-(* Each unique Pending Order corresponds to the amount deposited for thie  *)
-(* order.                                                                  *)
+(* Example Position                                                        *)
 (*                                                                         *)
-(* Simple Limit Order: designated by a single position with limit set to   *)
+(* Limit Order: designated by a single position with limit set to          *)
 (* lower bound of upper sell region and loss set to 0.                     *)
 (*                                                                         *)
 (* [amount: Nat, bid: Coin positions: {                                    *)
 (*      ask: Coin                                                          *)
 (*      limit: ExchrateType                                                *)
 (*      loss: 0                                                            *)
-(*  }]                                                                     *)                                                             
-(*                                                                         *)
+(*  }]                                                                     *)
 (*                                                                         *)
 (* Market Order: designated by a single position with limit and loss set   *)
 (* to zero.  Setting limit to zero means no limit.                         *)
@@ -93,71 +87,38 @@ PositionType == [
 (*  }]                                                                     *)                                                             
 (*                                                                         *)
 (*                                                                         *)
-(* bidAmount <Nat>: Amount of Bid Coin                                     *)
-(* bid <Coin>: Bid Coin                                                    *)
-(* ask <Coin>: Ask Coin                                                    *)
-(* exchrate <Real>: Exchange rate (ask/bid) limit                          *)
-(*                                                                         *)
 (* Cosmos-SDK type                                                         *)
 (*                                                                         *)
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
-(* type LimitType struct {                                                 *) 
-(*      Account     uint64                                                 *)
-(*      Amount      CoinDec                                                *)
-(*      bid         Coin                                                   *)
-(*      ask         Coin                                                   *)
-(*      exchrate    Dec                                                    *)
+(* type AccountType struct {                                               *) 
+(*      id          uint64                                                 *)
+(*      balances    Array                                                  *)
 (* }                                                                       *)
 (***************************************************************************)
 
 AccountType == [
-    id: Nat,
+    userId: Nat,
     balances: 
-        SUBSET {
-            amount: Coin
+        \* The balance and positions of each denomination of coin in an
+        \* exchange account are represented by the record type below
+        SUBSET [
+            amount: Coin,
             \* Positions are sequenced by ExchRate
             \* One position per ExchRate
             \* Sum of amounts in sequence of positions for a particular Coin must
             \* be lower than or equal to the total order amount.
             positions: SUBSET PositionType
-        }
-]
-
-
-
-(***************************************************************************)
-(* Cosmos-SDK types (Same as Limit Order with exchrate max Dec             *)
-(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
-(*                                                                         *)
-(* type OrderType struct {                                                 *) 
-(*      Account     uint64                                                 *)
-(*      Amount      CoinDec                                                *)
-(*      bid         Coin                                                   *)
-(*      ask         Coin                                                   *)
-(*      exchrate    Dec                                                    *)
-(* }                                                                       *)
-(***************************************************************************)
-
-OrderType == PendingType \cup MarketType 
-
-
-
-(**************************************************************************)
-(* Pair plus Coin Type                                                    *)
-(*                                                                        *)
-(* Each pair is a set with two coins.  Each pair may have variables that  *)
-(* depend on both the pair (set of two coins) as well as one of the coins *)
-(* associated with that particular pair                                   *)
-(**************************************************************************)
-PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair} 
+        ]
+] 
 
 TypeInvariant == 
     /\  orderQ \in [Pair -> Seq(Order)]
     /\  drops \in [Pair -> Nat]
-    /\  books \in [PairPlusCoin -> Seq(PositionType)]]
+    /\  limits \in [PairPlusCoin -> Seq(
+    /\  books \in [PairPlusCoin -> Seq(PositionType)]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
-    /\  bonds \in [PairPlusCoin -> Nat]]
+    /\  bonds \in [PairPlusCoin -> Nat]
     
 (************************** Variable Initialization ************************)       
         
@@ -428,10 +389,11 @@ Liquidate(pair) ==
                         ![pair] = @ - r ]
                     /\ UNCHANGED << books, orderQ >>
                        
-   
+(***************************************************************************)
+(* Process Order inserts a new limit and stop positions into the limit and *)
+(* stop sequences of the ask coin                                          *)
+(***************************************************************************)
 ProcessOrder(pair) ==
-    \* may be able to just add the book order to the book sequence and then
-    \* reconcile, versus handling 1st step in ProcessOrder
 
     (*************************** Enabling Condition ************************)
     (* Order queue is not empty                                            *)
@@ -553,7 +515,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Tue May 11 20:37:01 CDT 2021 by cdusek
+\* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
 \* Created Tue Apr 20 13:18:05 CDT 2021 by charlesd
