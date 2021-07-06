@@ -39,7 +39,8 @@ PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* limit order has an unfulfilled outstanding amount                       *)
 (*                                                                         *)
 (* amount <Nat>: Amount of Bid Coin                                        *)
-(* exchrate <ExchRateType>: ExchRate Limit (Ask Coin / Bid Coin)           *)
+(* limit <ExchRateType>: Lower Bound of the Upper Sell Region              *)
+(* loss <ExchRateType>: Upper Bound of the Lower Sell Region               *)
 (*                                                                         *)
 (* Cosmos-SDK types                                                        *)
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
@@ -51,14 +52,14 @@ PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* }                                                                       *)
 (***************************************************************************)
 PositionType == [
-    ask:
+    amount: Nat,
     limit: ExchRateType,
     loss: ExchRateType
 ]
 
-(****************************** Pending Order ******************************)
-(* The Pending Order is a collateralized exchange order that is valid until*)
-(* either executed by the exchange or closed by the user                   *)
+(*************************** Exchange Order Type ***************************)
+(* The Exchange Order is a collateralized order that is valid until either *)
+(* executed by the exchange or closed by the user                          *)
 (*                                                                         *)
 (* Pending Orders that are closed by the initiator will return any portion *)
 (* of the bidAmount that did not execute back to user account.             *)                                                    *)
@@ -71,6 +72,25 @@ PositionType == [
 (* The bid coin amount is deposited to the Onomy Exchange                  *)
 (* Each unique Pending Order corresponds to the amount deposited for thie  *)
 (* order.                                                                  *)
+(*                                                                         *)
+(* Simple Limit Order: designated by a single position with limit set to   *)
+(* lower bound of upper sell region and loss set to 0.                     *)
+(*                                                                         *)
+(* [amount: Nat, bid: Coin positions: {                                    *)
+(*      ask: Coin                                                          *)
+(*      limit: ExchrateType                                                *)
+(*      loss: 0                                                            *)
+(*  }]                                                                     *)                                                             
+(*                                                                         *)
+(*                                                                         *)
+(* Market Order: designated by a single position with limit and loss set   *)
+(* to zero.  Setting limit to zero means no limit.                         *)
+(*                                                                         *)
+(* [amount: Nat, bid: Coin positions: {                                    *)
+(*      ask: Coin                                                          *)
+(*      limit: 0                                                           *)
+(*      loss: 0                                                            *)
+(*  }]                                                                     *)                                                             
 (*                                                                         *)
 (*                                                                         *)
 (* bidAmount <Nat>: Amount of Bid Coin                                     *)
@@ -90,41 +110,17 @@ PositionType == [
 (* }                                                                       *)
 (***************************************************************************)
 
-PendingType == [
+OrderType == [
     amount: Nat, 
-    bid: Coin, 
-    positions: SUBSET PositionType
+    bid: Coin,
+    \* Positions are sequenced by ExchRate
+    \* One position per ExchRate
+    \* Sum of amounts in sequence of positions for a particular Coin must
+    \* be lower than or equal to the total order amount. 
+    positions: [Coin |-> Seq(PositionType)]
 ]
 
-(******************************* Market Order ******************************)
-(* The Market Order is an exchange order that does not limit the strike    *)
-(* exchrate (ask/bid).  The Market Order pulls the requested amount of ask *)
-(* coin liquidity at the minimum cost based on AMM liquidity pool and      *) 
-(* the limit order books.                                                  *)
-(*                                                                         *)
-(* Limit Orders are fulfilled at the time of order.                        *)
-(*                                                                         *)
-(* bidAmount <Nat>: Amount of Bid Coin                                     *)
-(* bid <Coin>: Bid Coin                                                    *)
-(* ask <Coin>: Ask Coin                                                    *)
-(*                                                                         *)
-(* Cosmos-SDK types (Same as Limit Order with exchrate max Dec             *)
-(* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
-(*                                                                         *)
-(* type MarketType struct {                                                *) 
-(*      Account     uint64                                                 *)
-(*      Amount      CoinDec                                                *)
-(*      bid         Coin                                                   *)
-(*      ask         Coin                                                   *)
-(*      exchrate    Dec (MAX decimal value)                                *)
-(* }                                                                       *)
-(***************************************************************************)
-MarketType == [
-    bidAmount: Nat, 
-    bid: Coin, 
-    ask: Coin,
-    exchrate: MAX
-]
+
 
 (***************************************************************************)
 (* Cosmos-SDK types (Same as Limit Order with exchrate max Dec             *)
