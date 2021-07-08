@@ -2,7 +2,8 @@
 EXTENDS     Naturals, Sequences, SequencesExt
 
 CONSTANT    Coin,       \* Set of all coins
-            Denominator,\* Set of all possible denominators
+            Denominator \* Set of all possible denominators. Precision of 
+                        \* fractions is defined by denominator constant.
            
 VARIABLE    limitBooks, \* Limit Order Books
             stopBooks,  \* Stop Loss Order Books
@@ -190,21 +191,40 @@ MaxBondBid(bookAsk, bondAsk, bondBid) ==
 (***************************************************************************)
 \* Need to fix some of the state updates such that existing state is not
 \* attempted to be mutated outside of prime definitions
-Reconcile(bondAsk, bondBid, bookAsk, bookBid) == 
+Reconcile(bondAsk, bondBid, limitAsk, limitBid, stopAsk, stopBid) == 
         \* Internal state update variables
         LET bondAskUpdate == bondAsk
             bondBidUpdate == bondBid
-            bookAskUpdate == bookAsk
-            bookBidUpdate == bookBid
+            limitAskUpdate == limitAsk
+            limitBidUpdate == limitBid
+            stopAskUpdate == stopAsk
+            stopAskUpdate == stopBid
         IN
-
+        
+        LET 
+            SeqSum(seq, x) == -1 \* Sum of seq[i].amount from 1..x
+            i == CHOOSE i \in 0..Len(bookAsk): 
+                /\ SeqSum(BookAsk, i) <= bondAsk
+                /\  \/ i = Len(bookAsk)
+                    \/ SeqSum(BookAsk, i+1) > bondAsk
+            j == CHOOSE j \in 0..Len(bookBid):
+                /\ -1   \* Same, except you have to do
+                        \* SeqSum <= bondAsk + SeqSum(BookAsk, i)
+        IN
+            <<i, j>>
         (********************** Iteration **************************)
         (* Iterate over the bookAsk sequence processing bond       *)
         (* purchases until bookAsk record with exchrate less than  *) 
         (* the bond price is reached                               *)
         (***********************************************************)
-        LET F[i \in 0 .. Len(bookAsk)] == \* 1st LET
-
+        LET F[i \in 0 .. Len(limitBid)] == \* 1st LET
+            IF i = 0 THEN limitBid
+            ELSE 
+                LET G[j \in 0 .. Len(stopAsk) ==
+                IF j = 0 THEN stopAsk
+                ELSE
+                    CASE    GT(limitBid(i), stopAsk(j)) ->
+                        
             (*********************** Case 1 ************************)                         
             (* The order at the Head of bookAsk sequence has an    *)
             (* exchange rate (bid/ask) greater than or equal to the*)
@@ -471,7 +491,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Jul 07 22:58:07 CDT 2021 by Charles Dusek
+\* Last modified Thu Jul 08 15:05:19 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
