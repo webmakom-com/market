@@ -403,8 +403,10 @@ ProcessOrder(pair) ==
     (***********************************************************************)
     /\ LET o == Head(orderQ[pair]) IN
         LET (*************************** Books *****************************)
-            bookAsk == books[pair][o.ask]
-            bookBid == books[pair][o.bid]
+            limitAsk == limits[pair][o.ask]
+            limitBid == limits[pair][o.bid]
+            stopAsk == stops[pair][o.ask]
+            stopBid == stops[pair][o.bid]
             
             (*************************** Bonds *****************************)
             bondAsk == bonds[pair][o.ask]
@@ -414,75 +416,32 @@ ProcessOrder(pair) ==
             orderAmt == o.amount
             
             (*********************** AMM Allowance *************************)
-            maxBondBid == MaxBondBid(bondAsk, bondBid, bookAsk, bookBid)  
+            \* May not need this here and need to investigate maxBondBid
+            \* with stops
+            maxBondBid == MaxBondBid(bondAsk, bondBid, limitAsk, limitBid)  
         IN  
-            
+            \* indices gt than active exchange
+
             (***************************************************************)
             (* Define Process() to allow for loop back                     *)
             (***************************************************************)
-            LET Process == 
+            LET Process ==
+                \* Run this on the limits
+                LET igt ==
+                    {i in 0..Len(limitBid): limitBid[i].exchrate >= o.exchrate}
+                IN \*Check following line!
+                    IF igt = {} THEN Append(order, stops)
+                    ELSE limits' = [limits EXCEPT ![pair][o.bid] 
+                        = InsertAt(@, Min(igt), order)] 
+                
+                \* Run this on the stop
+                LET ilt ==
+                    {i in 0..Len(stopBid): stopBid[i].exchrate >= o.exchrate}
+                IN \*Check following line!
+                    IF ilt = {} THEN Append(order, stops)
+                    ELSE stops' = [books EXCEPT ![pair][o.bid] 
+                        = InsertAt(@, Min(igt), order)] 
         
-            (***************************** Stage 1 *************************)
-            (* Process the order and update the state of the affected      *)
-            (* books or bonds variables                                    *)
-            (***************************************************************)
-            /\
-                    (********************** Case 1.1 ***********************)
-                    (*  Book order exchrate greater than or equal to the   *) 
-                    (*  head of the bid book                               *)
-                    (*******************************************************)
-                    CASE  GTE(o.exchrate, Head(bookBid).exchrate) ->
-                        /\ books' = [ books EXCEPT ![pair][o.bid] =
-
-                            (**************** Iteration ********************)
-                            (* Iterate over the bookBid sequence until bid *)
-                            (* book order price of element selected in     *)
-                            (* bookBid is greater than order exchrate      *)
-                            (*                                             *)
-                            (* Then insert the active order before the     *)
-                            (* first book order whose exchrate is greater  *)
-                            (* than the active order                       *)
-                            (***********************************************)
-                            LET F[i \in 0 .. Len(bookBid)] == \* 1st LET
-                                IF  i = 0 
-                                THEN bookBid 
-                                ELSE
-                                    LET 
-                                        topBid == bookBid[i].exchrate
-                                        orderBid == o.exchrate
-                                    IN
-                                        IF  
-                                            orderBid < topBid
-                                        THEN    
-                                            bookBid = InsertAt(
-                                                bookBid, 
-                                                i, 
-                                                [
-                                                    amount: orderAmt, 
-                                                    exchrate: o.exchrate
-                                                ]
-                                            )
-                                        ELSE
-                                            F[i-1]
-                            IN  F[Len(bookBid)]]
-                        
-                    
-                    (********************** Case 1.2 ***********************)
-                    (* Book order exchrate less than head of bid book      *)
-                    (* exchange rate                                       *)
-                    (*******************************************************)
-                    []  LT(o.exchrate, Head(bookBid).exchrate)
-
-                            (***********************************************)    
-                            (* Add book order to head of bid book          *)
-                            (***********************************************)
-                            /\  bookBid = Append(
-                                                [
-                                                    amount: orderAmt, 
-                                                    exchrate: o.exchrate
-                                                ],
-                                                bookBid
-                                            )
 
             (************************** Stage 2 ****************************)
             (* Iteratively reconcile books records with bonds amounts      *)
@@ -512,7 +471,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Jul 07 22:46:34 CDT 2021 by Charles Dusek
+\* Last modified Wed Jul 07 22:58:07 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
