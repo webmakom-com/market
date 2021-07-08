@@ -3,15 +3,12 @@ EXTENDS     Naturals, Sequences, SequencesExt
 
 CONSTANT    Coin,       \* Set of all coins
             Denominator,\* Set of all possible denominators
-            Input,      \* Set of all possible input amounts
-            NOM,        \* NOM coin. Single Constant Collateral.
-            Expiration  \* Set of all expirations
            
 VARIABLE    limitBooks, \* Limit Order Books
             stopBooks,  \* Stop Loss Order Books
             bonds,      \* AMM Bond Curves
-            orderQ, 
-            drops
+            orderQ,     \* Sequenced queue of orders
+            drops       \* Drops of Liquidity (tokens)
 
 ASSUME Denominator \subseteq Nat
 -----------------------------------------------------------------------------
@@ -515,6 +512,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
 
 =============================================================================
 \* Modification History
+\* Last modified Wed Jul 07 22:46:34 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
