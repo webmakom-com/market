@@ -321,6 +321,14 @@ ProcessWeak(p) ==
                 CASE    weakLimitHead.exchrate.GT(strongStopHead.exchrate) ->
                 []      weakLimitHead.exchrate.LT(strongStopHead.exchrate) ->
                 []      weakLimitHead.exchrate = strongStopHead.exchrate ->
+
+ProcessMid(p) ==
+    /\ ctl = "mid"
+    /\  LET 
+            strong = bonds[p][c \in p : \A {bonds[p][d] : d \in p} <= bonds[p][c]]
+            weak = bonds[p][c \in p : \A {bonds[p][d] : d \in p} >= bonds[p][c]]
+        IN  
+            
                 
 Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
                                                     \/ ProcessAsk(p)
