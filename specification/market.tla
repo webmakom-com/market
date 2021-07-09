@@ -95,39 +95,41 @@ PositionType == [
 (***************************************************************************)
 
 AccountType == [
-    userId: Nat,
-    balances: 
-        \* The balance and positions of each denomination of coin in an
-        \* exchange account are represented by the record type below
-        SUBSET [
-            amount: Coin,
-            \* Positions are sequenced by ExchRate
-            \* One position per ExchRate
-            \* Sum of amounts in sequence of positions for a particular Coin must
-            \* be lower than or equal to the total order amount.
-            positions: SUBSET PositionType
-        ]
+    \* The balance and positions of each denomination of coin in an
+    \* exchange account are represented by the record type below
+    SUBSET [
+        amount: Coin,
+        \* Positions are sequenced by ExchRate
+        \* One position per ExchRate
+        \* Sum of amounts in sequence of positions for a particular Coin must
+        \* be lower than or equal to the total order amount.
+        positions: SUBSET PositionType
+    ]
 ] 
 
-TypeInvariant == 
-    /\  orderQ \in [Pair -> Seq(Order)]
-    /\  drops \in [Pair -> Nat]
-    /\  limits \in [PairPlusCoin -> Seq(
-    /\  books \in [PairPlusCoin -> Seq(PositionType)]
+TypeInvariant ==
+    /\  accounts \in [Account -> AccountType]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
     /\  bonds \in [PairPlusCoin -> Nat]
-    
+    /\  drops \in [Pair -> Nat]
+    /\  limits \in [PairPlusCoin -> Seq(PositionType)]
+    /\  orderQ \in [Pair -> Seq(Order)]
+    /\  stops \in [PairPlusCoin -> Seq(PositionType)]
+
 (************************** Variable Initialization ************************)       
         
 MarketInit ==  
-    /\ orderQ = [p \in Pair |-> <<>>]
+    /\ accounts \in [Account |-> [
+        balances: {}
+    ]]
     /\ drops \in [Pair |-> Nat]
     \* order books bid sequences
     /\ books = [ppc \in PairPlusCoin |-> <<>>]
     \* liquidity balances for each pair
     /\ bonds = [ppc \in PairPlusCoin |-> NoVal]
-    
+    /\ orderQ = [p \in Pair |-> <<>>]
+
 (***************************** Helper Functions ****************************)
 
 \* Nat tuple (numerator/denominator) inequality helper functions
@@ -182,166 +184,7 @@ MaxBondBid(bookAsk, bondAsk, bondBid) ==
         \* erate(initial)
         bondAsk - bondBid^2 * erateFinal^2 \div bondAsk
 
-(******************************* Reconcile *********************************)
-(* Iteratively reconcile books records with bonds amounts                  *)
-(*                                                                         *)
-(* Bond amounts are balanced with the ask and bid books such               *)
-(* that effective price of bonded liquidity is within the ask              *)
-(* bid bookspread                                                          *)
-(***************************************************************************)
-\* Need to fix some of the state updates such that existing state is not
-\* attempted to be mutated outside of prime definitions
-Reconcile(bondAsk, bondBid, limitAsk, limitBid, stopAsk, stopBid) == 
-        \* Internal state update variables
-        LET bondAskUpdate == bondAsk
-            bondBidUpdate == bondBid
-            limitAskUpdate == limitAsk
-            limitBidUpdate == limitBid
-            stopAskUpdate == stopAsk
-            stopAskUpdate == stopBid
-        IN
-        
-        (********************** Iteration **************************)
-        (* Iterate over the bookAsk sequence processing bond       *)
-        (* purchases until bookAsk record with exchrate less than  *) 
-        (* the bond price is reached                               *)
-        (***********************************************************)
-        LET F[i \in 0 .. Len(limitBid)] == \* 1st LET
-            IF i = 0 THEN limitBid
-            ELSE 
-                LET G[j \in 0 .. Len(stopAsk) ==
-                IF j = 0 THEN stopAsk
-                ELSE
-                    CASE    GT(limitBid(i), stopAsk(j)) ->
-                        
-            (*********************** Case 1 ************************)                         
-            (* The order at the Head of bookAsk sequence has an    *)
-            (* exchange rate (bid/ask) greater than or equal to the*)
-            (* ask bond exchange rate (bid bal/ask Val).           *)
-            (*******************************************************)
-            CASE  GTE(bookAsk(i).exchrate, <<bondAsk, bondBid>>) ->
-                    LET maxBondBid == MaxBondBid(
-                            bookAskUpdate, 
-                            bondAskUpdate, 
-                            bondBidupdate
-                        )
-                    IN  CASE Head(bookAskUpdate).amount >= maxBondBid ->
-                            \* Ask Bond pays for the Ask Book order
-                            /\ bondAskUpdate == bondAsk - maxBondBid
-                
-                            \* Bid Bond receives the payment from the Ask Book
-                            /\ bondBidUpdate == bondBid + maxBondBid
 
-                            /\  bookAskUpdate == Append(
-                                    [
-                                        amount: Head(bookAskUpdate).amount - maxBondBid,
-                                        exchrate: Head(bookAskUpdate).amount
-                                    ], 
-                                    Tail(bookAskUpdate)
-                                )
-                            \* Do not loop back. Move onto other side of AMM
-                            \* bondBid maxxed out 
-                            
-                        \* Order amount is under the AMM bidBond may spend
-                        \* at exchrate
-                        [] Head(bookAskUpdate).amount < maxBondBid
-                            \* Ask Bond pays for the Ask Book order
-                            /\ bondAskUpdate == bondAskUpdate - maxBondBid
-                
-                            \* Bid Bond receives the payment from the Ask Book
-                            /\ bondBidUpdate == bondBidUpdate + maxBondBid
-                
-                            \* The ask book order is removed from the head 
-                            /\ bookAskUpdate == Tail(bookAsk)
-
-                            \* Loop back. bondBid AMM has more to spend
-                            /\  F[Len(bookAskUpdate)]
-                            
-                
-            (*********************** Case 2 ************************)
-            (* Head of bookAsk exchange rate less than ask bond    *)
-            (* exchange rate                                       *)
-            (*******************************************************)
-            []  LT(
-                        bookAsk(i).exchrate, 
-                        (<<bondAskUpdate, bondBidUpdate>>
-                    ) ->
-                
-                (******************** Iteration ********************)
-                (* Iterate over the bookBid sequence processing    *)
-                (* purchases until bookBid record with exchrate    *) 
-                (* the bond price is reached                       *)
-                (***************************************************)
-                LET G[j \in 0 .. Len(bookBidUpdate)] == \* 2nd LET
-                
-                (***************************************************)
-                (*            Case 2.1                             *)                         
-                (* Head of bookBid exchange rate                   *)
-                (* greater than or equal to the                    *)
-                (* updated bid bond exchange rate                  *)
-                (***************************************************)
-                CASE  LTE(
-                        bookBid(j).exchrate, 
-                        <<bondBidUpdate, bondAskUpdate>>
-                    ) ->
-                    \* Find maxBondBid is the Ask direction
-                    LET maxBondBid == MaxBondBid(
-                            bookBidUpdate, 
-                            bondBidUpdate, 
-                            bondAskupdate
-                        )
-                        erate == Head(bookBidUpdate).exchrate
-                    IN
-                        CASE Head(bookBidUpdate).amount >= maxBondBid ->
-                            \* Bid Bond pays for the Bid Book order
-                            /\ bondBidUpdate == bondBid - maxBondBid
-                
-                            \* Ask Bond receives the payment from the Bid Book
-                            /\ bondAskUpdate == 
-                                bondAskUpdate + 
-                                maxBondBid * 
-                                erate
-
-                            /\  bookBidUpdate == Append(
-                                    [
-                                        amount: Head(bookBidUpdate).amount - maxBondBid,
-                                        exchrate: erate
-                                    ], 
-                                    Tail(bookBidUpdate)
-                                )
-                            \* Loop back to check if AMM has enabled AskBook Order
-                            /\  F[len(bookAskUpdate)]
-                        \* Order amount is under the AMM bidAsk may spend
-                        \* at erate
-                        [] Head(bookAskUpdate).amount < maxBondBid ->
-                            \* Ask Bond pays for the Bid Book order
-                            /\ bondBidUpdate == bondBidUpdate - maxBondBid
-                
-                            \* Ask Bond receives the payment from the Bid Book
-                            /\ bondAskUpdate == bondAskUpdate + maxBondBid * erate 
-                
-                            \* The ask book order is removed from the head 
-                            /\ bookAskUpdate == Tail(bookAsk)
-                            
-                            \* Loop back as Bid Bond has more it can spend at erate
-                            /\ G[Len(Tail(bookBidUpdate))]
-                
-                (**************************************************)
-                (*            Case 2.2                            *)                         
-                (* Head of bookBid exchange rate                  *)
-                (* less than the updated bid bond                 *)
-                (* exchange rate                                  *)
-                (*                                                *)
-                (* Processing Complete                            *)
-                (* Update bonds and books states                  *)
-                (**************************************************)
-                []  LT(
-                            bookBidUpdate(j), 
-                            <<bondBidUpdate, bondAskUpdate>>
-                        ) ->
-                    /\ << bondAskUpdate, bondBidUpdate, bookAskUpdate, bookBidUpdate >> 
-            IN G[Len(bookBidUpdate)]
-        IN F[Len(bookAskUpdate)]
 
 (***************************** Step Functions ****************************)
 
@@ -412,9 +255,7 @@ ProcessOrder(pair) ==
     (***********************************************************************)
     /\ LET o == Head(orderQ[pair]) IN
         LET (*************************** Books *****************************)
-            limitAsk == limits[pair][o.ask]
             limitBid == limits[pair][o.bid]
-            stopAsk == stops[pair][o.ask]
             stopBid == stops[pair][o.bid]
             
             (*************************** Bonds *****************************)
@@ -437,19 +278,25 @@ ProcessOrder(pair) ==
             LET Process ==
                 \* Run this on the limits
                 LET igt ==
-                    {i in 0..Len(limitBid): limitBid[i].exchrate >= o.exchrate}
+                    {i in 0..Len(limitBid): limitBid[i].exchrate > o.exchrate}
                 IN \*Check following line!
-                    IF igt = {} THEN Append(order, stops)
+                    IF igt = {} THEN 
+                        /\ limits = [limits EXCEPT ![pair][o.bid] = Append(<<order>>, @)
+                        /\ ctl' = "Bid"
                     ELSE limits' = [limits EXCEPT ![pair][o.bid] 
                         = InsertAt(@, Min(igt), order)] 
                 
-                \* Run this on the stop
+                \* Run this on the stops
                 LET ilt ==
-                    {i in 0..Len(stopBid): stopBid[i].exchrate >= o.exchrate}
+                    {i in 0..Len(stopBid): stopBid[i].exchrate < o.exchrate}
                 IN \*Check following line!
-                    IF ilt = {} THEN Append(order, stops)
-                    ELSE stops' = [books EXCEPT ![pair][o.bid] 
-                        = InsertAt(@, Min(igt), order)] 
+                    IF ilt = {} THEN 
+                        /\ [stops EXCEPT ![pair][o.bid] = Append(<<order>>, @)
+                        /\ ctl' = "Bid"
+                    ELSE stops' = [stops EXCEPT ![pair][o.bid] 
+                        = InsertAt(@, Min(igt), order)]
+
+
         
                 
 Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
