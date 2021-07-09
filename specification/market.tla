@@ -172,26 +172,32 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 (*                                                                         *)
 (* MaxBondBid =                                                            *)
 (* bondAsk(initial) -                                                      *)
-(* bondBid(initial) ^ 2 * erate(final) ^ 2 / (bondAsk(initial)             *)
+(* bondBid(initial) ^ 2 * erate(final) ^ 2 /                               *)
+(* [(bondAsk(initial)/bondBid(initial)]                                    *)
 (***************************************************************************)
-MaxBondBid(bookAsk, bondAsk, bondBid) ==  
-    LET 
-        erateFinal == Head(bookAsk).exchrate
-    IN 
-        \* MaxBondBid = 
-        \* bondAsk(initial) - 
-        \* bondBid(initial)^2 * erate(final) ^ 2 / 
-        \* erate(initial)
-        bondAsk - bondBid^2 * erateFinal^2 \div bondAsk
+MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==  
+    \* MaxBondBid = 
+    \* bondAsk(initial) - 
+    \* bondBid(initial)^2 * erate(final) ^ 2 / 
+    \* erate(initial)
+    bondNumerator - bondDenominator^2 * erateFinal^2 \div 
+    (bondNumerator / bondDenominator)
 
 
 
 (***************************** Step Functions ****************************)
+\* Deposit coin into exchange account
+Deposit(a) ==
+\* Withdraw coin from exchange account
+Withdraw(a) ==
 
 \* Optional syntax
 (* LET all_limit_orders == Add your stuff in here *)
 (* IN {x \in all_limit_orders: x.bid # x.ask} *)
-SubmitOrder == 
+\* p = pair
+\* c = bid coin
+\* a = account
+SubmitOrder(a) == 
     /\  \E o \in Order : 
         /\  o.bid # o.ask
         /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
@@ -242,7 +248,7 @@ Liquidate(pair) ==
 (* Process Order inserts a new limit and stop positions into the limit and *)
 (* stop sequences of the ask coin                                          *)
 (***************************************************************************)
-ProcessOrder(pair) ==
+ProcessOrder(p) ==
 
     (*************************** Enabling Condition ************************)
     (* Order queue is not empty                                            *)
@@ -288,13 +294,33 @@ ProcessOrder(pair) ==
                 IN \*Check following line!
                     IF ilt = {} THEN 
                         /\ [stops EXCEPT ![pair][o.bid] = Append(<<order>>, @)
-                        /\ ctl' = "Bid"
+                        /\ ctl' = "Strong"
                     ELSE stops' = [stops EXCEPT ![pair][o.bid] 
                         = InsertAt(@, Min(igt), order)]
 
-ProcessBid(p) ==    /\ ctl = "bid"
+\* Explore mutual recursion, but for now, will use strong and weak to differentiate
+ProcessStrong(p) ==
+    /\  ctl = "strong" 
+    /\  LET strong = bonds[p][c \in p : \A {bonds[p][d] : d \in p} <= bonds[p][c]] IN
+            LET 
+                strongLimitHead = Head(limits[p][strong])
+                weakStopHead = Head(stops[p][{c \in p : c # strong}])
+            IN 
+                CASE    strongLimitHead.exchrate.GT(weakStopHead.exchrate) ->
+                []      strongLimitHead.exchrate.LT(weakStopHead.exchrate) ->
+                []      strongLimitHead.exchrate = weakStopHead.exchrate ->
 
-ProcessAsk(p) ==    /\ ctl = "ask"
+
+ProcessWeak(p) ==
+    /\ ctl = "weak"
+    /\  LET weak = bonds[p][c \in p : \A {bonds[p][d] : d \in p} >= bonds[p][c]] IN
+            LET 
+                weakLimitHead = Head(limits[p][strong])
+                strongStopHead = Head(stops[p][{c \in p : c # strong}])
+            IN 
+                CASE    weakLimitHead.exchrate.GT(strongStopHead.exchrate) ->
+                []      weakLimitHead.exchrate.LT(strongStopHead.exchrate) ->
+                []      weakLimitHead.exchrate = strongStopHead.exchrate ->
                 
 Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
                                                     \/ ProcessAsk(p)
