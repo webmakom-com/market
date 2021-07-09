@@ -265,10 +265,6 @@ ProcessOrder(pair) ==
             (*************************** Order *****************************)
             orderAmt == o.amount
             
-            (*********************** AMM Allowance *************************)
-            \* May not need this here and need to investigate maxBondBid
-            \* with stops
-            maxBondBid == MaxBondBid(bondAsk, bondBid, limitAsk, limitBid)  
         IN  
             \* indices gt than active exchange
 
@@ -296,10 +292,13 @@ ProcessOrder(pair) ==
                     ELSE stops' = [stops EXCEPT ![pair][o.bid] 
                         = InsertAt(@, Min(igt), order)]
 
+ProcessBid(p) ==    /\ ctl = "bid"
 
-        
+ProcessAsk(p) ==    /\ ctl = "ask"
                 
-Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
+Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
+                                                    \/ ProcessAsk(p)
+                                                    \/ ProcessBid(p)
                                                     \/ Provision(p)
                                                     \/ Liquidate(p)
         \/ SubmitOrder
