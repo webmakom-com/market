@@ -201,17 +201,6 @@ Reconcile(bondAsk, bondBid, limitAsk, limitBid, stopAsk, stopBid) ==
             stopAskUpdate == stopBid
         IN
         
-        LET 
-            SeqSum(seq, x) == -1 \* Sum of seq[i].amount from 1..x
-            i == CHOOSE i \in 0..Len(bookAsk): 
-                /\ SeqSum(BookAsk, i) <= bondAsk
-                /\  \/ i = Len(bookAsk)
-                    \/ SeqSum(BookAsk, i+1) > bondAsk
-            j == CHOOSE j \in 0..Len(bookBid):
-                /\ -1   \* Same, except you have to do
-                        \* SeqSum <= bondAsk + SeqSum(BookAsk, i)
-        IN
-            <<i, j>>
         (********************** Iteration **************************)
         (* Iterate over the bookAsk sequence processing bond       *)
         (* purchases until bookAsk record with exchrate less than  *) 
@@ -462,27 +451,6 @@ ProcessOrder(pair) ==
                     ELSE stops' = [books EXCEPT ![pair][o.bid] 
                         = InsertAt(@, Min(igt), order)] 
         
-
-            (************************** Stage 2 ****************************)
-            (* Iteratively reconcile books records with bonds amounts      *)
-            (*                                                             *)
-            (* Bond amounts are balanced with the ask and bid books such   *)
-            (* that effective price of bonded liquidity is within the ask  *) 
-            (* bid bookspread                                              *)
-            (***************************************************************)   
-            /\  LET  
-                    pairUpdate == Reconcile(bondAsk, bondBid, bookAsk, bookBid)
-                /\  books' = [
-                        books EXCEPT    
-                            ![pair][o.ask] = pairUpdate[0]
-                            ![pair][o.bid] = pairUpdate[1]
-                    ]
-                /\  bonds' = [
-                        bonds EXCEPT
-                            ![pair][o.ask] = pairUpdate[2]
-                            ![pair][o.bid] = pairUpdate[3]
-                    ]
-    IN Process(pair)
                 
 Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessPair(p)
                                                     \/ Provision(p)
