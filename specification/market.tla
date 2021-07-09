@@ -39,6 +39,7 @@ PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair}
 (* The position type is the order book record that is maintained when a    *)
 (* limit order has an unfulfilled outstanding amount                       *)
 (*                                                                         *)
+(* id <uint256>: Identifier of the position                                *) 
 (* amount <Nat>: Amount of Bid Coin                                        *)
 (* limit <ExchRateType>: Lower Bound of the Upper Sell Region              *)
 (* loss <ExchRateType>: Upper Bound of the Lower Sell Region               *)
@@ -47,17 +48,16 @@ PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair}
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (*                                                                         *)
 (* type PositionType struct {                                              *) 
-(*      Order       uint64                                                 *)
+(*      id:         uint256                                                *)
 (*      Amount      CoinDec                                                *)
 (*      limit       Dec                                                    *)
 (*      loss        Dec                                                    *)
 (* }                                                                       *)
 (***************************************************************************)
 PositionType == [
-    order: Nat,
+    id: Nat,
     amount: Nat,
-    limit: ExchRateType,
-    loss: ExchRateType
+    exchrate: ExchRateType
 ]
 
 (***************************** Exchange Account ****************************)
@@ -98,12 +98,17 @@ AccountType == [
     \* The balance and positions of each denomination of coin in an
     \* exchange account are represented by the record type below
     SUBSET [
-        amount: Coin,
+        \* Denomination of Coin balance
+        denom: Coin,
+        \* Balances are represented as Natural number
+        balance: Nat,
         \* Positions are sequenced by ExchRate
-        \* One position per ExchRate
-        \* Sum of amounts in sequence of positions for a particular Coin must
-        \* be lower than or equal to the total order amount.
-        positions: SUBSET PositionType
+        \*
+        \* Sum of amounts in sequence of positions for a particular Ask 
+        \* Coin must be lower than or equal to the accounts denom balance
+        \*
+        \* [AskCoin -> << Limits, Stops >>]
+        positions: [Coin -> <<Seq(PositionType), Seq(PositionType)>>]
     ]
 ] 
 
@@ -339,7 +344,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Jul 08 15:05:19 PDT 2021 by Charles Dusek
+\* Last modified Fri Jul 09 13:53:59 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
