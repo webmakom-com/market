@@ -1,7 +1,8 @@
 ------------------------------- MODULE market -------------------------------
 EXTENDS     Naturals, Sequences, SequencesExt
 
-CONSTANT    Coin,       \* Set of all coins
+CONSTANT    Account,    \* Set of all accounts
+            Coin,       \* Set of all coins
             Denominator \* Set of all possible denominators. Precision of 
                         \* fractions is defined by denominator constant.
            
@@ -99,7 +100,7 @@ AccountType == [
     \* exchange account are represented by the record type below
     SUBSET [
         \* Denomination of Coin balance
-        denom: Coin,
+        bidDenom: Coin,
         \* Balances are represented as Natural number
         balance: Nat,
         \* Positions are sequenced by ExchRate
@@ -192,9 +193,31 @@ MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==
 
 (***************************** Step Functions ****************************)
 \* Deposit coin into exchange account
-Deposit(a) ==
+Deposit(a, c, amount) ==    
+    LET record == { d \in accounts[a] : d.bidDenom }
+    IN
+        IF record = {}
+        THEN 
+            accounts' = [accounts EXCEPT ![a] = UNION {
+                @, 
+                [
+                    bidDenom: c,
+                    balance: amount,
+                    positions: [d \in Coin \ c |-> << <<>>, <<>> >>
+                ]
+            }
+        ELSE
+            accounts' = [accounts EXCEPT ![a] = UNION {
+                @ / record,
+                [
+                    bidDenom: c,
+                    balance: amount + record.amount,
+                    positions: record.positions
+                ]
+            }
+
 \* Withdraw coin from exchange account
-Withdraw(a) ==
+Withdraw(a, c) ==
 
 \* Optional syntax
 (* LET all_limit_orders == Add your stuff in here *)
@@ -344,7 +367,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Jul 09 13:53:59 PDT 2021 by Charles Dusek
+\* Last modified Fri Jul 09 20:13:19 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
