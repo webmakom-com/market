@@ -40,7 +40,7 @@ PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair}
 (* The position type is the order book record that is maintained when a    *)
 (* limit order has an unfulfilled outstanding amount                       *)
 (*                                                                         *)
-(* id <uint256>: Identifier of the position                                *) 
+(* account <uint256>: Identifier of the position                                *) 
 (* amount <Nat>: Amount of Bid Coin                                        *)
 (* limit <ExchRateType>: Lower Bound of the Upper Sell Region              *)
 (* loss <ExchRateType>: Upper Bound of the Lower Sell Region               *)
@@ -49,14 +49,14 @@ PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair}
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (*                                                                         *)
 (* type PositionType struct {                                              *) 
-(*      id:         uint256                                                *)
+(*      account:    uint256                                                *)
 (*      Amount      CoinDec                                                *)
 (*      limit       Dec                                                    *)
 (*      loss        Dec                                                    *)
 (* }                                                                       *)
 (***************************************************************************)
 PositionType == [
-    id: Nat,
+    account: Account,
     amount: Nat,
     exchrate: ExchRateType
 ]
@@ -90,7 +90,7 @@ PositionType == [
 (*                                                                         *)
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (* type AccountType struct {                                               *) 
-(*      id          uint64                                                 *)
+(*      account     uint64                                                 *)
 (*      balances    Array                                                  *)
 (* }                                                                       *)
 (***************************************************************************)
@@ -98,9 +98,7 @@ PositionType == [
 AccountType == [
     \* The balance and positions of each denomination of coin in an
     \* exchange account are represented by the record type below
-    SUBSET [
-        \* Denomination of Coin balance
-        bidDenom: Coin,
+    Coin -> [
         \* Balances are represented as Natural number
         balance: Nat,
         \* Positions are sequenced by ExchRate
@@ -126,10 +124,17 @@ TypeInvariant ==
 (************************** Variable Initialization ************************)       
         
 MarketInit ==  
-    /\ accounts \in [Account |-> [
-        balances: {}
-    ]]
-    /\ drops \in [Pair |-> Nat]
+    /\  accounts = [
+            a \in Account |-> [
+                c \in Coin |-> [
+                    balance: 0,
+                    positions: [
+                        Coin |-> << <<>>, <<>> >>
+                    ]
+                ] 
+            ]   
+        ]
+    /\ drops = [p \in Pair |-> Nat]
     \* order books bid sequences
     /\ books = [ppc \in PairPlusCoin |-> <<>>]
     \* liquidity balances for each pair
@@ -186,7 +191,7 @@ MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==
     \* bondAsk(initial) - 
     \* bondBid(initial)^2 * erate(final) ^ 2 / 
     \* erate(initial)
-    bondNumerator - bondDenominator^2 * erateFinal^2 \div 
+    bondNumerator - bondDenominator^2 \times erateFinal^2 \div 
     (bondNumerator / bondDenominator)
 
 
@@ -211,8 +216,8 @@ Reconcile(p) ==
                 <<stopsWeak.exchrate[1], stopsWeak.exchrate[0]>>
         IN
             CASE    stopWeakInverseExchrate.LT(bondExchrate)    ->
-                CASE limitStrong.exchrate = bondExchrate
-                THEN \* In this case the exchrate does not change if equal amounts of ask
+                CASE limitStrong.exchrate = bondExchrate ->
+                     \* In this case the exchrate does not change if equal amounts of ask
                      \* and bid coins are simulataneously exchanged.
                      \* AMM may exchange up the to least amount of the limitStrong or
                      \* the stopWeak orders.
@@ -228,12 +233,36 @@ Reconcile(p) ==
                                  \* amount 
                                 Append (
                                     [
-                                        id: Head(@).id
+                                        account: Head(@).account
                                         amount: Head(@).amount - least.amount
                                         exchrate: Head(@).exchrate
                                     ], 
                                     Tail(@)
                                  )
+                        /\ stops' = [stops EXCEPT ![p][weak] = 
+                            IF Head(@).amount = least.amount
+                            THEN \* Remove limit record from head of limit sequence
+                                Tail(@)
+                            ELSE \* Replace head limit record with one that has updated
+                                 \* amount 
+                                Append (
+                                    [
+                                        account: Head(@).account
+                                        amount: Head(@).amount - least.amount
+                                        exchrate: Head(@).exchrate
+                                    ], 
+                                    Tail(@)
+                                 )
+                        /\ accounts' = [accounts EXCEPT 
+                            ![limitStrong.account] = 
+                                IF
+                                    limitStrong.amount = least.amount
+                                THEN    @
+                                UNION {
+                                @ / [
+                                    account: limitStrong.account
+                                    amount: 
+                                    
                          
                         
                     
@@ -423,7 +452,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 10 22:43:47 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 10 23:46:03 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
