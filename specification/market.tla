@@ -204,17 +204,42 @@ Reconcile(p) ==
             stopWeak ==     Head(stops[p][weak])
         IN  LET
             bondExchrate ==         
-                <<bondStrong, bondWeak>>
+                <<bondWeak, bondStrong>>
             limitWeakInverseExchrate ==
                 <<limitsWeak.exchrate[1], limitsWeak.exchrate[0]>>
             stopWeakInverseExchrate == 
                 <<stopsWeak.exchrate[1], stopsWeak.exchrate[0]>>
         IN
             CASE    stopWeakInverseExchrate.LT(bondExchrate)    ->
-                IF limitStrong.exchrate.LT(bondExchrate)
-                THEN
+                CASE limitStrong.exchrate = bondExchrate
+                THEN \* In this case the exchrate does not change if equal amounts of ask
+                     \* and bid coins are simulataneously exchanged.
+                     \* AMM may exchange up the to least amount of the limitStrong or
+                     \* the stopWeak orders.
+                    LET least == 
+                        CHOOSE least \in { limitStrong, stopWeak } : least.amount <
+                        { limitStrong.amount, stopWeak.amount } \ least.amount
+                    IN
+                        /\ limits' = [limits EXCEPT ![p][strong] = 
+                            IF Head(@).amount = least.amount
+                            THEN \* Remove limit record from head of limit sequence
+                                Tail(@)
+                            ELSE \* Replace head limit record with one that has updated
+                                 \* amount 
+                                Append (
+                                    [
+                                        id: Head(@).id
+                                        amount: Head(@).amount - least.amount
+                                        exchrate: Head(@).exchrate
+                                    ], 
+                                    Tail(@)
+                                 )
+                         
+                        
+                    
                 ELSE
-            []      limitStrong.exchrate.LT(bondExchrate)       ->      
+            []      limitStrong.exchrate.LT(bondExchrate)       ->
+                LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)      
             []      stopStrong.exchrate.GT(bondExch             ->
                 IF limitWeakInverseExchrate.GT(bondExchrate)
                 THEN
@@ -398,7 +423,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 10 21:43:50 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 10 22:43:47 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
