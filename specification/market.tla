@@ -173,11 +173,7 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 (* Integrate over bondAsk on lhs and bondBid & erate on rhs then           *)
 (* substitute and simplify                                                 *)
 (*                                                                         *)
-(* MaxBondBid = bondAsk(initial) - bondAsk(final)                          *)
-(* bondAsk(final) = bondBid(initial) * erate(final)^2 / erate(initial)     *)
-(*                                                                         *)
 (* MaxBondBid =                                                            *)
-(* bondAsk(initial) - bondBid(initial) * erate(final) ^ 2 / erate(initial) *)
 (*                                                                         *)
 (* erate(intial) = bondAsk / bondBid                                       *)
 (*                                                                         *)
@@ -191,15 +187,14 @@ MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==
     \* bondAsk(initial) - 
     \* bondBid(initial)^2 * erate(final) ^ 2 / 
     \* erate(initial)
-    bondNumerator - bondDenominator^2 \times erateFinal^2 \div 
-    (bondNumerator / bondDenominator)
+    bondDenominator * ((erateFinal[0] * bondDenominator) \div (erateFinal[1] * bondNumerator)) - bondNumerator
 
 
 Reconcile(p) ==
     /\  ctl = "Reconcile"
     /\  LET
             strong == Strong(p)
-            weak == c \in p : c # strong
+            weak == { c \in p : c # strong }
         IN  LET
             bondStrong ==   bonds[p][strong]
             bondWeak ==     bonds[p][weak]
@@ -215,8 +210,39 @@ Reconcile(p) ==
             stopWeakInverseExchrate == 
                 <<stopsWeak.exchrate[1], stopsWeak.exchrate[0]>>
         IN
-            CASE    stopWeakInverseExchrate.LT(bondExchrate)    ->
-                CASE limitStrong.exchrate = bondExchrate ->
+            \* Moving in the strong direction first
+            \* Checking for weak stops first as they will drive the exchrate higher
+            \* enabling more strong limits
+            CASE    LT(stopWeakInverseExchrate, bondExchrate)    ->
+                
+                CASE    LT(stopWeakInverseExchrate, limitStrong.exchrate) ->
+                        LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)
+                        IN  
+                            IF stopWeak.amount < bondBid
+                            THEN
+                                /\ stops' = [stops EXCEPT ![<<p, strong>>] = Tail(@)]
+                                /\ bonds' = [
+                                                bonds EXCEPT 
+                                                    ![<<p, strong>>] = @ + stopWeak.amount,
+                                                    ![<<p, weak>>] = @ - stopWeak.amount
+                                            ]
+                                /\ accounts' = [accounts EXCEPT 
+                                    ![stopWeak.account][weak] = 
+                                        [
+                                            balance: @.balance - stopWeak.amount,
+                                            positions: <<
+                                                @.positions[strong][0], 
+                                                Tail(@.positions[strong][1])
+                                            >>
+                                        ],
+                                    ![stopWeak.account[strong] =
+                                        [
+                                            balance: @.balance + 
+                                        
+                            ELSE 
+                        
+                []      stopWeakInverseExchrate.GT(limitStrong.exchrate) ->    
+                []      limitStrong.exchrate = bondExchrate ->
                      \* In this case the exchrate does not change if equal amounts of ask
                      \* and bid coins are simulataneously exchanged.
                      \* AMM may exchange up the to least amount of the limitStrong or
@@ -452,7 +478,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 10 23:46:03 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 11 15:03:59 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
