@@ -216,32 +216,45 @@ Reconcile(p) ==
             CASE    LT(stopWeakInverseExchrate, bondExchrate)    ->
                 
                 CASE    LT(stopWeakInverseExchrate, limitStrong.exchrate) ->
+                        \* Find out 
                         LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)
                         IN  
-                            IF stopWeak.amount < bondBid
-                            THEN
+                            LET strikeStrongAmount == 
+                                \* Is bondBid enough to cover stopWeak.amount?
+                                IF stopWeak.amount < bondBid THEN stopWeak.amount
+                                ELSE bondBid
+                                strikeWeakAmount ==
+                                    (stopWeak.amount * stopWeak.exchrate[1]) / stopWeak.exchrate[0]
+                            IN  \* Remove head of weak stop book
                                 /\ stops' = [stops EXCEPT ![<<p, strong>>] = Tail(@)]
                                 /\ bonds' = [
                                                 bonds EXCEPT 
-                                                    ![<<p, strong>>] = @ + stopWeak.amount,
-                                                    ![<<p, weak>>] = @ - stopWeak.amount
+                                                    ![<<p, strong>>] = @ + strikeBidAmount,
+                                                    ![<<p, weak>>] = @ - strikeAskAmount
                                             ]
                                 /\ accounts' = [accounts EXCEPT 
                                     ![stopWeak.account][weak] = 
                                         [
-                                            balance: @.balance - stopWeak.amount,
+                                            balance: @.balance + strikeWeakAmount,
                                             positions: <<
                                                 @.positions[strong][0], 
                                                 Tail(@.positions[strong][1])
                                             >>
                                         ],
+                                    \* Price charged for the ask coin is stopWeak.exchrate
+                                    \* AMM earns difference between stopWeak.exchrate and bondExchrate
                                     ![stopWeak.account[strong] =
                                         [
-                                            balance: @.balance + 
-                                        
-                            ELSE 
-                        
-                []      stopWeakInverseExchrate.GT(limitStrong.exchrate) ->    
+                                            balance: @.balance - strikeBidAmount,
+                                            positions: @.positions
+                                        ]
+                                    \* Check that the positions of all other coins versus the strong
+                                    \* coin add to the balance of the strong coin for each other coin
+                                   ]
+                      
+                []      stopWeakInverseExchrate.GT(limitStrong.exchrate) ->
+                        \* Execute limitStrong order
+                        /\     
                 []      limitStrong.exchrate = bondExchrate ->
                      \* In this case the exchrate does not change if equal amounts of ask
                      \* and bid coins are simulataneously exchanged.
@@ -478,7 +491,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 11 15:03:59 PDT 2021 by Charles Dusek
+\* Last modified Sun Jul 11 20:32:25 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
