@@ -216,17 +216,63 @@ Reconcile(p) ==
             CASE    LT(stopWeakInverseExchrate, bondExchrate)    ->
                 
                 CASE    LT(stopWeakInverseExchrate, limitStrong.exchrate) ->
-                        \* Find out 
+                        \* Find out maximum bond may give of weak coin before hitting the head of the
+                        \* strong limit book
                         LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)
                         IN  
                             LET strikeStrongAmount == 
                                 \* Is bondBid enough to cover stopWeak.amount?
-                                IF stopWeak.amount < bondBid THEN stopWeak.amount
-                                ELSE bondBid
-                                strikeWeakAmount ==
-                                    (stopWeak.amount * stopWeak.exchrate[1]) / stopWeak.exchrate[0]
+                                IF stopWeak.amount < bondBid * (limitStrong.exchrate[0] / limitStrong.exchrate[1]) THEN stopWeak.amount
+                                \* ELSE: limit strong is used as the exchrate that the AMM uses to trade
+                                \* This allows the AMM to collect the difference between the exchange rate
+                                \* defined by the balances of the AMM, and the exchange rate that enables
+                                \* first strong limit order
+                                \*
+                                \* We do not consider enabling other stop loss orders as the first limit order
+                                \* exchange rate dictates the upper bound before dependent books are reached
+                                ELSE bondBid * (limitStrong.exchrate[0] / limitStrong.exchrate[1])
+                                
+                                strikeWeakAmount == bondBid
                             IN  \* Remove head of weak stop book
                                 /\ stops' = [stops EXCEPT ![<<p, strong>>] = Tail(@)]
+                                /\ bonds' = [
+                                                bonds EXCEPT 
+                                                    ![<<p, strong>>] = @ + strikeWeakAmount,
+                                                    ![<<p, weak>>] = @ - strikeStrongAmount
+                                            ]
+                                /\ accounts' = [accounts EXCEPT 
+                                    ![stopWeak.account][weak] = 
+                                        [
+                                            balance: @.balance + strikeWeakAmount,
+                                            positions: <<
+                                                @.positions[strong][0], 
+                                                Tail(@.positions[strong][1])
+                                            >>
+                                        ],
+                                    \* Price charged for the ask coin is stopWeak.exchrate
+                                    \* AMM earns difference between stopWeak.exchrate and bondExchrate
+                                    ![stopWeak.account[strong] =
+                                        [
+                                            balance: @.balance - strikeStrongAmount,
+                                            \* Balance positions such that limit and loss sequences sum
+                                            \* the balance of coin in the account
+                                            positions: Balance(weak, @.balance - strikeStrongAmount, @.positions)
+                                        ]
+                                   ]
+                      
+                []      stopWeakInverseExchrate.GT(limitStrong.exchrate) ->
+                        \* Execute limitStrong order
+                        LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)
+                        IN
+                            LET strikeStrongAmount == 
+                                \* Is bondBid enough to cover stopWeak.amount?
+                                IF limitStrong.amount < bondBid THEN limitStrong.amount
+                                ELSE bondBid
+                                strikeWeakAmount ==
+                                    (limitStrong.amount * limitStrong.exchrate[0]) / limitStrong.exchrate[1]
+                            IN  \* Remove head of strong limit book
+                                /\ limits' = [stops EXCEPT ![<<p, strong>>] = 
+                                    IF strikeAskAmount Tail(@)]
                                 /\ bonds' = [
                                                 bonds EXCEPT 
                                                     ![<<p, strong>>] = @ + strikeBidAmount,
@@ -251,10 +297,6 @@ Reconcile(p) ==
                                             positions: Balance(weak, @.balance - strikeBidAmount, @.positions)
                                         ]
                                    ]
-                      
-                []      stopWeakInverseExchrate.GT(limitStrong.exchrate) ->
-                        \* Execute limitStrong order
-                        /\     
                 []      limitStrong.exchrate = bondExchrate ->
                      \* In this case the exchrate does not change if equal amounts of ask
                      \* and bid coins are simulataneously exchanged.
@@ -491,7 +533,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 11 20:58:57 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 11 21:49:18 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
