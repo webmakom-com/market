@@ -246,10 +246,10 @@ Reconcile(p) ==
                                     ![stopWeak.account[strong] =
                                         [
                                             balance: @.balance - strikeBidAmount,
-                                            positions: @.positions
+                                            \* Balance positions such that limit and loss sequences sum
+                                            \* the balance of coin in the account
+                                            positions: Balance(weak, @.balance - strikeBidAmount, @.positions)
                                         ]
-                                    \* Check that the positions of all other coins versus the strong
-                                    \* coin add to the balance of the strong coin for each other coin
                                    ]
                       
                 []      stopWeakInverseExchrate.GT(limitStrong.exchrate) ->
@@ -491,7 +491,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 11 20:32:25 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 11 20:58:57 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
