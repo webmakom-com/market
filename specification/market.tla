@@ -294,7 +294,8 @@ Reconcile(p) ==
                                                     ![<<p, weak>>] = @ - strikeWeakAmount
                                             ]
                                 /\  IF strikeStrongAmount = limitStrong.amount
-                                    THEN accounts' = [ accounts EXCEPT ![limitStrong.account][weak] = 
+                                    THEN accounts' = [ accounts EXCEPT 
+                                            ![limitStrong.account][weak] = 
                                                 [   
                                                     balance: @.balance + strikeWeakAmount,
                                                     positions: <<
@@ -304,35 +305,40 @@ Reconcile(p) ==
                                                         @.positions[strong][1]
                                                     >>
                                                 ],
-                                            \* Price charged for the ask coin is stopWeak.exchrate
-                                            \* AMM earns difference between stopWeak.exchrate and bondExchrate
-                                            ![limitStrong.account[strong] =
+                                            ![limitStrong.account][strong] =
                                                 [
                                                     balance: @.balance - strikeStrongAmount,
                                                     \* Balance positions such that limit and loss sequences sum
                                                     \* the balance of coin in the account
-                                                    positions: Balance(weak, @.balance - strikeBidAmount, @.positions)
+                                                    positions: Balance(weak, @.balance - strikeStrongAmount, @.positions)
                                                 ]
-                                        ]
+                                         ]
                                     ELSE accounts' = [accounts EXCEPT 
                                         ![limitStrong.account][weak] = 
                                             [
                                                 balance: @.balance + strikeWeakAmount,
                                                 positions: <<
                                                     \* Remove head of 
-                                                    Tail(@.positions[strong][0]), 
+                                                    Append(
+                                                        Tail(@.positions[strong][0]),
+                                                        [
+                                                            account: limitStrong.account,
+                                                            amount: limitStrong.amount - strikeStrongAmount,
+                                                            exchrate: limitStrong.exchrate
+                                                        ]
+                                                    ),
                                                     \* Stops
                                                     @.positions[strong][1]
                                                 >>
                                             ],
                                         \* Price charged for the ask coin is stopWeak.exchrate
                                         \* AMM earns difference between stopWeak.exchrate and bondExchrate
-                                        ![limitStrong.account[strong] =
+                                        ![limitStrong.account][strong] =
                                             [
                                                 balance: @.balance - strikeStrongAmount,
                                                 \* Balance positions such that limit and loss sequences sum
                                                 \* the balance of coin in the account
-                                                positions: Balance(weak, @.balance - strikeBidAmount, @.positions)
+                                                positions: Balance(weak, @.balance - strikeStrongAmount, @.positions)
                                             ]
                                     ]
                 []      limitStrong.exchrate = bondExchrate ->
@@ -380,7 +386,8 @@ Reconcile(p) ==
                                 UNION {
                                 @ / [
                                     account: limitStrong.account
-                                    amount: 
+                                    amount: limitStrong.amount - 
+                                    exchrate: limitStrong.exchrate
                                     
                          
                         
@@ -571,7 +578,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon Jul 12 22:32:59 CDT 2021 by Charles Dusek
+\* Last modified Mon Jul 12 23:01:03 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
