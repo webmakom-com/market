@@ -290,28 +290,51 @@ Reconcile(p) ==
                                         ]
                                 /\ bonds' = [
                                                 bonds EXCEPT 
-                                                    ![<<p, strong>>] = @ + strikeBidAmount,
-                                                    ![<<p, weak>>] = @ - strikeAskAmount
+                                                    ![<<p, strong>>] = @ + strikeStrongAmount,
+                                                    ![<<p, weak>>] = @ - strikeWeakAmount
                                             ]
-                                /\ accounts' = [accounts EXCEPT 
-                                    ![stopWeak.account][weak] = 
-                                        [
-                                            balance: @.balance + strikeWeakAmount,
-                                            positions: <<
-                                                @.positions[strong][0], 
-                                                Tail(@.positions[strong][1])
-                                            >>
-                                        ],
-                                    \* Price charged for the ask coin is stopWeak.exchrate
-                                    \* AMM earns difference between stopWeak.exchrate and bondExchrate
-                                    ![stopWeak.account[strong] =
-                                        [
-                                            balance: @.balance - strikeBidAmount,
-                                            \* Balance positions such that limit and loss sequences sum
-                                            \* the balance of coin in the account
-                                            positions: Balance(weak, @.balance - strikeBidAmount, @.positions)
+                                /\  IF strikeStrongAmount = limitStrong.amount
+                                    THEN accounts' = [ accounts EXCEPT ![limitStrong.account][weak] = 
+                                                [   
+                                                    balance: @.balance + strikeWeakAmount,
+                                                    positions: <<
+                                                        \* Remove head of 
+                                                        Tail(@.positions[strong][0]), 
+                                                        \* Stops
+                                                        @.positions[strong][1]
+                                                    >>
+                                                ],
+                                            \* Price charged for the ask coin is stopWeak.exchrate
+                                            \* AMM earns difference between stopWeak.exchrate and bondExchrate
+                                            ![limitStrong.account[strong] =
+                                                [
+                                                    balance: @.balance - strikeStrongAmount,
+                                                    \* Balance positions such that limit and loss sequences sum
+                                                    \* the balance of coin in the account
+                                                    positions: Balance(weak, @.balance - strikeBidAmount, @.positions)
+                                                ]
                                         ]
-                                   ]
+                                    ELSE accounts' = [accounts EXCEPT 
+                                        ![limitStrong.account][weak] = 
+                                            [
+                                                balance: @.balance + strikeWeakAmount,
+                                                positions: <<
+                                                    \* Remove head of 
+                                                    Tail(@.positions[strong][0]), 
+                                                    \* Stops
+                                                    @.positions[strong][1]
+                                                >>
+                                            ],
+                                        \* Price charged for the ask coin is stopWeak.exchrate
+                                        \* AMM earns difference between stopWeak.exchrate and bondExchrate
+                                        ![limitStrong.account[strong] =
+                                            [
+                                                balance: @.balance - strikeStrongAmount,
+                                                \* Balance positions such that limit and loss sequences sum
+                                                \* the balance of coin in the account
+                                                positions: Balance(weak, @.balance - strikeBidAmount, @.positions)
+                                            ]
+                                    ]
                 []      limitStrong.exchrate = bondExchrate ->
                      \* In this case the exchrate does not change if equal amounts of ask
                      \* and bid coins are simulataneously exchanged.
@@ -548,7 +571,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon Jul 12 21:55:19 CDT 2021 by Charles Dusek
+\* Last modified Mon Jul 12 22:32:59 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
