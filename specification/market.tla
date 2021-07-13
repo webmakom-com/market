@@ -213,11 +213,27 @@ Reconcile(p) ==
             \* Moving in the strong direction first
             \* Checking for weak stops first as they will drive the exchrate higher
             \* enabling more strong limits
+            (***************************************************************)
+            (* CASE 1: Inverse Exchange Rate of the head Weak Stop is less *)
+            (*         than the current Bond Exchrate (weak/strong)        *)
+            (***************************************************************)
             CASE    LT(stopWeakInverseExchrate, bondExchrate)    ->
-                
+                (***********************************************************)
+                (* CASE 1.1: Inverse Exchange Rate of the head of the Weak *)
+                (*           stops is less than the Exchange Rate of the   *)
+                (*           head of the Strong Limits                     *)
+                (***********************************************************)
                 CASE    LT(stopWeakInverseExchrate, limitStrong.exchrate) ->
-                        \* Find out maximum bond may give of weak coin before hitting the head of the
-                        \* strong limit book
+                        (***************************************************)
+                        (* Bond Bid: The maximum amount of the weak coin   *)
+                        (*           the AMM bond may exchange for the     *)
+                        (*           strong coin, before the exchange rate,*)
+                        (*           dictated by the Weak AMM Balance over *)
+                        (*           the Strong AMM Balance, enables the   *)
+                        (*           order at the head of the Strong Limit *)
+                        (*           sequence.                             *)     
+                        (***************************************************)            
+                        
                         LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)
                         IN  
                             LET strikeStrongAmount == 
@@ -266,7 +282,11 @@ Reconcile(p) ==
                                     
                                 
                                    
-                      
+                (***********************************************************)
+                (* CASE 1.2: Inverse Exchange Rate of the head of the Weak *)
+                (*           stops is greater than the Exchange Rate of the*)
+                (*           head of the Strong Limits                     *)
+                (***********************************************************)      
                 []      GT(stopWeakInverseExchrate, limitStrong.exchrate) ->
                         \* Execute limitStrong order
                         LET bondBid == MaxBondBid(stopWeakInverseExchrate, bondWeak, bondStrong)
@@ -578,7 +598,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon Jul 12 23:01:03 CDT 2021 by Charles Dusek
+\* Last modified Tue Jul 13 12:05:22 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
