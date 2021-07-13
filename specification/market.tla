@@ -269,17 +269,25 @@ Reconcile(p) ==
                       
                 []      GT(stopWeakInverseExchrate, limitStrong.exchrate) ->
                         \* Execute limitStrong order
-                        LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)
+                        LET bondBid == MaxBondBid(stopWeakInverseExchrate, bondWeak, bondStrong)
                         IN
                             LET strikeStrongAmount == 
                                 \* Is bondBid enough to cover stopWeak.amount?
-                                IF limitStrong.amount < bondBid THEN limitStrong.amount
-                                ELSE bondBid
+                                IF limitStrong.amount < bondBid * (stopWeakInverseExchrate[0] / stopWeakInverseExchrate[1]) THEN limitStrong.amount
+                                ELSE bondBid * (stopWeakInverseExchrate[0] / stopWeakInverseExchrate[1])
                                 strikeWeakAmount ==
-                                    (limitStrong.amount * limitStrong.exchrate[0]) / limitStrong.exchrate[1]
+                                    (weakStop.amount * stopWeakInverseExchrate[0]) / stopWeakInverseExchrate[1]
                             IN  \* Remove head of strong limit book
-                                /\ limits' = [stops EXCEPT ![<<p, strong>>] = 
-                                    IF strikeAskAmount Tail(@)]
+                                /\  IF strikeStrongAmount = limitStrong.amount
+                                    THEN limits' = [limits EXCEPT ![<<p, strong>>] = Tail(@)]
+                                    ELSE limits' = [limits EXCEPT ![<<p, strong>>] = UNION {
+                                            [
+                                                account: @.account,
+                                                amount: @.amount - strikeStrongAmount,
+                                                positions: @.positions \* Need to update positions 
+                                            ],
+                                            Tail(@)}
+                                        ]
                                 /\ bonds' = [
                                                 bonds EXCEPT 
                                                     ![<<p, strong>>] = @ + strikeBidAmount,
@@ -540,7 +548,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 11 22:10:10 CDT 2021 by Charles Dusek
+\* Last modified Mon Jul 12 21:55:19 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
