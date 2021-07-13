@@ -232,13 +232,21 @@ Reconcile(p) ==
                         (*           the Strong AMM Balance, enables the   *)
                         (*           order at the head of the Strong Limit *)
                         (*           sequence.                             *)     
-                        (***************************************************)            
-                        
-                        LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)
+                        (***************************************************)
+                        LET bondBid == MaxBondBid(
+                                limitStrong.exchrate, 
+                                bondWeak, 
+                                bondStrong
+                            )
                         IN  
                             LET strikeStrongAmount == 
-                                \* Is bondBid enough to cover stopWeak.amount?
-                                IF stopWeak.amount < bondBid * (limitStrong.exchrate[0] / limitStrong.exchrate[1]) THEN stopWeak.amount
+                                \* Is bondBid (weak amount) * exchrate
+                                \* (strong/weak) enough to cover 
+                                \* stopWeak.amount (strong amount)
+                                IF  stopWeak.amount < bondBid * 
+                                    (limitStrong.exchrate[1] / 
+                                    limitStrong.exchrate[0]) 
+                                THEN stopWeak.amount
                                 \* ELSE: limit strong is used as the exchrate that the AMM uses to trade
                                 \* This allows the AMM to collect the difference between the exchange rate
                                 \* defined by the balances of the AMM, and the exchange rate that enables
@@ -246,9 +254,14 @@ Reconcile(p) ==
                                 \*
                                 \* We do not consider enabling other stop loss orders as the first limit order
                                 \* exchange rate dictates the upper bound before dependent books are reached
-                                ELSE bondBid * (limitStrong.exchrate[0] / limitStrong.exchrate[1])
-                                
-                                strikeWeakAmount == bondBid
+                                ELSE bondBid * (limitStrong.exchrate[1] / 
+                                     limitStrong.exchrate[0])
+                                \* strikeWeakAmount (weak amount) ==
+                                \* strikeStrongAmount * exchrate 
+                                \* (weak/strong)
+                                strikeWeakAmount == strikeStrongAmount *
+                                     (limitStrong.exchrate[0] / 
+                                    limitStrong.exchrate[1]) 
                             IN  \* Remove head of weak stop book
                                 /\ stops' = [stops EXCEPT ![<<p, strong>>] = Tail(@)]
                                 /\ bonds' = [
@@ -288,16 +301,37 @@ Reconcile(p) ==
                 (*           head of the Strong Limits                     *)
                 (***********************************************************)      
                 []      GT(stopWeakInverseExchrate, limitStrong.exchrate) ->
-                        \* Execute limitStrong order
-                        LET bondBid == MaxBondBid(stopWeakInverseExchrate, bondWeak, bondStrong)
+                        LET strikeExchrate == 
+                            IF stopWeakInverseExchrate < Head(Tail(limits[p][strong]))
+                            THEN stopWeakInverseExchrate
+                            ELSE Head(Tail(limits[p][strong]))
                         IN
+                        \* Execute limitStrong order
+                        LET bondBid == MaxBondBid(
+                                strikeExchrate, 
+                                bondWeak, 
+                                bondStrong
+                            )
+                        IN  \* Is bondBid (weak amount) * exchrate
+                            \* (strong/weak) enough to cover 
+                            \* stopWeak.amount (strong amount)
                             LET strikeStrongAmount == 
                                 \* Is bondBid enough to cover stopWeak.amount?
-                                IF limitStrong.amount < bondBid * (stopWeakInverseExchrate[0] / stopWeakInverseExchrate[1]) THEN limitStrong.amount
-                                ELSE bondBid * (stopWeakInverseExchrate[0] / stopWeakInverseExchrate[1])
+                                IF  limitStrong.amount < bondBid * 
+                                    (strikeExchrate[1] / 
+                                    strikeExchrate[0]) 
+                                THEN limitStrong.amount
+                                ELSE bondBid * 
+                                    (strikeExchrate[1] / 
+                                    strikeExchrate[0])
+                                \* strikeWeakAmount (weak amount) ==
+                                \* strikeStrongAmount * exchrate 
+                                \* (weak/strong)
                                 strikeWeakAmount ==
-                                    (weakStop.amount * stopWeakInverseExchrate[0]) / stopWeakInverseExchrate[1]
-                            IN  \* Remove head of strong limit book
+                                    strikeStrongAmount * 
+                                    (strikeExchrate[0] / 
+                                    strikeExchrate[1])
+                            IN  \*  Remove limit position or update balance
                                 /\  IF strikeStrongAmount = limitStrong.amount
                                     THEN limits' = [limits EXCEPT ![<<p, strong>>] = Tail(@)]
                                     ELSE limits' = [limits EXCEPT ![<<p, strong>>] = UNION {
@@ -328,8 +362,10 @@ Reconcile(p) ==
                                             ![limitStrong.account][strong] =
                                                 [
                                                     balance: @.balance - strikeStrongAmount,
-                                                    \* Balance positions such that limit and loss sequences sum
-                                                    \* the balance of coin in the account
+                                                    \* Balance function needed to adjust 
+                                                    \* positions such that limit and loss 
+                                                    \* sequences sum the balance of coin 
+                                                    \* in the account
                                                     positions: Balance(weak, @.balance - strikeStrongAmount, @.positions)
                                                 ]
                                          ]
@@ -378,8 +414,8 @@ Reconcile(p) ==
                                  \* amount 
                                 Append (
                                     [
-                                        account: Head(@).account
-                                        amount: Head(@).amount - least.amount
+                                        account: Head(@).account,
+                                        amount: Head(@).amount - least.amount,
                                         exchrate: Head(@).exchrate
                                     ], 
                                     Tail(@)
@@ -598,7 +634,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Jul 13 12:05:22 PDT 2021 by Charles Dusek
+\* Last modified Tue Jul 13 14:39:33 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
