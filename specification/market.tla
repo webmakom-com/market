@@ -32,7 +32,7 @@ PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
 (* depend on both the pair (set of two coins) as well as one of the coins *)
 (* associated with that particular pair                                   *)
 (**************************************************************************)
-PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair} 
+PairPlusCoin == { <<pair, coin>> \in Pair \X Coin: coin \in pair } 
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -404,7 +404,7 @@ Reconcile(p) ==
                 (*           stops is equal to the Exchange Rate of the    *)
                 (*           head of the Strong Limits                     *)
                 (***********************************************************)
-                []      limitStrong.exchrate = bondExchrate ->
+                []      limitStrong.exchrate = stopWeak.exchrate ->
                      \* In this case the exchrate does not change if equal amounts of ask
                      \* and bid coins are simulataneously exchanged.
                      \* AMM may exchange up the to least amount of the limitStrong or
@@ -415,7 +415,31 @@ Reconcile(p) ==
                     IN
                         /\  IF limitStrong.amount = least.amount
                             THEN    /\ limits' = [limits EXCEPT ![p][strong] = Tail(@)]
-                                    /\ accounts' = [accounts EXCEPT ![limitStrong.account] =  
+                                    /\ stops' = [stops EXCEPT ![p][weak] = Append (
+                                            [
+                                                account: Head(@).account,
+                                                amount: Head(@).amount - least.amount,
+                                                exchrate: Head(@).exchrate
+                                            ], 
+                                            Tail(@)
+                                        )]
+                                    /\ accounts' = [accounts EXCEPT 
+                                        ![limitStrong.account][strong] = [
+                                            balance: @.balance - strikeStrongAmount,
+                                            \* Balance positions such that limit and loss sequences sum
+                                            \* the balance of coin in the account
+                                            positions: Balance(strong, @.balance - strikeStrongAmount, @.positions)
+                                        ],
+                                        ![limitStrong.account][weak] = [
+                                            balance: @.balance + strikeWeakAmount
+                                        ],
+                                        ![weakStop.account][weak] = [
+                                            balance: @.balance - strikeStrongAmount,
+                                            \* Balance positions such that limit and loss sequences sum
+                                            \* the balance of coin in the account
+                                            positions: Balance(weak, @.balance - strikeStrongAmount, @.positions)
+                                        ]
+                                       ]
                             ELSE    /\ limits' = [limits EXCEPT ![p][strong] = Append (
                                         [
                                             account: Head(@).account,
@@ -424,21 +448,12 @@ Reconcile(p) ==
                                         ], 
                                         Tail(@)
                                        )]
-                                    /\ accounts' = [accounts EXCEPT ![limitStrong.account] = 
-                        /\ stops' = [stops EXCEPT ![p][weak] = 
-                            IF Head(@).amount = least.amount
-                            THEN \* Remove limit record from head of limit sequence
-                                Tail(@)
-                            ELSE \* Replace head limit record with one that has updated
-                                 \* amount 
-                                Append (
-                                    [
-                                        account: Head(@).account,
-                                        amount: Head(@).amount - least.amount,
-                                        exchrate: Head(@).exchrate
-                                    ], 
-                                    Tail(@)
-                                 )]
+                                    /\ stops' = [stops EXCEPT ![p][weak] = Tail(@)
+                                    /\ accounts' = [accounts EXCEPT 
+                                        ![limitStrong.account] =
+                                        ![weakStop.account] = 
+                        
+          
                     
                 ELSE
             []      limitStrong.exchrate.LT(bondExchrate)       ->
@@ -626,7 +641,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Jul 13 22:18:06 CDT 2021 by Charles Dusek
+\* Last modified Wed Jul 14 22:50:52 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
