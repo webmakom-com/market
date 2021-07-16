@@ -120,6 +120,7 @@ TypeInvariant ==
     /\  limits \in [PairPlusCoin -> Seq(PositionType)]
     /\  orderQ \in [Pair -> Seq(Order)]
     /\  stops \in [PairPlusCoin -> Seq(PositionType)]
+    /\  strong \in Coin
 
 (************************** Variable Initialization ************************)       
         
@@ -161,7 +162,7 @@ Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 
 (***************************************************************************)
 (* Max amount that Bond pool may sell of ask coin without                  *)
-(* executing an ask coin book limit order.                                 *)
+(* executing the most adjacent order                                       *)
 (*                                                                         *)
 (* Expression origin:                                                      *)
 (* bondAsk / bondBid = erate                                               *)
@@ -188,7 +189,6 @@ MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==
     \* bondBid(initial)^2 * erate(final) ^ 2 / 
     \* erate(initial)
     bondDenominator * ((erateFinal[0] * bondDenominator) \div (erateFinal[1] * bondNumerator)) - bondNumerator
-
 
 Reconcile(p) ==
     /\  ctl = "Reconcile"
@@ -641,7 +641,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Jul 14 22:50:52 CDT 2021 by Charles Dusek
+\* Last modified Thu Jul 15 19:46:23 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
