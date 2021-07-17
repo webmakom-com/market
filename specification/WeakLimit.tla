@@ -18,14 +18,14 @@ WeakLimit ==
     /\  LET bondStrong == bonds[pairPlusStrong]
             pair == pairPlusStrong[0]
             strong == pairPlusStrong[1]
-            weak == { c \in pairPlusStrong[0] : c # pairPlusStrong[1] } IN
+            weak == { c \in pairPlusStrong[0] : c # pairPlusStrong[1] }
         IN  LET 
             bondExchrate ==         
                 <<bond[<<pair, weak>>], bond[<<pair, strong>>]>>
             bondStrong == bonds[pairPlusStrong]
             bondWeak == bonds[<<pair, weak>>]
-            limitWeak = limits[p][weak]
-            stopStrong = stops[p][strong]
+            limitWeak == limits[p][weak]
+            stopStrong == stops[p][strong]
         IN  LET
             limitWeakInverseExchrate == 
                 <<limitsWeak.exchrate[1], limitsWeak.exchrate[0]>>
@@ -256,5 +256,5 @@ WeakLimit ==
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Jul 16 23:29:59 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 08:32:59 CDT 2021 by Charles Dusek
 \* Created Fri Jul 16 22:17:43 CDT 2021 by Charles Dusek
