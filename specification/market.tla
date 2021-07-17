@@ -144,98 +144,7 @@ MarketInit ==
     /\ orderQ = [p \in Pair |-> <<>>]
     /\ pairPlusStrong = <<>>
 
-(***************************** Helper Functions ****************************)
-
-\* Nat tuple (numerator/denominator) inequality helper functions
-\* All equalities assume Natural increments
-GT(a, b) ==     IF a[1]*b[2] > a[2]*b[1] THEN TRUE ELSE FALSE
-
-GTE(a, b) ==    IF a[1]*b[2] >= a[2]*b[1] THEN TRUE ELSE FALSE 
-
-LT(a, b) ==     IF a[1]*b[2] < a[2]*b[1] THEN TRUE ELSE FALSE
-
-LTE(a, b) ==    IF a[1]*b[2] <= a[2]*b[1] THEN TRUE ELSE FALSE
-
-\* This division needs
-BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
-    (bondAskBal * bidAmount) \div bondBidBal
-
 Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
-
-(***************************************************************************)
-(* Max amount that Bond pool may sell of ask coin without                  *)
-(* executing the most adjacent order                                       *)
-(*                                                                         *)
-(* Expression origin:                                                      *)
-(* bondAsk / bondBid = erate                                               *)
-(* d(bondAsk)/d(bondBid) = d(erate)                                        *)
-(* d(bondAsk)/d(bondBid) = d(bondAsk)/d(bondBid)                           *)
-(* d(bondAsk) = d(bondBid) * d(bondAsk)/d(bondBid)                         *)
-(* d(bondAsk) = d(bondBid) * d(erate)                                      *)
-(*                                                                         *)
-(* Integrate over bondAsk on lhs and bondBid & erate on rhs then           *)
-(* substitute and simplify                                                 *)
-(*                                                                         *)
-(* MaxBondBid =                                                            *)
-(*                                                                         *)
-(* erate(intial) = bondAsk / bondBid                                       *)
-(*                                                                         *)
-(* MaxBondBid =                                                            *)
-(* bondAsk(initial) -                                                      *)
-(* bondBid(initial) ^ 2 * erate(final) ^ 2 /                               *)
-(* [(bondAsk(initial)/bondBid(initial)]                                    *)
-(***************************************************************************)
-MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==  
-    \* MaxBondBid = 
-    \* bondAsk(initial) - 
-    \* bondBid(initial)^2 * erate(final) ^ 2 / 
-    \* erate(initial)
-    bondDenominator * ((erateFinal[0] * bondDenominator) \div (erateFinal[1] * bondNumerator)) - bondNumerator
-
-Reconcile(p) ==
-    /\  ctl = "Reconcile"
-    /\  LET
-            weak == { c \in p : c # strong }
-        IN  LET
-            bondStrong ==   bonds[p][strong]
-            bondWeak ==     bonds[p][weak]
-            limitStrong ==  Head(limits[p][strong])
-            limitWeak ==    Head(limits[p][weak])
-            stopStrong ==   Head(stops[p][strong])
-            stopWeak ==     Head(stops[p][weak])
-        IN  LET
-            bondExchrate ==         
-                <<bondWeak, bondStrong>>
-            limitWeakInverseExchrate ==
-                <<limitsWeak.exchrate[1], limitsWeak.exchrate[0]>>
-            stopWeakInverseExchrate == 
-                <<stopsWeak.exchrate[1], stopsWeak.exchrate[0]>>
-        IN
-            \* Moving in the strong direction first
-            \* Checking for weak stops first as they will drive the exchrate higher
-            \* enabling more strong limits
-            (***************************************************************)
-            (* CASE 1: Inverse Exchange Rate of the head Weak Stop is less *)
-            (*         than the current Bond Exchrate (weak/strong)        *)
-            (***************************************************************)
-            CASE    LT(stopWeakInverseExchrate, bondExchrate)    ->
-
-                                    
-                                
-                                   
-                
-                                
-                
-          
-                    
-                ELSE
-                  
-            []      stopStrong.exchrate.GT(bondExch             ->
-                IF limitWeakInverseExchrate.GT(bondExchrate)
-                THEN
-                ELSE
-            []      limitWeakInverseExchrate.GT(bondExchrate)   ->
-            
 
 (***************************** Step Functions ****************************)
 \* Deposit coin into exchange account
@@ -408,7 +317,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Jul 16 22:20:34 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 11:23:19 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
