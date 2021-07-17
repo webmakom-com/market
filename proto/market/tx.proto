@@ -1,5 +1,8 @@
 syntax = "proto3";
+
 package onomyprotocol.market.market;
+
+import "cosmos/base/v1beta1/coin.proto";
 
 // this line is used by starport scaffolding # proto/tx/import
 
@@ -8,6 +11,31 @@ option go_package = "github.com/onomyprotocol/market/x/market/types";
 // Msg defines the Msg service.
 service Msg {
     // this line is used by starport scaffolding # proto/tx/rpc
-}
+  rpc SendDeposit(MsgSendDeposit) returns (MsgSendDepositResponse) {};
+  rpc SendWithdraw(MsgSendWithdraw) returns (MsgSendWithdrawResponse) {};
+};
 
 // this line is used by starport scaffolding # proto/tx/message
+message MsgSendDeposit {
+  string sender = 1;
+  string port = 2;
+  string channelID = 3;
+  uint64 timeoutTimestamp = 4;
+
+  // custom fields
+  cosmos.base.v1beta1.Coin coin = 5;
+};
+
+message MsgSendDepositResponse {};
+
+message MsgSendWithdraw {
+  string sender = 1;
+  string port = 2;
+  string channelID = 3;
+  uint64 timeoutTimestamp = 4;
+
+  // custom fields
+  cosmos.base.v1beta1.Coin coin = 5;
+};
+
+message MsgSendWithdrawResponse {};
