@@ -1,7 +1,7 @@
 ------------------------------- MODULE market -------------------------------
 EXTENDS     Naturals, Sequences, SequencesExt
 
-CONSTANT    Account,    \* Set of all accounts
+CONSTANT    ExchAccount,    \* Set of all accounts
             Coin,       \* Set of all coins
             Denominator \* Set of all possible denominators. Precision of 
                         \* fractions is defined by denominator constant.
@@ -41,29 +41,27 @@ PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 (* The position type is the order book record that is maintained when a    *)
 (* limit order has an unfulfilled outstanding amount                       *)
 (*                                                                         *)
-(* account <uint256>: Identifier of the position                           *) 
+(* ExchAccount <uint256>: Identifier of the position                       *) 
 (* amount <Nat>: Amount of Bid Coin                                        *)
-(* limit <ExchRateType>: Lower Bound of the Upper Sell Region              *)
-(* loss <ExchRateType>: Upper Bound of the Lower Sell Region               *)
+(* exchrate <ExchRateType>: The Limit or Loss set-point                    *)
 (*                                                                         *)
 (* Cosmos-SDK types                                                        *)
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (*                                                                         *)
 (* type PositionType struct {                                              *) 
-(*      account:    uint256                                                *)
+(*      ExchAccount:    uint256                                                *)
 (*      Amount      CoinDec                                                *)
-(*      limit       Dec                                                    *)
-(*      loss        Dec                                                    *)
+(*      exchrate    Dec                                                    *)
 (* }                                                                       *)
 (***************************************************************************)
 PositionType == [
-    account: Account,
+    ExchAccount: ExchAccount,
     amount: Nat,
     exchrate: ExchRateType
 ]
 
-(***************************** Exchange Account ****************************)
-(* The Exchange Account holds active exchange balances with their          *)
+(***************************** Exchange ExchAccount ************************)
+(* The Exchange ExchAccount holds active exchange balances with their      *)
 (* associated order positions.                                             *)
 (*                                                                         *)
 (* Example Position                                                        *)
@@ -91,14 +89,14 @@ PositionType == [
 (*                                                                         *)
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (* type AccountType struct {                                               *) 
-(*      account     uint64                                                 *)
+(*      ExchAccount     uint64                                             *)
 (*      balances    Array                                                  *)
 (* }                                                                       *)
 (***************************************************************************)
 
 AccountType == [
     \* The balance and positions of each denomination of coin in an
-    \* exchange account are represented by the record type below
+    \* exchange ExchAccount are represented by the record type below
     Coin -> [
         \* Balances are represented as Natural number
         balance: Nat,
@@ -107,13 +105,13 @@ AccountType == [
         \* Sum of amounts in sequence of positions for a particular Ask 
         \* Coin must be lower than or equal to the accounts denom balance
         \*
-        \* [AskCoin -> << Limits, Stops >>]
+        \* [AskCoin -> << Limits [0], Stops [1]>>]
         positions: [Coin -> <<Seq(PositionType), Seq(PositionType)>>]
     ]
 ] 
 
 TypeInvariant ==
-    /\  accounts \in [Account -> AccountType]
+    /\  accounts \in [ExchAccount -> AccountType]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
     /\  bonds \in [PairPlusCoin -> Nat]
@@ -127,7 +125,7 @@ TypeInvariant ==
         
 MarketInit ==  
     /\  accounts = [
-            a \in Account |-> [
+            a \in ExchAccount |-> [
                 c \in Coin |-> [
                     balance: 0,
                     positions: [
@@ -147,43 +145,36 @@ MarketInit ==
 Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
 
 (***************************** Step Functions ****************************)
-\* Deposit coin into exchange account
+\* Deposit coin into exchange ExchAccount
+\* a: ExchAccount
+\* c: Coin
+\* amount: Amount of Coin
 Deposit(a, c, amount) ==    
-    LET record == { d \in accounts[a] : d.bidDenom }
-    IN
-        IF record = {}
-        THEN 
-            accounts' = [accounts EXCEPT ![a] = UNION {
-                @, 
-                [
-                    bidDenom: c,
-                    balance: amount,
-                    positions: [d \in Coin \ c |-> << <<>>, <<>> >>
-                ]
-            }
-        ELSE
-            accounts' = [accounts EXCEPT ![a] = UNION {
-                @ / record,
-                [
-                    bidDenom: c,
-                    balance: amount + record.amount,
-                    positions: record.positions
-                ]
-            }
+    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ + amount]
+    /\  UNCHANGED << >>
 
-\* Withdraw coin from exchange account
-Withdraw(a, c) ==
+\* Withdraw coin from exchange ExchAccount
+\* a: ExchAccount
+\* c: Coin
+\* amount: Amount of Coin
+Withdraw(a, c, amount) ==
+    /\  accounts[a][c].balance >= amount
+    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ - amount]
+    /\  UNCHANGED << >> 
 
 \* Optional syntax
 (* LET all_limit_orders == Add your stuff in here *)
 (* IN {x \in all_limit_orders: x.bid # x.ask} *)
-\* p = pair
-\* c = bid coin
-\* a = account
-SubmitOrder(a) == 
-    /\  \E o \in Order : 
-        /\  o.bid # o.ask
-        /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
+SubmitPosition(a, ask, bid, type, pos) == 
+    LET 
+        t == IF type = "limit" THEN 0 ELSE 1
+        balance == accounts[a][bid].balance
+        posSeqs == accounts[a][bid].positions[ask]
+    IN 
+    /\  IF      SumSeq(posSeqs[t]) + pos.amount <= balance
+        THEN    accounts' = [accounts EXCEPT ![a][bid].positions[ask] = 
+        
+    /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
     /\  UNCHANGED <<books, bonds>>
 
 Provision(pair) ==
@@ -313,11 +304,20 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
                                                     \/ ProcessBid(p)
                                                     \/ Provision(p)
                                                     \/ Liquidate(p)
-        \/ SubmitOrder
+        \/ \E a \in ExchAccount : 
+           \E {ask, bid} \in Pair : ask != bid :
+           \E type \in {"limit", "stop"} : 
+           \E pos \in Position :                    \/ SubmitPosition(
+                                                            a,
+                                                            ask,
+                                                            bid,
+                                                            type,
+                                                            pos
+                                                        )
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 11:23:19 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 11:59:49 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
