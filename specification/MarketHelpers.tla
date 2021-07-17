@@ -1,5 +1,5 @@
 --------------------------- MODULE MarketHelpers ---------------------------
-EXTENDS     Naturals, Sequences, SequencesExt
+EXTENDS Naturals, Sequences, SequencesExt
 
 \* Nat tuple (numerator/denominator) inequality helper functions
 \* All equalities assume Natural increments
@@ -10,6 +10,10 @@ GTE(a, b) ==    IF a[1]*b[2] >= a[2]*b[1] THEN TRUE ELSE FALSE
 LT(a, b) ==     IF a[1]*b[2] < a[2]*b[1] THEN TRUE ELSE FALSE
 
 LTE(a, b) ==    IF a[1]*b[2] <= a[2]*b[1] THEN TRUE ELSE FALSE
+
+\* Sequence Helpers
+IGT(limitSeq, pos) == {i \in 0..Len(limitSeq): limitSeq[i].exchrate > pos.exchrate}
+ILT(stopSeq, pos) == {i \in 0..Len(stopSeq): stopSeq[i].exchrate < pos.exchrate}
 
 \* This division needs
 BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
@@ -45,11 +49,11 @@ MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==
     \* erate(initial)
     bondDenominator * ((erateFinal[0] * bondDenominator) \div (erateFinal[1] * bondNumerator)) - bondNumerator
 
-IGT(limitSeq, pos) == {i \in 0..Len(limitSeq): limitSeq[i].exchrate > pos.exchrate}
+
                 
 
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 14:08:04 PDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 14:19:26 PDT 2021 by Charles Dusek
 \* Created Sat Jul 17 11:19:23 CDT 2021 by Charles Dusek

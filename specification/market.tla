@@ -1,5 +1,5 @@
 ------------------------------- MODULE market -------------------------------
-EXTENDS     Naturals, Sequences, SequencesExt
+EXTENDS     MarketHelpers, Naturals, Sequences, SequencesExt
 
 CONSTANT    ExchAccount,    \* Set of all accounts
             Coin,       \* Set of all coins
@@ -185,6 +185,8 @@ SubmitPosition(a, ask, bid, type, pos) ==
     /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
     /\  UNCHANGED <<books, bonds>>
 
+\* Need to add ClosePosition
+
 Provision(pair) ==
     \* Use Input constant to give ability to limit amounts input  
     \E r \in Nat : r \in Input 
@@ -224,93 +226,9 @@ Liquidate(pair) ==
                     
                     /\ drops' = [ drops EXCEPT 
                         ![pair] = @ - r ]
-                    /\ UNCHANGED << books, orderQ >>
-                       
-(***************************************************************************)
-(* Process Order inserts a new limit and stop positions into the limit and *)
-(* stop sequences of the ask coin                                          *)
-(***************************************************************************)
-ProcessOrder(p) ==
-
-    (*************************** Enabling Condition ************************)
-    (* Order queue is not empty                                            *)
-    (***********************************************************************)
-    /\ orderQ[pair] # <<>>
-    (***********************************************************************)
-    (* Set strong coin                                                     *)
-    (***********************************************************************)
-    /\ strong' = <<p, Strong(p)>>
-    (*************************** Internal Variables ************************)
-    (* Internal variables are used to track intermediate changes to books  *)
-    (* bonds on copy of the working state                                  *)
-    (***********************************************************************)
-    /\ LET o == Head(orderQ[pair]) IN
-        LET (*************************** Books *****************************)
-            limitBid == limits[pair][o.bid]
-            stopBid == stops[pair][o.bid]
-            
-            (*************************** Bonds *****************************)
-            bondAsk == bonds[pair][o.ask]
-            bondBid == bonds[pair][o.bid]
-            
-            (*************************** Order *****************************)
-            orderAmt == o.amount
-            
-        IN  
-            \* indices gt than active exchange
-            (***************************************************************)
-            (* Define Process() to allow for loop back                     *)
-            (***************************************************************)
-            LET Process ==
-                \* Run this on the limits
-                LET igt ==
-                    {i in 0..Len(limitBid): limitBid[i].exchrate > o.exchrate}
-                IN \*Check following line!
-                    IF igt = {} THEN 
-                        /\ limits = [limits EXCEPT ![pair][o.bid] = Append(<<order>>, @)
-                        /\ ctl' = "Bid"
-                    ELSE limits' = [limits EXCEPT ![pair][o.bid] 
-                        = InsertAt(@, Min(igt), order)] 
+                    /\ UNCHANGED << books, orderQ >>            
                 
-                \* Run this on the stops
-                LET ilt ==
-                    {i in 0..Len(stopBid): stopBid[i].exchrate < o.exchrate}
-                IN \*Check following line!
-                    IF ilt = {} THEN 
-                        /\ [stops EXCEPT ![pair][o.bid] = Append(<<order>>, @)
-                        /\ ctl' = "Strong"
-                    ELSE stops' = [stops EXCEPT ![pair][o.bid] 
-                        = InsertAt(@, Min(igt), order)]
-    
-    /\ ctl' = "WeakStop""
-    /\ UNCHANGED << >>
-
-
-                        
-                
-
-
-ProcessWeak(p) ==
-    /\ ctl = "weak"
-    /\  LET weak = bonds[p][c \in p : \A {bonds[p][d] : d \in p} >= bonds[p][c]] IN
-            LET 
-                weakLimitHead = Head(limits[p][strong])
-                strongStopHead = Head(stops[p][{c \in p : c # strong}])
-            IN 
-                
-
-ProcessMid(p) ==
-    /\ ctl = "mid"
-    /\  LET 
-            strong = bonds[p][c \in p : \A {bonds[p][d] : d \in p} <= bonds[p][c]]
-            weak = bonds[p][c \in p : \A {bonds[p][d] : d \in p} >= bonds[p][c]]
-        IN  
-            
-                
-Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
-                                                    \/ ProcessAsk(p)
-                                                    \/ ProcessBid(p)
-                                                    \/ Provision(p)
+Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ Provision(p)
                                                     \/ Liquidate(p)
         \/ \E a \in ExchAccount : 
            \E {ask, bid} \in Pair : ask != bid :
@@ -325,7 +243,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 14:05:08 PDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 14:18:35 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
