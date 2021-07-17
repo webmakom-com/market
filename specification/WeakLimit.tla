@@ -14,7 +14,7 @@ VARIABLE    limitBooks,     \* Limit Order Books
 
 -----------------------------------------------------------------------------
 WeakLimit ==
-    /\  ctl = "WeakStop" 
+    /\  ctl = "weakLimit" 
     /\  LET bondStrong == bonds[pairPlusStrong]
             pair == pairPlusStrong[0]
             strong == pairPlusStrong[1]
@@ -36,9 +36,9 @@ WeakLimit ==
                 (*           stops is less than the Exchange Rate of the head  *)
                 (*           of the Strong Limits                              *)
                 (***************************************************************)
-                CASE    LT(limitWeakInverseExchrate, limitStrong.exchrate) ->
+                CASE    GT(limitWeakInverseExchrate, stopStrong.exchrate) ->
                         LET bondBid == MaxBondBid(
-                                limitStrong.exchrate, 
+                                stopStrong.exchrate, 
                                 bondWeak, 
                                 bondStrong
                             )
@@ -46,11 +46,11 @@ WeakLimit ==
                             LET strikeStrongAmount == 
                                 \* Is bondBid (weak amount) * exchrate
                                 \* (strong/weak) enough to cover 
-                                \* stopWeak.amount (strong amount)
-                                IF  stopWeak.amount < bondBid * 
-                                    (limitStrong.exchrate[1] / 
-                                    limitStrong.exchrate[0]) 
-                                THEN stopWeak.amount
+                                \* limitWeak.amount (strong amount)
+                                IF  limitWeak.amount < bondBid * 
+                                    (stopStrong.exchrate[1] / 
+                                    stopStrong.exchrate[0]) 
+                                THEN limitWeak.amount
                                 \* ELSE: limit strong is used as the exchrate that the AMM uses to trade
                                 \* This allows the AMM to collect the difference between the exchange rate
                                 \* defined by the balances of the AMM, and the exchange rate that enables
@@ -58,14 +58,14 @@ WeakLimit ==
                                 \*
                                 \* We do not consider enabling other stop loss orders as the first limit order
                                 \* exchange rate dictates the upper bound before dependent books are reached
-                                ELSE bondBid * (limitStrong.exchrate[1] / 
-                                     limitStrong.exchrate[0])
+                                ELSE bondBid * (stopStrong.exchrate[1] / 
+                                     stopStrong.exchrate[0])
                                 \* strikeWeakAmount (weak amount) ==
                                 \* strikeStrongAmount * exchrate 
                                 \* (weak/strong)
                                 strikeWeakAmount == strikeStrongAmount *
-                                     (limitStrong.exchrate[0] / 
-                                    limitStrong.exchrate[1]) 
+                                     (stopStrong.exchrate[0] / 
+                                    stopStrong.exchrate[1]) 
                             IN  \* Remove head of weak stop book
                                 /\ stops' = [stops EXCEPT ![<<p, strong>>] = Tail(@)]
                                 /\ bonds' = [
@@ -74,7 +74,7 @@ WeakLimit ==
                                                     ![<<p, weak>>] = @ - strikeStrongAmount
                                             ]
                                 /\ accounts' = [accounts EXCEPT 
-                                        ![stopWeak.account][weak] = 
+                                        ![limitWeak.account][weak] = 
                                             [
                                                 balance: @.balance + strikeWeakAmount,
                                                 positions: <<
@@ -85,9 +85,9 @@ WeakLimit ==
                                         
                                         
                                         
-                                    \* Price charged for the ask coin is stopWeak.exchrate
-                                    \* AMM earns difference between stopWeak.exchrate and bondExchrate
-                                        ![stopWeak.account][strong] =
+                                    \* Price charged for the ask coin is limitWeak.exchrate
+                                    \* AMM earns difference between limitWeak.exchrate and bondExchrate
+                                        ![limitWeak.account][strong] =
                                             [
                                                 balance: @.balance - strikeStrongAmount,
                                                 \* Balance positions such that limit and loss sequences sum
@@ -101,13 +101,13 @@ WeakLimit ==
                 (*           stops is greater than the Exchange Rate of the*)
                 (*           head of the Strong Limits                     *)
                 (***********************************************************)      
-                []      GT(stopWeakInverseExchrate, limitStrong.exchrate) ->
+                []      LT(limitWeakInverseExchrate, stopStrong.exchrate) ->
                         LET strikeExchrate == 
                             IF stopWeakInverseExchrate < Head(Tail(limits[p][strong]))
                             THEN stopWeakInverseExchrate
                             ELSE Head(Tail(limits[p][strong]))
                         IN
-                        \* Execute limitStrong order
+                        \* Execute stopStrong order
                         LET bondBid == MaxBondBid(
                                 strikeExchrate, 
                                 bondWeak, 
@@ -115,13 +115,13 @@ WeakLimit ==
                             )
                         IN  \* Is bondBid (weak amount) * exchrate
                             \* (strong/weak) enough to cover 
-                            \* stopWeak.amount (strong amount)
+                            \* limitWeak.amount (strong amount)
                             LET strikeStrongAmount == 
-                                \* Is bondBid enough to cover stopWeak.amount?
-                                IF  limitStrong.amount < bondBid * 
+                                \* Is bondBid enough to cover limitWeak.amount?
+                                IF  stopStrong.amount < bondBid * 
                                     (strikeExchrate[1] / 
                                     strikeExchrate[0]) 
-                                THEN limitStrong.amount
+                                THEN stopStrong.amount
                                 ELSE bondBid * 
                                     (strikeExchrate[1] / 
                                     strikeExchrate[0])
@@ -138,10 +138,10 @@ WeakLimit ==
                                                     ![<<p, strong>>] = @ + strikeStrongAmount,
                                                     ![<<p, weak>>] = @ - strikeWeakAmount
                                             ]
-                                /\  IF strikeStrongAmount = limitStrong.amount
+                                /\  IF strikeStrongAmount = stopStrong.amount
                                     THEN /\ limits' = [limits EXCEPT ![<<p, strong>>] = Tail(@)]
                                          /\ accounts' = [accounts EXCEPT 
-                                            ![limitStrong.account][weak] = 
+                                            ![stopStrong.account][weak] = 
                                                 [   
                                                     balance: @.balance + strikeWeakAmount,
                                                     positions: <<
@@ -151,7 +151,7 @@ WeakLimit ==
                                                         @.positions[strong][1]
                                                     >>
                                                 ],
-                                            ![limitStrong.account][strong] =
+                                            ![stopStrong.account][strong] =
                                                 [
                                                     balance: @.balance - strikeStrongAmount,
                                                     \* Balance function needed to adjust 
@@ -171,7 +171,7 @@ WeakLimit ==
                                             Tail(@)}
                                             ]
                                          /\ accounts' = [accounts EXCEPT 
-                                                ![limitStrong.account][weak] = 
+                                                ![stopStrong.account][weak] = 
                                                     [
                                                         balance: @.balance + strikeWeakAmount,
                                                         positions: <<
@@ -179,18 +179,18 @@ WeakLimit ==
                                                             Append(
                                                                 Tail(@.positions[strong][0]),
                                                                 [
-                                                                    account: limitStrong.account,
-                                                                    amount: limitStrong.amount - strikeStrongAmount,
-                                                                    exchrate: limitStrong.exchrate
+                                                                    account: stopStrong.account,
+                                                                    amount: stopStrong.amount - strikeStrongAmount,
+                                                                    exchrate: stopStrong.exchrate
                                                                 ]
                                                             ),
                                                             \* Stops
                                                             @.positions[strong][1]
                                                         >>
                                                     ],
-                                                \* Price charged for the ask coin is stopWeak.exchrate
-                                                \* AMM earns difference between stopWeak.exchrate and bondExchrate
-                                                ![limitStrong.account][strong] =
+                                                \* Price charged for the ask coin is limitWeak.exchrate
+                                                \* AMM earns difference between limitWeak.exchrate and bondExchrate
+                                                ![stopStrong.account][strong] =
                                                     [
                                                         balance: @.balance - strikeStrongAmount,
                                                         \* Balance positions such that limit and loss sequences sum
@@ -204,16 +204,16 @@ WeakLimit ==
                 (*           stops is equal to the Exchange Rate of the    *)
                 (*           head of the Strong Limits                     *)
                 (***********************************************************)
-                []      limitStrong.exchrate = stopWeak.exchrate ->
+                []      stopStrong.exchrate = limitWeak.exchrate ->
                      \* In this case the exchrate does not change if equal amounts of ask
                      \* and bid coins are simulataneously exchanged.
-                     \* AMM may exchange up the to least amount of the limitStrong or
-                     \* the stopWeak orders.
+                     \* AMM may exchange up the to least amount of the stopStrong or
+                     \* the limitWeak orders.
                     LET least == 
-                        CHOOSE least \in { limitStrong, stopWeak } : least.amount <
-                        { limitStrong.amount, stopWeak.amount } \ least.amount
+                        CHOOSE least \in { stopStrong, limitWeak } : least.amount <
+                        { stopStrong.amount, limitWeak.amount } \ least.amount
                     IN
-                        /\  IF limitStrong.amount = least.amount
+                        /\  IF stopStrong.amount = least.amount
                             THEN    /\ limits' = [limits EXCEPT ![p][strong] = Tail(@)]
                                     /\ stops' = [stops EXCEPT ![p][weak] = Append (
                                             [
@@ -224,16 +224,16 @@ WeakLimit ==
                                             Tail(@)
                                         )]
                                     /\ accounts' = [accounts EXCEPT 
-                                        ![limitStrong.account][strong] = [
+                                        ![stopStrong.account][strong] = [
                                             balance: @.balance - strikeStrongAmount,
                                             \* Balance positions such that limit and loss sequences sum
                                             \* the balance of coin in the account
                                             positions: Balance(strong, @.balance - strikeStrongAmount, @.positions)
                                         ],
-                                        ![limitStrong.account][weak] = [
+                                        ![stopStrong.account][weak] = [
                                             balance: @.balance + strikeWeakAmount
                                         ],
-                                        ![weakStop.account][weak] = [
+                                        ![weakLimit.account][weak] = [
                                             balance: @.balance - strikeStrongAmount,
                                             \* Balance positions such that limit and loss sequences sum
                                             \* the balance of coin in the account
@@ -250,11 +250,11 @@ WeakLimit ==
                                        )]
                                     /\ stops' = [stops EXCEPT ![p][weak] = Tail(@)
                                     /\ accounts' = [accounts EXCEPT 
-                                        ![limitStrong.account] =
-                                        ![weakStop.account] = 
+                                        ![stopStrong.account] =
+                                        ![weakLimit.account] = 
             [] OTHER -> ctl' = "Stable"
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Jul 16 23:21:29 CDT 2021 by Charles Dusek
+\* Last modified Fri Jul 16 23:29:59 CDT 2021 by Charles Dusek
 \* Created Fri Jul 16 22:17:43 CDT 2021 by Charles Dusek
