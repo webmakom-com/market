@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>market</name>
+	<name>StrongLimit</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -16,9 +16,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>market.tla</name>
+			<name>StrongLimit.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/market.tla</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/StrongLimit.tla</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

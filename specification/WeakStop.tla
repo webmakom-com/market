@@ -1,4 +1,18 @@
 ------------------------------ MODULE WeakStop ------------------------------
+EXTENDS     Naturals, Sequences, SequencesExt
+
+CONSTANT    Account,    \* Set of all accounts
+            Coin,       \* Set of all coins
+            Denominator \* Set of all possible denominators. Precision of 
+                        \* fractions is defined by denominator constant.
+           
+VARIABLE    limitBooks,     \* Limit Order Books
+            stopBooks,      \* Stop Loss Order Books
+            bonds,          \* AMM Bond Curves
+            orderQ,         \* Sequenced queue of orders
+            pairPlusStrong  \* Current Pair plus Strong Coin 
+
+-----------------------------------------------------------------------------
 
 \* Explore mutual recursion, but for now, will use strong and weak to differentiate
 WeakStop ==
@@ -17,7 +31,7 @@ WeakStop ==
             stopWeakInverseExchrate == 
                 <<stopsWeak.exchrate[1], stopsWeak.exchrate[0]>>
         IN
-            CASE    LT(stopWeakInverseExchrate, bondExchrate)    ->
+            CASE   LT(stopWeakInverseExchrate, bondExchrate)    ->
                 (***************************************************************)
                 (* CASE 1.1: Inverse Exchange Rate of the head of the Weak     *)
                 (*           stops is less than the Exchange Rate of the head  *)
@@ -239,8 +253,9 @@ WeakStop ==
                                     /\ accounts' = [accounts EXCEPT 
                                         ![limitStrong.account] =
                                         ![weakStop.account] = 
+            [] OTHER -> ctl'= "StrongLimit"
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Jul 15 22:20:30 CDT 2021 by Charles Dusek
+\* Last modified Fri Jul 16 22:15:16 CDT 2021 by Charles Dusek
 \* Created Thu Jul 15 22:19:22 CDT 2021 by Charles Dusek

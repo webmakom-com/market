@@ -229,8 +229,7 @@ Reconcile(p) ==
           
                     
                 ELSE
-            []      limitStrong.exchrate.LT(bondExchrate)       ->
-                LET bondBid == MaxBondBid(limitStrong.exchrate, bondWeak, bondStrong)      
+                  
             []      stopStrong.exchrate.GT(bondExch             ->
                 IF limitWeakInverseExchrate.GT(bondExchrate)
                 THEN
@@ -375,7 +374,8 @@ ProcessOrder(p) ==
                     ELSE stops' = [stops EXCEPT ![pair][o.bid] 
                         = InsertAt(@, Min(igt), order)]
     
-    /\
+    /\ ctl' = "WeakStop""
+    /\ UNCHANGED << >>
 
 
                         
@@ -389,9 +389,7 @@ ProcessWeak(p) ==
                 weakLimitHead = Head(limits[p][strong])
                 strongStopHead = Head(stops[p][{c \in p : c # strong}])
             IN 
-                CASE    weakLimitHead.exchrate.GT(strongStopHead.exchrate) ->
-                []      weakLimitHead.exchrate.LT(strongStopHead.exchrate) ->
-                []      weakLimitHead.exchrate = strongStopHead.exchrate ->
+                
 
 ProcessMid(p) ==
     /\ ctl = "mid"
@@ -410,7 +408,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Jul 15 22:20:18 CDT 2021 by Charles Dusek
+\* Last modified Fri Jul 16 22:20:34 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
