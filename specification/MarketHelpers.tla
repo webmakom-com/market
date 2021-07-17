@@ -45,7 +45,11 @@ MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==
     \* erate(initial)
     bondDenominator * ((erateFinal[0] * bondDenominator) \div (erateFinal[1] * bondNumerator)) - bondNumerator
 
+IGT(limitSeq, pos) == {i \in 0..Len(limitSeq): limitSeq[i].exchrate > pos.exchrate}
+                
+
+
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 11:22:35 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 14:08:04 PDT 2021 by Charles Dusek
 \* Created Sat Jul 17 11:19:23 CDT 2021 by Charles Dusek

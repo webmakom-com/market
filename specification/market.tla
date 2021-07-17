@@ -49,7 +49,7 @@ PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (*                                                                         *)
 (* type PositionType struct {                                              *) 
-(*      ExchAccount:    uint256                                                *)
+(*      ExchAccount:    uint256                                            *)
 (*      Amount      CoinDec                                                *)
 (*      exchrate    Dec                                                    *)
 (* }                                                                       *)
@@ -168,11 +168,19 @@ Withdraw(a, c, amount) ==
 SubmitPosition(a, ask, bid, type, pos) == 
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
+        u == IF type = "limit" THEN 1 ELSE 1
         balance == accounts[a][bid].balance
         posSeqs == accounts[a][bid].positions[ask]
     IN 
     /\  IF      SumSeq(posSeqs[t]) + pos.amount <= balance
-        THEN    accounts' = [accounts EXCEPT ![a][bid].positions[ask] = 
+        THEN     
+            IF  type = "limit"
+            THEN
+                
+                accounts' = [accounts EXCEPT ![a][bid].positions[ask] =
+                <<
+                 
+                     ,@[1]
         
     /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
     /\  UNCHANGED <<books, bonds>>
@@ -317,7 +325,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ ProcessOrder(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 11:59:49 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 14:05:08 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
