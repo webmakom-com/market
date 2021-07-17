@@ -176,11 +176,16 @@ SubmitPosition(a, ask, bid, type, pos) ==
         THEN     
             IF  type = "limit"
             THEN
-                
-                accounts' = [accounts EXCEPT ![a][bid].positions[ask] =
-                <<
-                 
-                     ,@[1]
+                LET igt == IGT(posSeqs[0], pos) IN
+                IF igt = {} 
+                THEN 
+                    accounts' = 
+                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        <<Append(pos, @[0]),@[1]>>]
+                ELSE
+                    accounts' =
+                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        <<InsertAt(@[0], Min(igt), pos),@[1]>>]
         
     /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
     /\  UNCHANGED <<books, bonds>>
@@ -243,7 +248,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ Provision(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 14:18:35 PDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 16:01:02 PDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
