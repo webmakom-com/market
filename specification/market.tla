@@ -1,5 +1,6 @@
 ------------------------------- MODULE Market -------------------------------
-EXTENDS     FiniteSetsExt, FiniteSets, MarketHelpers, Naturals, Sequences, SequencesExt
+EXTENDS     FiniteSetsExt, FiniteSets, MarketHelpers, Naturals, 
+            Sequences, SequencesExt
 
 CONSTANT    ExchAccount,    \* Set of all accounts
             Coin,       \* Set of all coins
@@ -40,10 +41,10 @@ PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 (* Position Type                                                           *)
 (*                                                                         *)
 (* The position type is the order book record that is maintained when a    *)
-(* limit order has an unfulfilled outstanding amount                       *)
+(* limit order has an unfulfilled outstanding amt                       *)
 (*                                                                         *)
 (* ExchAccount <uint256>: Identifier of the position                       *) 
-(* amount <Nat>: Amount of Bid Coin                                        *)
+(* amt <Nat>: amt of Bid Coin                                        *)
 (* exchrate <ExchRateType>: The Limit or Loss set-point                    *)
 (*                                                                         *)
 (* Cosmos-SDK types                                                        *)
@@ -51,13 +52,13 @@ PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 (*                                                                         *)
 (* type PositionType struct {                                              *) 
 (*      ExchAccount:    uint256                                            *)
-(*      Amount      CoinDec                                                *)
+(*      amt      CoinDec                                                *)
 (*      exchrate    Dec                                                    *)
 (* }                                                                       *)
 (***************************************************************************)
 PositionType == [
     ExchAccount: ExchAccount,
-    amount: Nat,
+    amt: Nat,
     exchrate: ExchRateType
 ]
 
@@ -70,7 +71,7 @@ PositionType == [
 (* Limit Order: designated by a single position with limit set to          *)
 (* lower bound of upper sell region and loss set to 0.                     *)
 (*                                                                         *)
-(* [amount: Nat, bid: Coin positions: {                                    *)
+(* [amt: Nat, bid: Coin positions: {                                    *)
 (*      ask: Coin                                                          *)
 (*      limit: ExchrateType                                                *)
 (*      loss: 0                                                            *)
@@ -79,7 +80,7 @@ PositionType == [
 (* Market Order: designated by a single position with limit and loss set   *)
 (* to zero.  Setting limit to zero means no limit.                         *)
 (*                                                                         *)
-(* [amount: Nat, bid: Coin positions: {                                    *)
+(* [amt: Nat, bid: Coin positions: {                                    *)
 (*      ask: Coin                                                          *)
 (*      limit: 0                                                           *)
 (*      loss: 0                                                            *)
@@ -152,18 +153,18 @@ SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
 \* Deposit coin into exchange ExchAccount
 \* a: ExchAccount
 \* c: Coin
-\* amount: Amount of Coin
-Deposit(a, c, amount) ==    
-    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ + amount]
+\* amt: amt of Coin
+Deposit(a, c, amt) ==    
+    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ + amt]
     /\  UNCHANGED << >>
 
 \* Withdraw coin from exchange ExchAccount
 \* a: ExchAccount
 \* c: Coin
-\* amount: Amount of Coin
-Withdraw(a, c, amount) ==
-    /\  accounts[a][c].balance >= amount
-    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ - amount]
+\* amt: amt of Coin
+Withdraw(a, c, amt) ==
+    /\  accounts[a][c].balance >= amt
+    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ - amt]
     /\  UNCHANGED << >> 
 
 \* Optional syntax
@@ -176,7 +177,7 @@ SubmitPosition(a, ask, bid, type, pos) ==
         balance == accounts[a][bid].balance
         posSeqs == accounts[a][bid].positions[ask]
     IN 
-    /\  IF  SumSeq(posSeqs[t]) + pos.amount <= balance
+    /\  IF  SumSeq(posSeqs[t]) + pos.amt <= balance
         THEN     
             IF  type = "limit"
             THEN
@@ -218,71 +219,73 @@ SubmitPosition(a, ask, bid, type, pos) ==
                 ELSE    stops' =
                     [stops EXCEPT ![<<{ask, bid}, bid>>] =
                     InsertAt(@, Max(ilt), pos)]
-        ELSE    UNCHANGED << everything >>
+        ELSE    UNCHANGED <<>>
 
 \* Need to add ClosePosition
 
-Provision(pair) ==
-    \* Use Input constant to give ability to limit amounts input  
-    \E r \in Nat :
-        LET bond == bonds[pair]
+Provision(acct, pair, amt) ==
+    LET strong == Stronger(pair)
+        weak == pair \ strong
+        bond == bonds[pair]
+        bondExchrate == << bonds[<<pair, weak>>], bonds[<<pair, strong>>] >>
+        balStrong == accounts[acct][strong].balance
+        balWeak == accounts[acct][weak].balance
+        bidWeak == 
+            LET strongToWeak == (balStrong * bonds[<<pair, weak>>]) \ bonds[<<pair, strong>>]
+            IN  IF  strongToWeak > balWeak
+                THEN    balWeak
+                ELSE    strongToWeak
+        bidStrong ==
+            (bidWeak * bonds[<<pair, strong>>]) \ bonds[<<pair, weak>>]
+    IN
+        /\  bonds' = [ bonds EXCEPT 
+                ![<<pair, weak>>] = @ + bidWeak,
+                ![<<pair, strong>>] = @ + bidStrong
+            ]
+        /\  drops' = [ drops EXCEPT 
+                ![PairType] = @ + bidWeak 
+            ]
+        /\ UNCHANGED << limits, stops >>
+
+Liquidate(acct, pair, amt) ==   
+    \* Qualifying condition
+    /\  amt < drops[pair]
+    /\  LET 
+            bond == bonds[pair]
         IN
-            LET c == Weaker(pair)
-                d == pair \ c
+            LET 
+                d == Stronger(pair)
+                c == pair \ d
             IN
                 /\  bonds' = [ bonds EXCEPT 
-                        ![pair][d] = 
-                            @ + 
-                            @ * 
-                            (r / bonds[pair][c]),
-                        ![pair][c] = @ + r
+                        ![pair][d] = @ - @ * (amt \ bonds[pair][c]),
+                        ![pair][c] = @ - amt
                     ]
-                /\  drops' = [ drops EXCEPT 
-                        ![pair] = @ + r 
-                    ]
-                /\ UNCHANGED << books, orderQ >>
-
-Liquidate(pair) ==  
-    \E r \in Nat : 
-        \* Qualifying condition
-        /\  r < drops[pair]
-        /\  LET 
-                bond == bonds[pair]
-            IN
-                LET 
-                    c == Weaker(pair)
-                    d == pair \ c
-                IN
-                    /\  bonds' = [ bonds EXCEPT 
-                            ![pair][d] = @ - @ * 
-                                (r / bonds[pair][c]),
-                            ![pair][c] = @ - r
-                        ]
-                    
-                    /\ drops' = [ drops EXCEPT 
-                        ![pair] = @ - r ]
-                    /\ UNCHANGED << books, orderQ >>            
                 
-Next == \/ \E p \in PairType :  
-           \E r \in Nat :                           \/ Provision(p, r)
-                                                    \/ Liquidate(p, r)
-        \/ \E a \in ExchAccount : 
-           \E p \in PairType : 
-                LET ask == ask \in p IN
-                LET bid == bid \in p \ ask IN
-                    
-           \E type \in {"limit", "stop"} : 
-           \E pos \in Position :                    \/ SubmitPosition(
-                                                            a,
-                                                            ask,
-                                                            bid,
-                                                            type,
-                                                            pos
-                                                        )
+                /\ drops' = [ drops EXCEPT 
+                    ![pair] = @ - amt ]
+                /\ UNCHANGED << limits, stops >>            
+                
+Next == \/ \E   acct \in ExchAccount,
+                pair \in PairType, 
+                amt \in Nat :           \/  Provision(acct, pair, amt)
+                                        \/  Liquidate(acct, pair, amt)
+        \/ \E   acct \in ExchAccount : 
+           \E   pair \in PairType : 
+           \E   bid \in pair :
+           \E   ask \in pair \ bid :
+           \E   type \in {"limit", "stop"} : 
+           \E   pos \in PositionType :  \/  SubmitPosition(
+                                                acct,
+                                                ask,
+                                                bid,
+                                                type,
+                                                pos
+                                            )
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 10:02:17 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 13:54:56 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
