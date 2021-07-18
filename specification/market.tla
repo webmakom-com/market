@@ -10,7 +10,7 @@ CONSTANT    ExchAccount,    \* Set of all accounts
 VARIABLE    accounts,
             limits,     \* Limit Order Books
             stops,      \* Stop Loss Order Books
-            bonds,          \* AMM Bond Curves
+            pools,          \* AMM pool Curves
             orderQ,         \* Sequenced queue of orders
             pairPlusStrong, \* Current Pair plus Strong Coin 
             drops           \* Drops of Liquidity (tokens)
@@ -51,13 +51,13 @@ PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (*                                                                         *)
 (* type PositionType struct {                                              *) 
-(*      ExchAccount:    uint256                                            *)
-(*      amt      CoinDec                                                *)
+(*      acct:    uint256                                                   *)
+(*      amt      CoinDec                                                   *)
 (*      exchrate    Dec                                                    *)
 (* }                                                                       *)
 (***************************************************************************)
 PositionType == [
-    ExchAccount: ExchAccount,
+    acct: ExchAccount,
     amt: Nat,
     exchrate: ExchRateType
 ]
@@ -116,7 +116,7 @@ TypeInvariant ==
     /\  accounts \in [ExchAccount -> AccountType]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
-    /\  bonds \in [PairPlusCoin -> Nat]
+    /\  pools \in [PairPlusCoin -> Nat]
     /\  drops \in [PairType -> Nat]
     /\  pairPlusStrong \in PairPlusCoin
     /\  stops \in [PairPlusCoin -> Seq(PositionType)]
@@ -135,14 +135,14 @@ MarketInit ==
             ]   
         ]
     \* liquidity balances for each pair
-    /\ bonds = [ppc \in PairPlusCoin |-> NoVal]
+    /\ pools = [ppc \in PairPlusCoin |-> NoVal]
     /\ drops = [p \in PairType |-> Nat]
     \* order books bid sequences
     /\ limits = [ppc \in PairPlusCoin |-> <<>>]
     /\ stops = [ppc \in PairPlusCoin |-> <<>>]
     /\ pairPlusStrong = <<>>
 
-Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bonds[pair \ {c}]
+Stronger(pair)    ==  CHOOSE c \in pair :  pools[c] <= pools[pair \ {c}]
 
 SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
                     IF i = 0 THEN 0
@@ -226,19 +226,19 @@ SubmitPosition(a, ask, bid, type, pos) ==
 Provision(acct, pair, amt) ==
     LET strong == Stronger(pair)
         weak == pair \ strong
-        bond == bonds[pair]
-        bondExchrate == << bonds[<<pair, weak>>], bonds[<<pair, strong>>] >>
+        pool == pools[pair]
+        poolExchrate == << pools[<<pair, weak>>], pools[<<pair, strong>>] >>
         balStrong == accounts[acct][strong].balance
         balWeak == accounts[acct][weak].balance
         bidWeak == 
-            LET strongToWeak == (balStrong * bonds[<<pair, weak>>]) \ bonds[<<pair, strong>>]
+            LET strongToWeak == (balStrong * pools[<<pair, weak>>]) \ pools[<<pair, strong>>]
             IN  IF  strongToWeak > balWeak
                 THEN    balWeak
                 ELSE    strongToWeak
         bidStrong ==
-            (bidWeak * bonds[<<pair, strong>>]) \ bonds[<<pair, weak>>]
+            (bidWeak * pools[<<pair, strong>>]) \ pools[<<pair, weak>>]
     IN
-        /\  bonds' = [ bonds EXCEPT 
+        /\  pools' = [ pools EXCEPT 
                 ![<<pair, weak>>] = @ + bidWeak,
                 ![<<pair, strong>>] = @ + bidStrong
             ]
@@ -251,14 +251,14 @@ Liquidate(acct, pair, amt) ==
     \* Qualifying condition
     /\  amt < drops[pair]
     /\  LET 
-            bond == bonds[pair]
+            pool == pools[pair]
         IN
             LET 
                 d == Stronger(pair)
                 c == pair \ d
             IN
-                /\  bonds' = [ bonds EXCEPT 
-                        ![pair][d] = @ - @ * (amt \ bonds[pair][c]),
+                /\  pools' = [ pools EXCEPT 
+                        ![pair][d] = @ - @ * (amt \ pools[pair][c]),
                         ![pair][c] = @ - amt
                     ]
                 
@@ -285,7 +285,7 @@ Next == \/ \E   acct \in ExchAccount,
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 13:54:56 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 14:42:43 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
