@@ -1,5 +1,5 @@
 ------------------------------- MODULE Market -------------------------------
-EXTENDS     MarketHelpers, Naturals, Sequences, SequencesExt
+EXTENDS     FiniteSetsExt, FiniteSets, MarketHelpers, Naturals, Sequences, SequencesExt
 
 CONSTANT    ExchAccount,    \* Set of all accounts
             Coin,       \* Set of all coins
@@ -21,11 +21,11 @@ ASSUME Denominator \subseteq Nat
 NoVal == CHOOSE v : v \notin Nat
 
 \* All exchange rates are represented as numerator/denominator tuples
-ExchRateType == <<a \in Nat, b \in Denominator>>
+ExchRateType == {<<a, b>> : a \in Nat, b \in Denominator}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
-PairType == {{a, b}: a \in Coin, b \in Coin \ {a}}
+PairType == {{a, b} : a \in Coin, b \in Coin}
 
 (**************************************************************************)
 (* Pair plus Coin Type                                                    *)
@@ -116,9 +116,7 @@ TypeInvariant ==
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
     /\  bonds \in [PairPlusCoin -> Nat]
-    /\  drops \in [Pair -> Nat]
-    /\  limits \in [PairPlusCoin -> Seq(PositionType)]
-    /\  orderQ \in [Pair -> Seq(Order)]
+    /\  drops \in [PairType -> Nat]
     /\  pairPlusStrong \in PairPlusCoin
     /\  stops \in [PairPlusCoin -> Seq(PositionType)]
 
@@ -135,15 +133,20 @@ MarketInit ==
                 ] 
             ]   
         ]
-    /\ drops = [p \in Pair |-> Nat]
-    \* order books bid sequences
-    /\ books = [ppc \in PairPlusCoin |-> <<>>]
     \* liquidity balances for each pair
     /\ bonds = [ppc \in PairPlusCoin |-> NoVal]
-    /\ orderQ = [p \in Pair |-> <<>>]
+    /\ drops = [p \in PairType |-> Nat]
+    \* order books bid sequences
+    /\ limits = [ppc \in PairPlusCoin |-> <<>>]
+    /\ stops = [ppc \in PairPlusCoin |-> <<>>]
     /\ pairPlusStrong = <<>>
 
 Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bonds[pair \ {c}]
+
+SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
+                    IF i = 0 THEN 0
+                    ELSE s[i] + F[i-1]
+                IN  F[Len(s)]
 
 (***************************** Step Functions ****************************)
 \* Deposit coin into exchange ExchAccount
@@ -206,8 +209,7 @@ SubmitPosition(a, ask, bid, type, pos) ==
                 ELSE
                     accounts' =
                         [accounts EXCEPT ![a][bid].positions[ask] =
-                        \* Should this be Max(ilt)?
-                        <<@[0], InsertAt(@[1], Min(ilt), pos)>>]
+                        <<@[0], InsertAt(@[1], Max(ilt), pos)>>]
             /\  LET ilt == ILT(stops[<<{ask, bid}, bid>>], pos) IN
                 IF ilt = {}
                 THEN    stops' =
@@ -215,8 +217,7 @@ SubmitPosition(a, ask, bid, type, pos) ==
                     Append(pos, @)]
                 ELSE    stops' =
                     [stops EXCEPT ![<<{ask, bid}, bid>>] =
-                    \* Should this be Max(ilt)?
-                    InsertAt(@, Min(ilt), pos)]
+                    InsertAt(@, Max(ilt), pos)]
         ELSE    UNCHANGED << everything >>
 
 \* Need to add ClosePosition
@@ -281,7 +282,7 @@ Next == \/ \E p \in PairType :
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 22:15:04 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 10:02:17 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
