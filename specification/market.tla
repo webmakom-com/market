@@ -142,12 +142,9 @@ MarketInit ==
     /\ stops = [ppc \in PairPlusCoin |-> <<>>]
     /\ pairPlusStrong = <<>>
 
-Stronger(pair)    ==  CHOOSE c \in pair :  pools[c] <= pools[pair \ {c}]
 
-SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
-                    IF i = 0 THEN 0
-                    ELSE s[i] + F[i-1]
-                IN  F[Len(s)]
+
+
 
 (***************************** Step Functions ****************************)
 \* Deposit coin into exchange ExchAccount
@@ -224,7 +221,7 @@ SubmitPosition(a, ask, bid, type, pos) ==
 \* Need to add ClosePosition
 
 Provision(acct, pair, amt) ==
-    LET strong == Stronger(pair)
+    LET strong == Stronger(pair, pools)
         weak == pair \ strong
         pool == pools[pair]
         poolExchrate == << pools[<<pair, weak>>], pools[<<pair, strong>>] >>
@@ -254,7 +251,7 @@ Liquidate(acct, pair, amt) ==
             pool == pools[pair]
         IN
             LET 
-                d == Stronger(pair)
+                d == Stronger(pair, pools)
                 c == pair \ d
             IN
                 /\  pools' = [ pools EXCEPT 
@@ -285,7 +282,7 @@ Next == \/ \E   acct \in ExchAccount,
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 14:42:43 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 14:45:10 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd

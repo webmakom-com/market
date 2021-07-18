@@ -16,44 +16,50 @@ IGT(limitSeq, pos) == {i \in 0..Len(limitSeq): limitSeq[i].exchrate > pos.exchra
 ILT(stopSeq, pos) == {i \in 0..Len(stopSeq): stopSeq[i].exchrate < pos.exchrate}
 
 \* This division needs
-BondAskAmount(bondAskBal, bondBidBal, bidAmount) ==
-    (bondAskBal * bidAmount) \div bondBidBal
+poolAskAmount(poolAskBal, poolBidBal, bidAmount) ==
+    (poolAskBal * bidAmount) \div poolBidBal
 
 (***************************************************************************)
-(* Max amount that Bond pool may sell of ask coin without                  *)
+(* Max amount that pool may sell of ask coin without                       *)
 (* executing the most adjacent order                                       *)
 (*                                                                         *)
 (* Expression origin:                                                      *)
-(* bondAsk / bondBid = erate                                               *)
-(* d(bondAsk)/d(bondBid) = d(erate)                                        *)
-(* d(bondAsk)/d(bondBid) = d(bondAsk)/d(bondBid)                           *)
-(* d(bondAsk) = d(bondBid) * d(bondAsk)/d(bondBid)                         *)
-(* d(bondAsk) = d(bondBid) * d(erate)                                      *)
+(* poolAsk / poolBid = erate                                               *)
+(* d(poolAsk)/d(poolBid) = d(erate)                                        *)
+(* d(poolAsk)/d(poolBid) = d(poolAsk)/d(poolBid)                           *)
+(* d(poolAsk) = d(poolBid) * d(poolAsk)/d(poolBid)                         *)
+(* d(poolAsk) = d(poolBid) * d(erate)                                      *)
 (*                                                                         *)
-(* Integrate over bondAsk on lhs and bondBid & erate on rhs then           *)
+(* Integrate over poolAsk on lhs and poolBid & erate on rhs then           *)
 (* substitute and simplify                                                 *)
 (*                                                                         *)
-(* MaxBondBid =                                                            *)
-(*                                                                         *)
-(* erate(intial) = bondAsk / bondBid                                       *)
-(*                                                                         *)
-(* MaxBondBid =                                                            *)
-(* bondAsk(initial) -                                                      *)
-(* bondBid(initial) ^ 2 * erate(final) ^ 2 /                               *)
-(* [(bondAsk(initial)/bondBid(initial)]                                    *)
+(* MaxpoolBid =                                                            *)
+(* poolBid(initial) *                                                      *)
+(* erate(final) *                                                          *)
+(* (2 - erate(final) / erate(initial)) -                                   *)
+(* poolAsk(initial)                                                        *)
 (***************************************************************************)
-MaxBondBid(erateFinal, bondNumerator, bondDenominator) ==  
-    \* MaxBondBid = 
-    \* bondAsk(initial) - 
-    \* bondBid(initial)^2 * erate(final) ^ 2 / 
-    \* erate(initial)
-    bondDenominator * ((erateFinal[0] * bondDenominator) \div (erateFinal[1] * bondNumerator)) - bondNumerator
+MaxpoolBid(erateFinal, poolNumerator, poolDenominator) ==  
+    \* MaxpoolBid = 
+    \* poolBid(initial) * 
+    \* (2 - erate(final) / erate(final)) *
+    \* erate(final) - poolAsk(initial)
+    poolDenominator * 
+    (
+        (erateFinal[0] * poolDenominator) \div
+         (erateFinal[1] * poolNumerator)
+    ) - poolNumerator
 
+Stronger(pair, pools) ==  CHOOSE c \in pair : pools[c] <= pools[pair \ {c}]
 
+SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
+                    IF i = 0 THEN 0
+                    ELSE s[i] + F[i-1]
+                IN  F[Len(s)]
                 
 
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 14:19:26 PDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 15:04:29 CDT 2021 by Charles Dusek
 \* Created Sat Jul 17 11:19:23 CDT 2021 by Charles Dusek
