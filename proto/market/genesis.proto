@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package onomyprotocol.market.market;
 
 // this line is used by starport scaffolding # genesis/proto/import

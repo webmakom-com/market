@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package onomyprotocol.market.market;
+
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/onomyprotocol/market/x/market/types";
+
+message ExchangeAccount {
+  string           id = 1;
+  repeated Balance balances = 2;
+};
+
+message Balance {
+  cosmos.base.v1beta1.Coin coin = 1;
+  repeated Position        positions = 2;
+};
+
+message Position {
+  cosmos.base.v1beta1.Coin coin = 1;
+  repeated Order           limit_orders = 2;
+  repeated Order           stop_orders = 3;
+};
+
+message Order {
+  string                       account_id = 1;
+  cosmos.base.v1beta1.DecCoin  amount = 2;
+  cosmos.base.v1beta1.DecProto limit = 3;
+  cosmos.base.v1beta1.DecProto loss = 4;
+};
