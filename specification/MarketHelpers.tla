@@ -40,15 +40,16 @@ poolAskAmount(poolAskBal, poolBidBal, bidAmount) ==
 (* poolAsk(initial)                                                        *)
 (***************************************************************************)
 MaxpoolBid(erateFinal, poolNumerator, poolDenominator) ==  
-    \* MaxpoolBid = 
-    \* poolBid(initial) * 
-    \* (2 - erate(final) / erate(final)) *
-    \* erate(final) - poolAsk(initial)
     poolDenominator * 
     (
-        (erateFinal[0] * poolDenominator) \div
-         (erateFinal[1] * poolNumerator)
+        (erateFinal[0] \ erateFinal[1]) *
+        (
+            2 - 
+            (erateFinal[0] * poolDenominator) \
+            (erateFinal[1] * poolNumerator)
+        )
     ) - poolNumerator
+    
 
 Stronger(pair, pools) ==  CHOOSE c \in pair : pools[c] <= pools[pair \ {c}]
 
@@ -61,5 +62,5 @@ SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 15:04:29 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 15:26:48 CDT 2021 by Charles Dusek
 \* Created Sat Jul 17 11:19:23 CDT 2021 by Charles Dusek
