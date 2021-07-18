@@ -6,8 +6,9 @@ CONSTANT    ExchAccount,    \* Set of all accounts
             Denominator \* Set of all possible denominators. Precision of 
                         \* fractions is defined by denominator constant.
            
-VARIABLE    limitBooks,     \* Limit Order Books
-            stopBooks,      \* Stop Loss Order Books
+VARIABLE    accounts,
+            limits,     \* Limit Order Books
+            stops,      \* Stop Loss Order Books
             bonds,          \* AMM Bond Curves
             orderQ,         \* Sequenced queue of orders
             pairPlusStrong, \* Current Pair plus Strong Coin 
@@ -142,7 +143,7 @@ MarketInit ==
     /\ orderQ = [p \in Pair |-> <<>>]
     /\ pairPlusStrong = <<>>
 
-Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bond[pair \ {c}]
+Stronger(pair)    ==  CHOOSE c \in pair :  bonds[c] <= bonds[pair \ {c}]
 
 (***************************** Step Functions ****************************)
 \* Deposit coin into exchange ExchAccount
@@ -261,10 +262,14 @@ Liquidate(pair) ==
                         ![pair] = @ - r ]
                     /\ UNCHANGED << books, orderQ >>            
                 
-Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ Provision(p)
-                                                    \/ Liquidate(p)
+Next == \/ \E p \in PairType :  
+           \E r \in Nat :                           \/ Provision(p, r)
+                                                    \/ Liquidate(p, r)
         \/ \E a \in ExchAccount : 
-           \E {ask, bid} \in Pair : ask != bid :
+           \E p \in PairType : 
+                LET ask == ask \in p IN
+                LET bid == bid \in p \ ask IN
+                    
            \E type \in {"limit", "stop"} : 
            \E pos \in Position :                    \/ SubmitPosition(
                                                             a,
@@ -276,7 +281,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ Provision(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 21:45:28 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 22:15:04 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
