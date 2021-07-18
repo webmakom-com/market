@@ -1,4 +1,4 @@
-------------------------------- MODULE market -------------------------------
+------------------------------- MODULE Market -------------------------------
 EXTENDS     MarketHelpers, Naturals, Sequences, SequencesExt
 
 CONSTANT    ExchAccount,    \* Set of all accounts
@@ -172,11 +172,11 @@ SubmitPosition(a, ask, bid, type, pos) ==
         balance == accounts[a][bid].balance
         posSeqs == accounts[a][bid].positions[ask]
     IN 
-    /\  IF      SumSeq(posSeqs[t]) + pos.amount <= balance
+    /\  IF  SumSeq(posSeqs[t]) + pos.amount <= balance
         THEN     
             IF  type = "limit"
             THEN
-                LET igt == IGT(posSeqs[0], pos) IN
+            /\  LET igt == IGT(posSeqs[0], pos) IN
                 IF igt = {} 
                 THEN 
                     accounts' = 
@@ -186,15 +186,43 @@ SubmitPosition(a, ask, bid, type, pos) ==
                     accounts' =
                         [accounts EXCEPT ![a][bid].positions[ask] =
                         <<InsertAt(@[0], Min(igt), pos),@[1]>>]
-        
-    /\  orderQ' = [orderQ EXCEPT ![{o.bid, o.ask}] = Append(@, o)]
-    /\  UNCHANGED <<books, bonds>>
+            /\  LET igt == IGT(limits[<<{ask, bid}, bid>>], pos) IN
+                IF igt = {}
+                THEN    limits' =
+                    [limits EXCEPT ![<<{ask, bid}, bid>>] =
+                    Append(pos, @)]
+                ELSE    limits' =
+                    [limits EXCEPT ![<<{ask, bid}, bid>>] =
+                    InsertAt(@, Min(igt), pos)]
+            \* ELSE Stops
+            ELSE
+            /\  LET ilt == ILT(posSeqs[1], pos) IN
+                IF ilt = {} 
+                THEN 
+                    accounts' = 
+                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        <<@[0], Append(pos, @[1])>>]
+                ELSE
+                    accounts' =
+                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        \* Should this be Max(ilt)?
+                        <<@[0], InsertAt(@[1], Min(ilt), pos)>>]
+            /\  LET ilt == ILT(stops[<<{ask, bid}, bid>>], pos) IN
+                IF ilt = {}
+                THEN    stops' =
+                    [stops EXCEPT ![<<{ask, bid}, bid>>] =
+                    Append(pos, @)]
+                ELSE    stops' =
+                    [stops EXCEPT ![<<{ask, bid}, bid>>] =
+                    \* Should this be Max(ilt)?
+                    InsertAt(@, Min(ilt), pos)]
+        ELSE    UNCHANGED << everything >>
 
 \* Need to add ClosePosition
 
 Provision(pair) ==
     \* Use Input constant to give ability to limit amounts input  
-    \E r \in Nat : r \in Input 
+    \E r \in Nat :
         LET bond == bonds[pair]
         IN
             LET c == Weaker(pair)
@@ -248,7 +276,7 @@ Next == \/ \E p: p == {c, d} \in Pair : c != d :    \/ Provision(p)
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 16:01:02 PDT 2021 by Charles Dusek
+\* Last modified Sat Jul 17 21:45:28 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
