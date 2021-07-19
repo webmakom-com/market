@@ -14,11 +14,23 @@ VARIABLE    limitBooks,     \* Limit Order Books
 
 -----------------------------------------------------------------------------
 
-CASE        limitAsk.exchrate.LT(bondExchrate)       ->
-                LET bondBid == MaxBondBid(limitAsk.exchrate, bondBid, bondAsk)
+IF  LT(
+        Head(limits[<<{ask, bid}, ask>>]).exchrate,
+        <<pools[<<{ask, bid}, bid>>],pools[<<{ask, bid}, ask>>]>>
+    )
+THEN
+    IF  MaxBondBid() >= Head(limits[<<{ask, bid}, ask>>]).amount
+    THEN
+        /\  limits' = [limits EXCEPT ![<<{ask, bid}, ask>>] = Tail(@)]
+        /\  accounts' = [accounts EXCEPT 
+            ![Head(limits[<<{ask, bid}, ask>>]).acct][ask] = 
+            @ - Head(limits[<<{ask, bid}, ask>>]).amount
+            
+ELSE
+
 [] OTHER -> ctl' = "AskStop"          
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 21:54:02 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 23:03:59 CDT 2021 by Charles Dusek
 \* Created Sun Jul 18 21:25:28 CDT 2021 by Charles Dusek
