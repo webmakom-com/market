@@ -139,15 +139,17 @@ MarketInit ==
                 ] 
             ]   
         ]
+    \*  Tracks the Ask Coin
     /\  ask = NoCoin
+    \*  Tracks the Bid Coin
     /\  bid = NoCoin
-    \* liquidity balances for each pair
-    /\ pools = [ppc \in PairPlusCoin |-> NoVal]
-    /\ drops = [p \in PairType |-> Nat]
-    \* order books bidCoin sequences
-    /\ limits = [ppc \in PairPlusCoin |-> <<>>]
-    /\ stops = [ppc \in PairPlusCoin |-> <<>>]
-    /\ pairPlusStrong = <<>>
+    \*  liquidity balances for each pair
+    /\  pools = [ppc \in PairPlusCoin |-> NoVal]
+    /\  drops = [p \in PairType |-> Nat]
+    \*  order books bidCoin sequences
+    /\  limits = [ppc \in PairPlusCoin |-> <<>>]
+    /\  stops = [ppc \in PairPlusCoin |-> <<>>]
+    /\  pairPlusStrong = <<>>
 
 
 
@@ -182,9 +184,11 @@ SubmitPosition(a, askCoin, bidCoin, type, pos) ==
         posSeqs == accounts[a][bidCoin].positions[askCoin]
     IN 
     /\  IF  SumSeq(posSeqs[t]) + pos.amt <= balance
-        THEN     
-            IF  type = "limit"
-            THEN
+        THEN
+        /\  ask' = askCoin
+        /\  bid' = bidCoin     
+        /\  IF  type = "limit"
+                THEN
             /\  LET igt == IGT(posSeqs[0], pos) IN
                 IF igt = {} 
                 THEN 
@@ -289,7 +293,7 @@ Next == \/ \E   acct \in ExchAccount,
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 21:06:01 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 21:22:34 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
