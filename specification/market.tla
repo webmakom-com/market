@@ -7,8 +7,9 @@ CONSTANT    ExchAccount,    \* Set of all accounts
             Denominator \* Set of all possible denominators. Precision of 
                         \* fractions is defined by denominator constant.
            
-VARIABLE    accounts,       \* 
-            base,           \* bidCoin Coin       
+VARIABLE    accounts,       \* Exchange Accounts
+            ask,            \* Ask Coin
+            bid,            \* Bid Coin       
             limits,         \* Limit Order Books
             stops,          \* Stop Loss Order Books
             pools,          \* AMM pool Curves
@@ -116,6 +117,8 @@ AccountType == [
 
 TypeInvariant ==
     /\  accounts \in [ExchAccount -> AccountType]
+    /\  ask \in Coin
+    /\  bid \in Coin
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
     /\  pools \in [PairPlusCoin -> Nat]
@@ -136,6 +139,8 @@ MarketInit ==
                 ] 
             ]   
         ]
+    /\  ask = NoCoin
+    /\  bid = NoCoin
     \* liquidity balances for each pair
     /\ pools = [ppc \in PairPlusCoin |-> NoVal]
     /\ drops = [p \in PairType |-> Nat]
@@ -284,7 +289,7 @@ Next == \/ \E   acct \in ExchAccount,
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 21:03:42 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 21:06:01 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
