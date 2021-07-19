@@ -7,9 +7,10 @@ CONSTANT    ExchAccount,    \* Set of all accounts
             Denominator \* Set of all possible denominators. Precision of 
                         \* fractions is defined by denominator constant.
            
-VARIABLE    accounts,
-            limits,     \* Limit Order Books
-            stops,      \* Stop Loss Order Books
+VARIABLE    accounts,       \* 
+            base,           \* bidCoin Coin       
+            limits,         \* Limit Order Books
+            stops,          \* Stop Loss Order Books
             pools,          \* AMM pool Curves
             orderQ,         \* Sequenced queue of orders
             pairPlusStrong, \* Current Pair plus Strong Coin 
@@ -20,6 +21,7 @@ ASSUME Denominator \subseteq Nat
 (***************************** Type Declarations ***************************)
 
 NoVal == CHOOSE v : v \notin Nat
+NoCoin == CHOOSE c : c \notin Coin
 
 \* All exchange rates are represented as numerator/denominator tuples
 ExchRateType == {<<a, b>> : a \in Nat, b \in Denominator}
@@ -44,7 +46,7 @@ PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 (* limit order has an unfulfilled outstanding amt                       *)
 (*                                                                         *)
 (* ExchAccount <uint256>: Identifier of the position                       *) 
-(* amt <Nat>: amt of Bid Coin                                        *)
+(* amt <Nat>: amt of bidCoin Coin                                        *)
 (* exchrate <ExchRateType>: The Limit or Loss set-point                    *)
 (*                                                                         *)
 (* Cosmos-SDK types                                                        *)
@@ -71,8 +73,8 @@ PositionType == [
 (* Limit Order: designated by a single position with limit set to          *)
 (* lower bound of upper sell region and loss set to 0.                     *)
 (*                                                                         *)
-(* [amt: Nat, bid: Coin positions: {                                    *)
-(*      ask: Coin                                                          *)
+(* [amt: Nat, bidCoin: Coin positions: {                                       *)
+(*      askCoin: Coin                                                          *)
 (*      limit: ExchrateType                                                *)
 (*      loss: 0                                                            *)
 (*  }]                                                                     *)
@@ -80,8 +82,8 @@ PositionType == [
 (* Market Order: designated by a single position with limit and loss set   *)
 (* to zero.  Setting limit to zero means no limit.                         *)
 (*                                                                         *)
-(* [amt: Nat, bid: Coin positions: {                                    *)
-(*      ask: Coin                                                          *)
+(* [amt: Nat, bidCoin: Coin positions: {                                        *)
+(*      askCoin: Coin                                                          *)
 (*      limit: 0                                                           *)
 (*      loss: 0                                                            *)
 (*  }]                                                                     *)                                                             
@@ -104,7 +106,7 @@ AccountType == [
         balance: Nat,
         \* Positions are sequenced by ExchRate
         \*
-        \* Sum of amounts in sequence of positions for a particular Ask 
+        \* Sum of amounts in sequence of positions for a particular askCoin 
         \* Coin must be lower than or equal to the accounts denom balance
         \*
         \* [AskCoin -> << Limits [0], Stops [1]>>]
@@ -137,7 +139,7 @@ MarketInit ==
     \* liquidity balances for each pair
     /\ pools = [ppc \in PairPlusCoin |-> NoVal]
     /\ drops = [p \in PairType |-> Nat]
-    \* order books bid sequences
+    \* order books bidCoin sequences
     /\ limits = [ppc \in PairPlusCoin |-> <<>>]
     /\ stops = [ppc \in PairPlusCoin |-> <<>>]
     /\ pairPlusStrong = <<>>
@@ -166,13 +168,13 @@ Withdraw(a, c, amt) ==
 
 \* Optional syntax
 (* LET all_limit_orders == Add your stuff in here *)
-(* IN {x \in all_limit_orders: x.bid # x.ask} *)
-SubmitPosition(a, ask, bid, type, pos) == 
+(* IN {x \in all_limit_orders: x.bidCoin # x.askCoin} *)
+SubmitPosition(a, askCoin, bidCoin, type, pos) == 
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
         u == IF type = "limit" THEN 1 ELSE 1
-        balance == accounts[a][bid].balance
-        posSeqs == accounts[a][bid].positions[ask]
+        balance == accounts[a][bidCoin].balance
+        posSeqs == accounts[a][bidCoin].positions[askCoin]
     IN 
     /\  IF  SumSeq(posSeqs[t]) + pos.amt <= balance
         THEN     
@@ -182,19 +184,19 @@ SubmitPosition(a, ask, bid, type, pos) ==
                 IF igt = {} 
                 THEN 
                     accounts' = 
-                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
                         <<Append(pos, @[0]),@[1]>>]
                 ELSE
                     accounts' =
-                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
                         <<InsertAt(@[0], Min(igt), pos),@[1]>>]
-            /\  LET igt == IGT(limits[<<{ask, bid}, bid>>], pos) IN
+            /\  LET igt == IGT(limits[<<{askCoin, bidCoin}, bidCoin>>], pos) IN
                 IF igt = {}
                 THEN    limits' =
-                    [limits EXCEPT ![<<{ask, bid}, bid>>] =
+                    [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     Append(pos, @)]
                 ELSE    limits' =
-                    [limits EXCEPT ![<<{ask, bid}, bid>>] =
+                    [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Min(igt), pos)]
             \* ELSE Stops
             ELSE
@@ -202,19 +204,19 @@ SubmitPosition(a, ask, bid, type, pos) ==
                 IF ilt = {} 
                 THEN 
                     accounts' = 
-                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
                         <<@[0], Append(pos, @[1])>>]
                 ELSE
                     accounts' =
-                        [accounts EXCEPT ![a][bid].positions[ask] =
+                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
                         <<@[0], InsertAt(@[1], Max(ilt), pos)>>]
-            /\  LET ilt == ILT(stops[<<{ask, bid}, bid>>], pos) IN
+            /\  LET ilt == ILT(stops[<<{askCoin, bidCoin}, bidCoin>>], pos) IN
                 IF ilt = {}
                 THEN    stops' =
-                    [stops EXCEPT ![<<{ask, bid}, bid>>] =
+                    [stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     Append(pos, @)]
                 ELSE    stops' =
-                    [stops EXCEPT ![<<{ask, bid}, bid>>] =
+                    [stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Max(ilt), pos)]
         ELSE    UNCHANGED <<>>
 
@@ -269,20 +271,20 @@ Next == \/ \E   acct \in ExchAccount,
                                         \/  Liquidate(acct, pair, amt)
         \/ \E   acct \in ExchAccount : 
            \E   pair \in PairType : 
-           \E   bid \in pair :
-           \E   ask \in pair \ bid :
+           \E   bidCoin \in pair :
+           \E   askCoin \in pair \ bidCoin :
            \E   type \in {"limit", "stop"} : 
            \E   pos \in PositionType :  \/  SubmitPosition(
                                                 acct,
-                                                ask,
-                                                bid,
+                                                askCoin,
+                                                bidCoin,
                                                 type,
                                                 pos
                                             )
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 14:45:10 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 21:03:42 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd

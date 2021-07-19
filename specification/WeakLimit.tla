@@ -250,11 +250,12 @@ WeakLimit ==
                                        )]
                                     /\ stops' = [stops EXCEPT ![p][weak] = Tail(@)
                                     /\ accounts' = [accounts EXCEPT 
-                                        ![stopStrong.account] =
+                                        ![stopStrong.account] = Tail(@)
+                                            
                                         ![weakLimit.account] = 
             [] OTHER -> ctl' = "Stable"
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 17 08:32:59 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 18 16:26:22 CDT 2021 by Charles Dusek
 \* Created Fri Jul 16 22:17:43 CDT 2021 by Charles Dusek
