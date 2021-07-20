@@ -176,7 +176,7 @@ Withdraw(a, c, amt) ==
 \* Optional syntax
 (* LET all_limit_orders == Add your stuff in here *)
 (* IN {x \in all_limit_orders: x.bidCoin # x.askCoin} *)
-SubmitPosition(a, askCoin, bidCoin, type, pos) == 
+Open(a, askCoin, bidCoin, type, pos) == 
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
         balance == accounts[a][bidCoin].balance
@@ -228,32 +228,52 @@ SubmitPosition(a, askCoin, bidCoin, type, pos) ==
                     InsertAt(@, Max(ilt), pos)]
         ELSE    UNCHANGED <<>>
 
-ClosePosition(acct, askCoin, bidCoin, type, i) ==
+Close(acct, askCoin, bidCoin, type, i) ==
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
-        balance == accounts[a][bidCoin].balance
-        posSeqs == accounts[a][bidCoin].positions[askCoin]
+        balance == accounts[acct][bidCoin].balance
+        posSeqs == accounts[acct][bidCoin].positions[askCoin]
         pos == accounts[acct][bidCoin].positions[askCoin]
     IN  IF t = 0
-        THEN    LET igt == IGT(limits[<<{askCoin, bidCoin}, bidCoin>>], pos) IN
+        THEN    LET igt == IGT(limits[<<{askCoin, bidCoin}, bidCoin>>], pos)
         IN      IF igt = {}
                 THEN    
                 /\  limits' = [
                         limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                        Tail(pos, @)
+                        Tail(@)
                     ]
                 /\  accounts' = [ 
                         accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
                         <<Remove(@[0], pos),@[1]>>
                     ]
-                ELSE    limits' =
-                    [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                    Remove(posSeqs[0], pos)]
-        /\  accounts' = 
-        /\  limits' = [ limits EXCEPT ![<< <<askCoin, bidCoin>>, bidCoin >>] =
-            
-        
-\* Need to add ClosePosition
+                ELSE    
+                /\  limits' =
+                        [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                        Remove(posSeqs[0], pos)]
+                /\  accounts' = [ 
+                        accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
+                        <<Remove(@[0], pos),@[1]>>
+                    ]
+        ELSE    LET ilt == ILT(stops[<<{askCoin, bidCoin}, bidCoin>>], pos) IN
+                /\  IF ilt = {}
+                    THEN
+                    /\  stops' = [
+                            stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                            Tail(@)
+                        ]
+                    /\  accounts' = [ 
+                            accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
+                            <<@[1], Remove(@[1], pos)>>
+                        ]
+                    ELSE
+                    /\  stops' = [
+                            stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                            Remove(posSeqs[1], pos)
+                        ]
+                    /\  accounts' = [ 
+                            accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
+                            <<@[1], Remove(@[1], pos)>>
+                        ]
 
 Provision(acct, pair, amt) ==
     LET strong == Stronger(pair, pools)
@@ -297,7 +317,9 @@ Liquidate(acct, pair, amt) ==
                 /\ drops' = [ drops EXCEPT 
                     ![pair] = @ - amt ]
                 /\ UNCHANGED << limits, stops >>            
-                
+
+-----------------------------------------------------------------------------
+               
 Next == \/ \E   acct \in ExchAccount,
                 pair \in PairType, 
                 amt \in Nat :           \/  Provision(acct, pair, amt)
@@ -307,37 +329,53 @@ Next == \/ \E   acct \in ExchAccount,
             \E   bidCoin \in pair :
             \E   askCoin \in pair \ bidCoin :
             \E   type \in {"limit", "stop"} : 
-            \/   \E   pos \in PositionType :  \/  SubmitPosition(
+            \/  \E pos \in PositionType : \/  Open(
                                                 acct,
                                                 askCoin,
                                                 bidCoin,
                                                 type,
                                                 pos
                                             )
-            \/  \E seq \in  
+            \/    
                 IF type = "limit" 
-                THEN acct[{pair, bidCoin}][askCoin][0] :
-                    /\  len(seq) > 0
-                    /\  \E  i \in len(seq) :    \/ RemovePosition(
-                                                    acct,
-                                                    askCoin,
-                                                    bidCoin,
-                                                    type,
-                                                    i
-                                                )
+                THEN 
+                    \E seq \in acct[{pair, bidCoin}][askCoin][0] :
+                    /\  Len(seq) > 0
+                    /\  \E  i \in Len(seq) :    \/ Close(
+                                                        acct,
+                                                        askCoin,
+                                                        bidCoin,
+                                                        type,
+                                                        i
+                                                    )
                                  
-                ELSE acct[{pair, bidCoin}][askCoin][1] :
-                    /\  len(seq) > 0
-                    /\  \E  i \in len(seq) :   \/ RemovePosition(
-                                                acct,
-                                                askCoin,
-                                                bidCoin,
-                                                type,
-                                                i
-                                             )
+                ELSE 
+                    \E seq \in acct[{pair, bidCoin}][askCoin][1] :
+                    /\  Len(seq) > 0
+                    /\  \E  i \in Len(seq) :   \/ Close(
+                                                        acct,
+                                                        askCoin,
+                                                        bidCoin,
+                                                        type,
+                                                        i
+                                                    )
+
+Spec == /\  MarketInit 
+        /\ [][Next]_<<
+                accounts,
+                ask,
+                bid,       
+                limits,
+                stops,
+                pools,
+                pairPlusStrong, 
+                drops
+           >>
+-----------------------------------------------------------------------------
+THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Mon Jul 19 15:13:00 CDT 2021 by Charles Dusek
+\* Last modified Tue Jul 20 15:09:32 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
