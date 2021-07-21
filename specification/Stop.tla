@@ -1,4 +1,4 @@
-------------------------------- MODULE Limit -------------------------------
+-------------------------------- MODULE Stop --------------------------------
 EXTENDS     Naturals, Sequences, SequencesExt, MarketHelpers
 
 CONSTANT    Coin,       \* Set of all coins
@@ -8,22 +8,22 @@ CONSTANT    Coin,       \* Set of all coins
 VARIABLE    accounts,   \* Exchange Accounts
             ask,        \* Ask Coin
             bid,        \* Bid Coin
-            limits,     \* Limit Order Books
+            stops,      \* Stop Loss Order Books
             pools       \* AMM Pools 
-
+            
 -----------------------------------------------------------------------------
 
-Limit ==   
+Stop ==   
     /\  LET pairPlusAsk == <<{ask, bid}, ask>>
             pairPlusBid == <<{ask, bid}, bid>>
-            headLimit == Head(limits[pairPlusBid]) IN
+            headLimit == Head(stops[pairPlusBid]) IN
         IF  LT(
             headLimit.exchrate,
             <<pools[pairPlusAsk],pools[pairPlusBid]>>
         )
         THEN
             LET poolBid == MaxPoolBid(
-                    Head(limits[pairPlusBid]).exchrate,
+                    Head(stops[pairPlusBid]).exchrate,
                     ask,
                     bid
                 ) IN
@@ -34,7 +34,7 @@ Limit ==
                         ![headLimit.acct][ask] = 
                         @ - headLimit.amount
                     ]
-                /\  limits' = [limits EXCEPT 
+                /\  stops' = [stops EXCEPT 
                         ![pairPlusBid] = Tail(@)
                     ]
             ELSE
@@ -43,8 +43,8 @@ Limit ==
                         ![headLimit.acct][ask] =
                         @ - headLimit.amt
                     ]
-                /\  limits' = [
-                        limits EXCEPT ![pairPlusBid] = 
+                /\  stops' = [
+                        stops EXCEPT ![pairPlusBid] = 
                             Append([
                                 acct: headLimit.acct,
                                 amt: headLimit.amt - poolBid,
@@ -52,9 +52,9 @@ Limit ==
                         ], @)
                     ]
                               
-        ELSE UNCHANGED << accounts, ask, bid, limits, pools >>
+        ELSE UNCHANGED << accounts, ask, bid, stops, pools >>
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Jul 21 12:46:20 CDT 2021 by Charles Dusek
-\* Created Tue Jul 20 22:45:29 CDT 2021 by Charles Dusek
+\* Last modified Wed Jul 21 12:46:30 CDT 2021 by Charles Dusek
+\* Created Wed Jul 21 12:39:56 CDT 2021 by Charles Dusek

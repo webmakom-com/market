@@ -39,7 +39,7 @@ poolAskAmount(poolAskBal, poolBidBal, bidAmount) ==
 (* (2 - erate(final) / erate(initial)) -                                   *)
 (* poolAsk(initial)                                                        *)
 (***************************************************************************)
-MaxpoolBid(erateFinal, poolNumerator, poolDenominator) ==  
+MaxPoolBid(erateFinal, poolNumerator, poolDenominator) ==  
     poolDenominator * 
     (
         (erateFinal[0] \ erateFinal[1]) *
@@ -62,5 +62,5 @@ SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 15:26:48 CDT 2021 by Charles Dusek
+\* Last modified Wed Jul 21 12:38:13 CDT 2021 by Charles Dusek
 \* Created Sat Jul 17 11:19:23 CDT 2021 by Charles Dusek

@@ -17,6 +17,9 @@ VARIABLE    accounts,       \* Exchange Accounts
             pairPlusStrong, \* Current Pair plus Strong Coin 
             drops           \* Drops of Liquidity (tokens)
 
+Limit == INSTANCE Limit
+Stop == INSTANCE Stop
+
 ASSUME Denominator \subseteq Nat
 -----------------------------------------------------------------------------
 (***************************** Type Declarations ***************************)
@@ -316,8 +319,8 @@ Liquidate(acct, pair, amt) ==
                 
                 /\ drops' = [ drops EXCEPT 
                     ![pair] = @ - amt ]
-                /\ UNCHANGED << limits, stops >>            
-
+                /\ UNCHANGED << limits, stops >> 
+                
 -----------------------------------------------------------------------------
                
 Next == \/ \E   acct \in ExchAccount,
@@ -329,36 +332,45 @@ Next == \/ \E   acct \in ExchAccount,
             \E   bidCoin \in pair :
             \E   askCoin \in pair \ bidCoin :
             \E   type \in {"limit", "stop"} : 
-            \/  \E pos \in PositionType : \/  Open(
-                                                acct,
-                                                askCoin,
-                                                bidCoin,
-                                                type,
-                                                pos
-                                            )
+            \/  \E pos \in PositionType : 
+                /\  Open(
+                            acct,
+                            askCoin,
+                            bidCoin,
+                            type,
+                            pos
+                        )
+                /\  IF type = "limit"
+                    THEN    Limit!Limit
+                    ELSE    Stop!Stop
             \/    
                 IF type = "limit" 
                 THEN 
                     \E seq \in acct[{pair, bidCoin}][askCoin][0] :
                     /\  Len(seq) > 0
-                    /\  \E  i \in Len(seq) :    \/ Close(
-                                                        acct,
-                                                        askCoin,
-                                                        bidCoin,
-                                                        type,
-                                                        i
-                                                    )
+                    /\  \E  i \in Len(seq) :    
+                        /\  Close(
+                                acct,
+                                askCoin,
+                                bidCoin,
+                                type,
+                                i
+                            )
+                        /\  Limit!Limit
+                            
                                  
                 ELSE 
                     \E seq \in acct[{pair, bidCoin}][askCoin][1] :
                     /\  Len(seq) > 0
-                    /\  \E  i \in Len(seq) :   \/ Close(
-                                                        acct,
-                                                        askCoin,
-                                                        bidCoin,
-                                                        type,
-                                                        i
-                                                    )
+                    /\  \E  i \in Len(seq) :   
+                        /\  Close(
+                                acct,
+                                askCoin,
+                                bidCoin,
+                                type,
+                                i
+                            )
+                        /\  Stop!Stop
 
 Spec == /\  MarketInit 
         /\ [][Next]_<<
@@ -375,7 +387,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Tue Jul 20 22:15:30 CDT 2021 by Charles Dusek
+\* Last modified Wed Jul 21 12:53:54 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
