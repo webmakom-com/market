@@ -1,4 +1,4 @@
------------------------------- MODULE AskLimit ------------------------------
+------------------------------- MODULE Limit -------------------------------
 EXTENDS     Naturals, Sequences, SequencesExt, MarketHelpers
 
 CONSTANT    Account,    \* Set of all accounts
@@ -14,7 +14,7 @@ VARIABLE    limitBooks,     \* Limit Order Books
 
 -----------------------------------------------------------------------------
 
-AskLimit ==   
+Limit ==   
     /\  LET headLimit == Head(limits[<<{ask, bid}, ask>>]) IN
         IF  LT(
             headLimit.exchrate,
@@ -50,7 +50,8 @@ AskLimit ==
                         ], @)
                               
         ELSE UNCHANGED << >>
+
 =============================================================================
 \* Modification History
-\* Last modified Tue Jul 20 22:43:48 CDT 2021 by Charles Dusek
-\* Created Sun Jul 18 21:25:28 CDT 2021 by Charles Dusek
+\* Last modified Tue Jul 20 22:46:01 CDT 2021 by Charles Dusek
+\* Created Tue Jul 20 22:45:29 CDT 2021 by Charles Dusek
