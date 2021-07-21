@@ -34,11 +34,11 @@ BidLimit ==
                 <<limitsBid.exchrate[1], limitsBid.exchrate[0]>>
         IN
             CASE   GT(limitBidInverseExchrate, bondExchrate)    ->
-                (***************************************************************)
-                (* CASE 1.1: Inverse Exchange Rate of the head of the bid     *)
-                (*           stops is less than the Exchange Rate of the head  *)
-                (*           of the Ask Limits                              *)
-                (***************************************************************)
+                (***********************************************************)
+                (* CASE 1.1: Inverse Exchange Rate of the head of the bid  *)
+                (*           stops is less than the Exchange Rate of the   *) 
+                (* head of the Ask Limits                                  *)
+                (***********************************************************)
                 CASE    GT(limitBidInverseExchrate, stopAsk.exchrate) ->
                         LET bondBid == MaxBondBid(
                                 stopAsk.exchrate, 
@@ -261,5 +261,5 @@ BidLimit ==
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 18 21:33:00 CDT 2021 by Charles Dusek
+\* Last modified Tue Jul 20 22:17:42 CDT 2021 by Charles Dusek
 \* Created Sun Jul 18 21:24:55 CDT 2021 by Charles Dusek

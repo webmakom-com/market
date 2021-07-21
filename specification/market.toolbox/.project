@@ -18,17 +18,17 @@
 		<link>
 			<name>FiniteSetsExt.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/FiniteSetsExt.tla</locationURI>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/FiniteSetsExt.tla</location>
 		</link>
 		<link>
 			<name>Folds.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/Folds.tla</locationURI>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Folds.tla</location>
 		</link>
 		<link>
 			<name>Functions.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/Functions.tla</locationURI>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Functions.tla</location>
 		</link>
 		<link>
 			<name>Market.tla</name>
@@ -38,12 +38,12 @@
 		<link>
 			<name>MarketHelpers.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/MarketHelpers.tla</locationURI>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/MarketHelpers.tla</location>
 		</link>
 		<link>
 			<name>SequencesExt.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/SequencesExt.tla</locationURI>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/SequencesExt.tla</location>
 		</link>
 	</linkedResources>
 </projectDescription>

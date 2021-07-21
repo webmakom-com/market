@@ -3,9 +3,10 @@ EXTENDS     FiniteSetsExt, FiniteSets, MarketHelpers, Naturals,
             Sequences, SequencesExt
 
 CONSTANT    ExchAccount,    \* Set of all accounts
-            Coin,       \* Set of all coins
-            Denominator \* Set of all possible denominators. Precision of 
-                        \* fractions is defined by denominator constant.
+            Coin,           \* Set of all coins
+            Denominator     \* Set of all possible denominators. 
+                            \* Precision of fractions is defined by 
+                            \* denominator constant.
            
 VARIABLE    accounts,       \* Exchange Accounts
             ask,            \* Ask Coin
@@ -13,7 +14,6 @@ VARIABLE    accounts,       \* Exchange Accounts
             limits,         \* Limit Order Books
             stops,          \* Stop Loss Order Books
             pools,          \* AMM pool Curves
-            orderQ,         \* Sequenced queue of orders
             pairPlusStrong, \* Current Pair plus Strong Coin 
             drops           \* Drops of Liquidity (tokens)
 
@@ -375,7 +375,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Tue Jul 20 15:09:32 CDT 2021 by Charles Dusek
+\* Last modified Tue Jul 20 22:15:30 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
