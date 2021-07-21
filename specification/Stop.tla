@@ -16,9 +16,9 @@ VARIABLE    accounts,   \* Exchange Accounts
 Stop ==   
     /\  LET pairPlusAsk == <<{ask, bid}, ask>>
             pairPlusBid == <<{ask, bid}, bid>>
-            headLimit == Head(stops[pairPlusBid]) IN
+            headStop == Head(stops[pairPlusBid]) IN
         IF  LT(
-            headLimit.exchrate,
+            headStop.exchrate,
             <<pools[pairPlusAsk],pools[pairPlusBid]>>
         )
         THEN
@@ -27,12 +27,12 @@ Stop ==
                     ask,
                     bid
                 ) IN
-            IF poolBid >= headLimit.amt
+            IF poolBid >= headStop.amt
             \* AMM has sufficient liquidity to complete order
             THEN
                 /\  accounts' = [accounts EXCEPT 
                         ![headLimit.acct][ask] = 
-                        @ - headLimit.amount
+                        @ - headStop.amount
                     ]
                 /\  stops' = [stops EXCEPT 
                         ![pairPlusBid] = Tail(@)
@@ -40,15 +40,15 @@ Stop ==
             ELSE
             \* AMM only has sufficient liquidity to fill part of the order
                 /\  accounts' = [accounts EXCEPT
-                        ![headLimit.acct][ask] =
-                        @ - headLimit.amt
+                        ![headStop.acct][ask] =
+                        @ - headStop.amt
                     ]
                 /\  stops' = [
                         stops EXCEPT ![pairPlusBid] = 
                             Append([
-                                acct: headLimit.acct,
-                                amt: headLimit.amt - poolBid,
-                                exchrate: headLimit.exchrate
+                                acct: headStop.acct,
+                                amt: headStop.amt - poolBid,
+                                exchrate: headStop.exchrate
                         ], @)
                     ]
                               
