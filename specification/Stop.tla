@@ -31,7 +31,7 @@ Stop ==
             \* AMM has sufficient liquidity to complete order
             THEN
                 /\  accounts' = [accounts EXCEPT 
-                        ![headLimit.acct][ask] = 
+                        ![headStop.acct][ask] = 
                         @ - headStop.amount
                     ]
                 /\  stops' = [stops EXCEPT 
@@ -56,5 +56,5 @@ Stop ==
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Jul 21 12:46:30 CDT 2021 by Charles Dusek
+\* Last modified Thu Jul 22 20:26:49 CDT 2021 by Charles Dusek
 \* Created Wed Jul 21 12:39:56 CDT 2021 by Charles Dusek
