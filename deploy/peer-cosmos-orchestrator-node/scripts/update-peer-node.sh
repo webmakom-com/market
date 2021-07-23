@@ -1,5 +1,5 @@
 GRAVITY_ASSETS="/root/assets"
-BUCKET_MASTER="/root/onomy/master"
+BUCKET_MASTER="/root/market/master"
 
 GRAVITY_HOME_FLAG="--home /root/testchain/gravity"
 GRAVITY_GENESIS_FILE="/root/testchain/gravity/config"

@@ -67,7 +67,7 @@ CONTRACT_ADDRESS=$(cat /root/eth_contract_address)
 echo "Contract address: $CONTRACT_ADDRESS"
 
 ###----------------------------- commit save Contract address-----
-cd /root/onomy/
+cd /root/market/
 #sh deploy/master-cosmos-orchestrator-node/scripts/store-ethereum-contract-info.sh $GIT_HUB_USER $GIT_HUB_PASS $GIT_HUB_EMAIL $GIT_HUB_BRANCH
 # # return back to home
 # cd $CURRENT_WORKING_DIR
@@ -76,8 +76,8 @@ cd /root/onomy/
 # #sleep 10
 GRAVITY_CHAIN_DATA="/root/eth_contract_address"
 GRAVITY_CHAIN_CONTRACT="/root/contracts"
-BUCKET_MASTER_CHAIN_DATA="/root/onomy/master/eth_contract_address"
-BUCKET_MASTER_CHAIN_CONTRACT="/root/onomy/master/contracts"
+BUCKET_MASTER_CHAIN_DATA="/root/market/master/eth_contract_address"
+BUCKET_MASTER_CHAIN_CONTRACT="/root/market/master/contracts"
 
 echo "Get pull updates"
 git pull origin $GIT_HUB_BRANCH

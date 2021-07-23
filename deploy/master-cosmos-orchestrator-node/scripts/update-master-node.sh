@@ -2,11 +2,11 @@ GRAVITY_CONFIG_FILE="/root/testchain/gravity/config"
 GRAVITY_GENESIS_FILE="/root/testchain/gravity/config/genesis.json"
 GRAVITY_ASSETS="/root/assets"
 BUCKET_MASTER_GENESIS_FILE="master/genesis.json"
-BUCKET_MASTER="/root/onomy/master"
+BUCKET_MASTER="/root/market/master"
 
-PEER_INFO="/root/onomy/peerInfo"
-PEER_INFO_VALIDATOR_KEY="/root/onomy/peerInfo/testchain/gravity/val_key"
-PEER_INFO_ORCHESTRATOR_KEY="/root/onomy/peerInfo/testchain/gravity/orchestrator_key.json"
+PEER_INFO="/root/market/peerInfo"
+PEER_INFO_VALIDATOR_KEY="/root/market/peerInfo/testchain/gravity/val_key"
+PEER_INFO_ORCHESTRATOR_KEY="/root/market/peerInfo/testchain/gravity/orchestrator_key.json"
 
 GIT_HUB_USER=$1
 GIT_HUB_PASS=$2
