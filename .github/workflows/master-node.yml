@@ -5,7 +5,7 @@ jobs:
   amd64:
     name: Master-Node
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/ONET-42'
+    if: github.ref != 'refs/heads/config'
     steps:
       - name: checkout
         uses: actions/checkout@v2

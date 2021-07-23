@@ -5,7 +5,7 @@ jobs:
   amd64:
     name: Gravity Bridge Binary
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/ONET-52'
+    if: github.ref != 'refs/heads/config'
     steps:
       - name: checkout
         uses: actions/checkout@v2
