@@ -20,7 +20,7 @@ VARIABLE    accounts,       \* Exchange Accounts
 Limit == INSTANCE Limit
 Stop == INSTANCE Stop
 
-ASSUME Denominator \subseteq Nat
+ASSUME Denominator \in Nat
 -----------------------------------------------------------------------------
 (***************************** Type Declarations ***************************)
 
@@ -28,7 +28,7 @@ NoVal == CHOOSE v : v \notin Nat
 NoCoin == CHOOSE c : c \notin Coin
 
 \* All exchange rates are represented as numerator/denominator tuples
-ExchRateType == {<<a, b>> : a \in Nat, b \in Denominator}
+ExchRateType == {<<a, b>> : a \in Nat, b \in { 1 .. Denominator }}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
@@ -41,7 +41,7 @@ PairType == {{a, b} : a \in Coin, b \in Coin}
 (* depend on both the pair (set of two coins) as well as one of the coins *)
 (* associated with that particular pair                                   *)
 (**************************************************************************)
-PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair } 
+PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -90,25 +90,16 @@ PositionType == [
 (*      balances    Array                                                  *)
 (* }                                                                       *)
 (***************************************************************************)
+AccountType ==
+[
+    balance: Nat,
+    positions: [Coin -> <<Seq(PositionType), Seq(PositionType)>>]
+]
 
-AccountType == [
-    \* The balance and positions of each denomination of coin in an
-    \* exchange ExchAccount are represented by the record type below
-    Coin -> [
-        \* Balances are represented as Natural number
-        balance: Nat,
-        \* Positions are sequenced by ExchRate
-        \*
-        \* Sum of amounts in sequence of positions for a particular askCoin 
-        \* Coin must be lower than or equal to the accounts denom balance
-        \*
-        \* [AskCoin -> << Limits [0], Stops [1]>>]
-        positions: [Coin -> <<Seq(PositionType), Seq(PositionType)>>]
-    ]
-] 
+AccountPlusCoin == {<<e, c>> : e \in ExchAccount, c \in Coin}
 
 TypeInvariant ==
-    /\  accounts \in [ExchAccount -> AccountType]
+    /\  accounts \in [AccountPlusCoin -> AccountType]
     /\  ask \in Coin
     /\  bid \in Coin
     \* Alternative Declaration
@@ -122,13 +113,13 @@ TypeInvariant ==
         
 MarketInit ==  
     /\  accounts = [
-            a \in ExchAccount |-> [
-                c \in Coin |-> [
-                    balance: 0,
-                    positions: [
-                        Coin |-> << <<>>, <<>> >>
-                    ]
-                ] 
+            a \in AccountPlusCoin |-> 
+                [
+                    balance |-> NoVal,
+                    positions |-> 
+                        [ c \in Coin |-> 
+                        << <<>>, <<>> >>
+                ]
             ]   
         ]
     \*  Tracks the Ask Coin
@@ -137,7 +128,7 @@ MarketInit ==
     /\  bid = NoCoin
     \*  liquidity balances for each pair
     /\  pools = [ppc \in PairPlusCoin |-> NoVal]
-    /\  drops = [p \in PairType |-> Nat]
+    /\  drops = [p \in PairType |-> NoVal]
     \*  order books bidCoin sequences
     /\  limits = [ppc \in PairPlusCoin |-> <<>>]
     /\  stops = [ppc \in PairPlusCoin |-> <<>>]
@@ -355,7 +346,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Thu Jul 22 20:06:05 CDT 2021 by Charles Dusek
+\* Last modified Thu Jul 22 20:47:41 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
