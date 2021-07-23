@@ -235,21 +235,10 @@ Close(acct, askCoin, bidCoin, type, i) ==
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
         balance == accounts[acct][bidCoin].balance
-        posSeqs == accounts[acct][bidCoin].positions[askCoin]
-        pos == accounts[acct][bidCoin].positions[askCoin]
+        posSeqs == accounts[acct][bidCoin].positions[askCoin][t]
+        pos == posSeqs[i]
     IN  IF t = 0
-        THEN    LET igt == IGT(limits[<<{askCoin, bidCoin}, bidCoin>>], pos)
-        IN      IF igt = {}
-                THEN    
-                /\  limits' = [
-                        limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                        Tail(@)
-                    ]
-                /\  accounts' = [ 
-                        accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
-                        <<Remove(@[0], pos),@[1]>>
-                    ]
-                ELSE    
+        THEN       
                 /\  limits' =
                         [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                         Remove(posSeqs[0], pos)]
@@ -257,26 +246,16 @@ Close(acct, askCoin, bidCoin, type, i) ==
                         accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
                         <<Remove(@[0], pos),@[1]>>
                     ]
-        ELSE    LET ilt == ILT(stops[<<{askCoin, bidCoin}, bidCoin>>], pos) IN
-                /\  IF ilt = {}
-                    THEN
-                    /\  stops' = [
-                            stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                            Tail(@)
-                        ]
-                    /\  accounts' = [ 
-                            accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
-                            <<@[1], Remove(@[1], pos)>>
-                        ]
-                    ELSE
-                    /\  stops' = [
-                            stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                            Remove(posSeqs[1], pos)
-                        ]
-                    /\  accounts' = [ 
-                            accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
-                            <<@[1], Remove(@[1], pos)>>
-                        ]
+        ELSE    
+                /\  stops' = [
+                        stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                        Remove(posSeqs[1], pos)
+                    ]
+                /\  accounts' = [ 
+                        accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
+                        <<@[0], Remove(@[1], pos)>>
+                    ]
+
 
 Provision(acct, pair, amt) ==
     LET strong == Stronger(pair, pools)
@@ -387,7 +366,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Wed Jul 21 12:53:54 CDT 2021 by Charles Dusek
+\* Last modified Thu Jul 22 19:13:07 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
