@@ -8,9 +8,9 @@ ARG GIT_HUB_REPO=${GIT_HUB_REPO}
 
 # //TODO this clone may be change in future
 RUN git clone -b $GIT_HUB_BRANCH $GIT_HUB_REPO
-RUN cp -r /root/onomy/deploy/peer-cosmos-orchestrator-node/scripts scripts
-RUN cp -r /root/onomy/master/assets assets
-RUN cp -r /root/onomy/peerInfo/testchain testchain
+RUN cp -r /root/market/deploy/peer-cosmos-orchestrator-node/scripts scripts
+RUN cp -r /root/market/master/assets assets
+RUN cp -r /root/market/peerInfo/testchain testchain
 
 RUN chmod -R +x /root/scripts
 RUN chmod -R +x /root/assets

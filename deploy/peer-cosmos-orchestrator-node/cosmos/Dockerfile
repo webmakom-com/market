@@ -14,8 +14,8 @@ ARG GRAVITY_GENESIS_COINS="100000000000stake,100000000000footoken"
 # purpose of clone the repo is to commit and push genesis file and seed in this repo to use by other node
 # //TODO this clone may be change in future
 RUN git clone -b $GIT_HUB_BRANCH $GIT_HUB_REPO
-RUN cp -r /root/onomy/deploy/peer-cosmos-orchestrator-node/scripts scripts
-RUN cp -r /root/onomy/master/assets assets
+RUN cp -r /root/market/deploy/peer-cosmos-orchestrator-node/scripts scripts
+RUN cp -r /root/market/master/assets assets
 
 RUN chmod -R +x /root/scripts
 RUN chmod -R +x /root/assets
@@ -26,7 +26,7 @@ RUN sh scripts/init.sh
 RUN gravity --home /root/testchain/gravity tendermint show-node-id > seed
 RUN sed -i 's#'$(gravity --home /root/testchain/gravity tendermint show-node-id)'#'$(gravity --home /root/testchain/gravity tendermint show-node-id)'@'$PUBLIC_IP':26656#g' seed
 
-WORKDIR /root/onomy
+WORKDIR /root/market
 RUN sh deploy/peer-cosmos-orchestrator-node/scripts/store-peer-info.sh $GIT_HUB_USER $GIT_HUB_PASS $GIT_HUB_EMAIL $GIT_HUB_BRANCH
 
 #WORKDIR /root

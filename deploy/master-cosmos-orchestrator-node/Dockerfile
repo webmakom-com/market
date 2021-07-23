@@ -19,8 +19,8 @@ ARG GRAVITY_GENESIS_COINS="100000000000stake,100000000000footoken"
 # purpose of clone the repo is to get updated Ethgenesis.json file
 # //TODO this clone may be change in future
 RUN git clone -b $GIT_HUB_BRANCH $GIT_HUB_REPO
-RUN cp -r /root/onomy/deploy/master-cosmos-orchestrator-node/scripts scripts
-RUN cp -r /root/onomy/deploy/master-cosmos-orchestrator-node/assets assets
+RUN cp -r /root/market/deploy/master-cosmos-orchestrator-node/scripts scripts
+RUN cp -r /root/market/deploy/master-cosmos-orchestrator-node/assets assets
 
 RUN chmod -R +x /root/scripts
 RUN chmod -R +x /root/assets
@@ -31,7 +31,7 @@ RUN sh scripts/init.sh
 RUN gravity --home /root/testchain/gravity tendermint show-node-id > seed
 RUN sed -i 's#'$(gravity --home /root/testchain/gravity tendermint show-node-id)'#'$(gravity --home /root/testchain/gravity tendermint show-node-id)'@'$PUBLIC_IP':26656#g' seed
 
-WORKDIR /root/onomy
+WORKDIR /root/market
 RUN sh deploy/master-cosmos-orchestrator-node/scripts/store-master-info.sh $GIT_HUB_USER $GIT_HUB_PASS $GIT_HUB_EMAIL $GIT_HUB_BRANCH
 
 WORKDIR /root

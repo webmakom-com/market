@@ -11,9 +11,9 @@ ARG GIT_HUB_REPO=${GIT_HUB_REPO}
 # purpose of clone the repo is to get updated Ethgenesis.json file
 # //TODO this clone may be change in future
 RUN git clone -b $GIT_HUB_BRANCH $GIT_HUB_REPO
-RUN cp -r /root/onomy/deploy/master-cosmos-orchestrator-node/scripts scripts
-#RUN cp -r /root/onomy/master/assets assets
-RUN cp -r /root/onomy/master/testchain testchain
+RUN cp -r /root/market/deploy/master-cosmos-orchestrator-node/scripts scripts
+#RUN cp -r /root/market/master/assets assets
+RUN cp -r /root/market/master/testchain testchain
 
 RUN chmod -R +x /root/scripts
 RUN chmod -R +x /root/testchain
