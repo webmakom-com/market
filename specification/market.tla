@@ -4,9 +4,10 @@ EXTENDS     FiniteSetsExt, FiniteSets, MarketHelpers, Naturals,
 
 CONSTANT    ExchAccount,    \* Set of all accounts
             Coin,           \* Set of all coins
-            Denominator     \* Set of all possible denominators. 
+            Denominator,    \* Set of all possible denominators. 
                             \* Precision of fractions is defined by 
                             \* denominator constant.
+            Amount          \* Amounts
            
 VARIABLE    accounts,       \* Exchange Accounts
             ask,            \* Ask Coin
@@ -21,6 +22,7 @@ Limit == INSTANCE Limit
 Stop == INSTANCE Stop
 
 ASSUME Denominator \in Nat
+ASSUME Amount \in SUBSET Nat
 -----------------------------------------------------------------------------
 (***************************** Type Declarations ***************************)
 
@@ -32,7 +34,7 @@ ExchRateType == {<<a, b>> : a \in Nat, b \in { 1 .. Denominator }}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
-PairType == {{a, b} : a \in Coin, b \in Coin}
+PairType == { { {a, b} : b \in Coin \ {a} } :  a \in Coin }
 
 (**************************************************************************)
 (* Pair plus Coin Type                                                    *)
@@ -284,8 +286,12 @@ Liquidate(acct, pair, amt) ==
                
 Next == \/ \E   acct \in ExchAccount,
                 pair \in PairType, 
-                amt \in Nat :           \/  Provision(acct, pair, amt)
+                amt \in Amount :        \/  Provision(acct, pair, amt)
                                         \/  Liquidate(acct, pair, amt)
+        \/ \E   acct \in ExchAccount,
+                coin \in Coin,
+                amt \in Amount :        \/  Deposit(acct, coin, amt)
+                                        \/  Withdraw(acct, coin, amt)
         \/  \E   acct \in ExchAccount : 
             \E   pair \in PairType : 
             \E   bidCoin \in pair :
@@ -346,7 +352,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Thu Jul 22 20:47:41 CDT 2021 by Charles Dusek
+\* Last modified Fri Jul 23 20:51:31 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
