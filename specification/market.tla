@@ -15,7 +15,6 @@ VARIABLE    accounts,       \* Exchange Accounts
             limits,         \* Limit Order Books
             stops,          \* Stop Loss Order Books
             pools,          \* AMM pool Curves
-            pairPlusStrong, \* Current Pair plus Strong Coin 
             drops           \* Drops of Liquidity (tokens)
 
 Limit == INSTANCE Limit
@@ -104,12 +103,13 @@ TypeInvariant ==
     /\  accounts \in [AccountPlusCoin -> AccountType]
     /\  ask \in Coin
     /\  bid \in Coin
+    /\  drops \in [PairType -> Nat]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
+    /\  limits \in [PairPlusCoin -> Seq(PositionType)]
     /\  pools \in [PairPlusCoin -> Nat]
-    /\  drops \in [PairType -> Nat]
-    /\  pairPlusStrong \in PairPlusCoin
     /\  stops \in [PairPlusCoin -> Seq(PositionType)]
+    
 
 (************************** Variable Initialization ************************)       
         
@@ -128,13 +128,10 @@ MarketInit ==
     /\  ask = NoCoin
     \*  Tracks the Bid Coin
     /\  bid = NoCoin
-    \*  liquidity balances for each pair
-    /\  pools = [ppc \in PairPlusCoin |-> NoVal]
     /\  drops = [p \in PairType |-> NoVal]
-    \*  order books bidCoin sequences
     /\  limits = [ppc \in PairPlusCoin |-> <<>>]
+    /\  pools = [ppc \in PairPlusCoin |-> NoVal]
     /\  stops = [ppc \in PairPlusCoin |-> <<>>]
-    /\  pairPlusStrong = <<>>
 
 
 
@@ -147,7 +144,7 @@ MarketInit ==
 \* amt: amt of Coin
 Deposit(a, c, amt) ==    
     /\  accounts' = [accounts EXCEPT ![a][c].balance = @ + amt]
-    /\  UNCHANGED << >>
+    /\  UNCHANGED << ask, bid, pools, drops, stops >>
 
 \* Withdraw coin from exchange ExchAccount
 \* a: ExchAccount
@@ -191,6 +188,7 @@ Open(a, askCoin, bidCoin, type, pos) ==
                 ELSE    limits' =
                     [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Min(igt), pos)]
+            /\  UNCHANGED << stops >>
             \* ELSE Stops
             ELSE
             /\  LET ilt == ILT(posSeqs[1], pos) IN
@@ -211,6 +209,7 @@ Open(a, askCoin, bidCoin, type, pos) ==
                 ELSE    stops' =
                     [stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Max(ilt), pos)]
+            /\  UNCHANGED << limits >>
         ELSE    UNCHANGED <<>>
 
 Close(acct, askCoin, bidCoin, type, i) ==
@@ -228,6 +227,7 @@ Close(acct, askCoin, bidCoin, type, i) ==
                         accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
                         <<Remove(@[0], pos),@[1]>>
                     ]
+                /\  UNCHANGED << stops, pools >> 
         ELSE    
                 /\  stops' = [
                         stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
@@ -345,14 +345,13 @@ Spec == /\  MarketInit
                 limits,
                 stops,
                 pools,
-                pairPlusStrong, 
                 drops
            >>
 -----------------------------------------------------------------------------
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Fri Jul 23 20:51:31 CDT 2021 by Charles Dusek
+\* Last modified Fri Jul 23 21:36:19 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd

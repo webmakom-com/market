@@ -51,7 +51,7 @@ MaxPoolBid(erateFinal, poolNumerator, poolDenominator) ==
     ) - poolNumerator
     
 
-Stronger(pair, pools) ==  CHOOSE c \in pair : pools[c] <= pools[pair \ {c}]
+Stronger(pair, pools) ==  CHOOSE c \in pair : pools[<<pair, c>>] <= pools[<<pair, pair \ {c}>>]
 
 SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
                     IF i = 0 THEN 0
@@ -62,5 +62,5 @@ SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Jul 21 12:38:13 CDT 2021 by Charles Dusek
+\* Last modified Fri Jul 23 21:33:22 CDT 2021 by Charles Dusek
 \* Created Sat Jul 17 11:19:23 CDT 2021 by Charles Dusek
