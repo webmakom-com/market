@@ -33,7 +33,7 @@ ExchRateType == {<<a, b>> : a \in Nat, b \in { 1 .. Denominator }}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
-PairType == { { {a, b} : b \in Coin \ {a} } :  a \in Coin }
+PairType == { {a, b} : b \in Coin, a \in Coin }
 
 (**************************************************************************)
 (* Pair plus Coin Type                                                    *)
@@ -240,9 +240,9 @@ Close(acct, askCoin, bidCoin, type, i) ==
 
 
 Provision(acct, pair, amt) ==
+IF Cardinality(pair) > 1 THEN
     LET strong == Stronger(pair, pools)
         weak == pair \ strong
-        pool == pools[pair]
         poolExchrate == << pools[<<pair, weak>>], pools[<<pair, strong>>] >>
         balStrong == accounts[acct][strong].balance
         balWeak == accounts[acct][weak].balance
@@ -262,6 +262,7 @@ Provision(acct, pair, amt) ==
                 ![PairType] = @ + bidWeak 
             ]
         /\ UNCHANGED << limits, stops >>
+ELSE UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
 
 Liquidate(acct, pair, amt) ==   
     \* Qualifying condition
@@ -351,7 +352,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Fri Jul 23 21:36:19 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 24 13:14:04 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
