@@ -17,7 +17,7 @@ func SubmitPosition(
 	}
 
 	// We can't place order, because there are not enough funds in the account
-	if balance.GetCoin().Amount.ToDec().Sub(order.GetAmount().Amount).LTE(sdk.ZeroDec()) {
+	if balance.GetCoin().Amount.ToDec().Sub(order.GetAmount().Amount).LT(sdk.ZeroDec()) {
 		return ErrNotEnoughFunds
 	}
 
@@ -37,7 +37,7 @@ func SubmitPosition(
 		return ErrOrderTypeUnspecified
 	}
 
-	balance.GetCoin().Amount = balance.GetCoin().Amount.Add(sdk.NewIntFromBigInt(order.GetAmount().Amount.BigInt()))
+	balance.GetCoin().Amount = balance.GetCoin().Amount.Sub(sdk.NewIntFromBigInt(order.GetAmount().Amount.BigInt()))
 
 	return nil
 }
