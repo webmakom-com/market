@@ -31,6 +31,11 @@
 			<location>C:/Users/Charles Dusek/Projects/market/specification/Functions.tla</location>
 		</link>
 		<link>
+			<name>Limit.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Limit.tla</location>
+		</link>
+		<link>
 			<name>Market.tla</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Market.tla</locationURI>
@@ -44,6 +49,11 @@
 			<name>SequencesExt.tla</name>
 			<type>1</type>
 			<location>C:/Users/Charles Dusek/Projects/market/specification/SequencesExt.tla</location>
+		</link>
+		<link>
+			<name>Stop.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Stop.tla</location>
 		</link>
 	</linkedResources>
 </projectDescription>
