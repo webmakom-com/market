@@ -33,7 +33,9 @@ ExchRateType == {<<a, b>> : a \in Nat, b \in { 1 .. Denominator }}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
-PairType == { {a, b} : a \in Coin, b \in Coin }
+Pairs == { {a, b} : a \in Coin, b \in Coin }
+
+PairType == { pair \in Pairs : Cardinality(pair) > 1 }
 
 (**************************************************************************)
 (* Pair plus Coin Type                                                    *)
@@ -42,7 +44,7 @@ PairType == { {a, b} : a \in Coin, b \in Coin }
 (* depend on both the pair (set of two coins) as well as one of the coins *)
 (* associated with that particular pair                                   *)
 (**************************************************************************)
-PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
+PairPlusCoin == { <<pair, coin>> \in PairType \X Coin : coin \in pair }
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -50,9 +52,13 @@ PairPlusCoin == { <<pair, coin>> \in PairType \X Coin: coin \in pair }
 (* The position type is the order book record that is maintained when a    *)
 (* limit or stop order has an unfulfilled outstanding amount               *)
 (*                                                                         *)
-(* ExchAccount <uint256>: Identifier of the position                       *) 
-(* amt <Nat>: amt of bidCoin Coin                                          *)
-(* exchrate <ExchRateType>: The Limit or Loss set-point                    *)
+(* The position type is defined by the parent sequence.  The position may  *)
+(* either be a limit or stop type.                                         *)                  
+(*                                                                         *)
+(* Position record fields                                                  *)
+(* acct: Position Owner                                                    *) 
+(* amt: Amount of Bid Coin                                                 *)
+(* exchrate: The Limit or Stop Loss set-point                              *)
 (*                                                                         *)
 (* Market Order: designated by a single position with limit set to zero.   *)  
 (* Setting limit to zero means no limit.                                   *)
@@ -78,8 +84,8 @@ PositionType == [
     exchrate: ExchRateType
 ]
 
-(***************************** Exchange ExchAccount ************************)
-(* The Exchange ExchAccount holds active exchange balances with their      *)
+(***************************** Exchange Account ****************************)
+(* The Exchange Account holds active exchange balances with their          *) 
 (* associated order positions.                                             *)
 (*                                                                         *)
 (*                                                                         *)
@@ -358,7 +364,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 24 21:48:15 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 25 20:52:38 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd

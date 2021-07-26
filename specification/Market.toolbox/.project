@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>Market</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>toolbox.builder.TLAParserBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>toolbox.natures.TLANature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>FiniteSetsExt.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/FiniteSetsExt.tla</location>
+		</link>
+		<link>
+			<name>Folds.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Folds.tla</location>
+		</link>
+		<link>
+			<name>Functions.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Functions.tla</location>
+		</link>
+		<link>
+			<name>Limit.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Limit.tla</location>
+		</link>
+		<link>
+			<name>Market.tla</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Market.tla</locationURI>
+		</link>
+		<link>
+			<name>MarketHelpers.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/MarketHelpers.tla</location>
+		</link>
+		<link>
+			<name>SequencesExt.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/SequencesExt.tla</location>
+		</link>
+		<link>
+			<name>Stop.tla</name>
+			<type>1</type>
+			<location>C:/Users/Charles Dusek/Projects/market/specification/Stop.tla</location>
+		</link>
+	</linkedResources>
+</projectDescription>
