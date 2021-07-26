@@ -12,10 +12,11 @@ CONSTANT    ExchAccount,    \* Set of all accounts
 VARIABLE    accounts,       \* Exchange Accounts
             ask,            \* Ask Coin
             bid,            \* Bid Coin       
+            drops,          \* Drops of Liquidity (tokens)
             limits,         \* Limit Order Books
-            stops,          \* Stop Loss Order Books
             pools,          \* AMM pool Curves
-            drops           \* Drops of Liquidity (tokens)
+            stops           \* Stop Loss Order Books
+            
 
 Limit == INSTANCE Limit
 Stop == INSTANCE Stop
@@ -104,12 +105,13 @@ AccountType ==
 ]
 
 AccountPlusCoin == {<<e, c>> : e \in ExchAccount, c \in Coin}
+AccountPlusPair == {<<e, p>> : e \in ExchAccount, p \in PairType}
 
 TypeInvariant ==
     /\  accounts \in [AccountPlusCoin -> AccountType]
     /\  ask \in Coin
     /\  bid \in Coin
-    /\  drops \in [PairType -> Nat]
+    /\  drops \in [AccountPlusPair -> Nat]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
     /\  limits \in [PairPlusCoin -> Seq(PositionType)]
@@ -125,7 +127,7 @@ MarketInit ==
                 [
                     balance |-> 0,
                     positions |-> 
-                        [ c \in Coin |-> 
+                        [ c \in Coin \ a[1] |-> 
                         << <<>>, <<>> >>
                 ]
             ]   
@@ -246,50 +248,56 @@ Close(acct, askCoin, bidCoin, type, i) ==
 
 
 Provision(acct, pair, amt) ==
-IF Cardinality(pair) > 1 THEN
-    LET strong == Stronger(pair, pools)
-        weak == pair \ strong
-        poolExchrate == << pools[<<pair, weak>>], pools[<<pair, strong>>] >>
-        balStrong == accounts[acct][strong].balance
-        balWeak == accounts[acct][weak].balance
-        bidWeak == 
-            LET strongToWeak == (balStrong * pools[<<pair, weak>>]) \ pools[<<pair, strong>>]
-            IN  IF  strongToWeak > balWeak
-                THEN    balWeak
-                ELSE    strongToWeak
-        bidStrong ==
-            (bidWeak * pools[<<pair, strong>>]) \ pools[<<pair, weak>>]
-    IN
-        /\  pools' = [ pools EXCEPT 
-                ![<<pair, weak>>] = @ + bidWeak,
-                ![<<pair, strong>>] = @ + bidStrong
-            ]
-        /\  drops' = [ drops EXCEPT 
-                ![PairType] = @ + bidWeak 
-            ]
-        /\ UNCHANGED << limits, stops >>
-ELSE UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
+
+LET strong == Stronger(pair, pools)
+    weak == pair \ strong
+    poolExchrate == << pools[<<pair, weak>>], pools[<<pair, strong>>] >>
+    balStrong == accounts[acct][strong].balance
+    balWeak == accounts[acct][weak].balance
+    bidStrong == 
+        IF  amt > balStrong
+            THEN    balStrong
+            ELSE    amt
+    bidWeak ==
+        (bidStrong * pools[<<pair, weak>>]) \ pools[<<pair, strong>>]
+IN
+    /\  pools' = [ pools EXCEPT 
+            ![<<pair, weak>>] = @ + bidWeak,
+            ![<<pair, strong>>] = @ + bidStrong
+        ]
+    /\  drops' = [ drops EXCEPT 
+            ![<<acct, pair>>] = @ + bidStrong 
+        ]
+    /\  accounts' = [ accounts EXCEPT
+            ![<<acct, weak>>].balance = @ - bidWeak,
+            ![<<acct, strong>>].balance = @ - bidStrong
+        ]
+    /\ UNCHANGED << ask, bid, limits, stops >>
+
 
 Liquidate(acct, pair, amt) ==
-IF Cardinality(pair) > 1 THEN
-    \* Qualifying condition
-    /\  amt < drops[pair]
-    /\  LET 
-            pool == pools[pair]
-        IN
-            LET 
-                d == Stronger(pair, pools)
-                c == pair \ d
-            IN
-                /\  pools' = [ pools EXCEPT 
-                        ![pair][d] = @ - @ * (amt \ pools[pair][c]),
-                        ![pair][c] = @ - amt
-                    ]
-                
-                /\ drops' = [ drops EXCEPT 
-                    ![pair] = @ - amt ]
-                /\ UNCHANGED << limits, stops >>
-ELSE UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
+
+\* Qualifying condition
+/\  amt < drops[pair]
+/\  LET 
+        pool == pools[pair]
+        strong == Stronger(pair, pools)
+        weak == pair \ strong
+        bidStrong == amt
+        bidWeak == amt * pools[<<pair, weak>>] \ pools[<<pair, strong>>]
+    IN
+        /\  accounts' = [ accounts EXCEPT
+                ![<<acct, bidWeak>>].balance = @ + bidWeak,
+                ![<<acct, bidStrong>>].balance = @ + bidStrong
+            ]
+        /\  pools' = [ pools EXCEPT 
+                ![<<pair, strong>>] = @ - @ * (amt \ pools[<<pair, weak>>]),
+                ![<<pair, weak>>] = @ - amt
+            ]
+        
+        /\ drops' = [ drops EXCEPT 
+            ![<<acct, pair>>] = @ - amt ]
+        /\ UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
                 
 -----------------------------------------------------------------------------
                
@@ -364,7 +372,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 25 20:52:38 CDT 2021 by Charles Dusek
+\* Last modified Sun Jul 25 21:39:58 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
