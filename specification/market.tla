@@ -33,7 +33,7 @@ ExchRateType == {<<a, b>> : a \in Nat, b \in { 1 .. Denominator }}
 
 \* Pairs of coins are represented as couple sets
 \* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
-PairType == { {a, b} : b \in Coin, a \in Coin }
+PairType == { {a, b} : a \in Coin, b \in Coin }
 
 (**************************************************************************)
 (* Pair plus Coin Type                                                    *)
@@ -117,7 +117,7 @@ MarketInit ==
     /\  accounts = [
             a \in AccountPlusCoin |-> 
                 [
-                    balance |-> NoVal,
+                    balance |-> 0,
                     positions |-> 
                         [ c \in Coin |-> 
                         << <<>>, <<>> >>
@@ -128,9 +128,9 @@ MarketInit ==
     /\  ask = NoCoin
     \*  Tracks the Bid Coin
     /\  bid = NoCoin
-    /\  drops = [p \in PairType |-> NoVal]
+    /\  drops = [p \in PairType |-> 0]
     /\  limits = [ppc \in PairPlusCoin |-> <<>>]
-    /\  pools = [ppc \in PairPlusCoin |-> NoVal]
+    /\  pools = [ppc \in PairPlusCoin |-> 0]
     /\  stops = [ppc \in PairPlusCoin |-> <<>>]
 
 
@@ -143,17 +143,17 @@ MarketInit ==
 \* c: Coin
 \* amt: amt of Coin
 Deposit(a, c, amt) ==    
-    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ + amt]
-    /\  UNCHANGED << ask, bid, pools, drops, stops >>
+    /\  accounts' = [accounts EXCEPT ![<<a, c>>].balance = @ + amt]
+    /\  UNCHANGED << ask, bid, pools, drops, limits, stops >>
 
 \* Withdraw coin from exchange ExchAccount
-\* a: ExchAccount
+\* acct: ExchAccount
 \* c: Coin
 \* amt: amt of Coin
-Withdraw(a, c, amt) ==
-    /\  accounts[a][c].balance >= amt
-    /\  accounts' = [accounts EXCEPT ![a][c].balance = @ - amt]
-    /\  UNCHANGED << >> 
+Withdraw(acct, c, amt) ==
+    /\  accounts[<<acct, c>>].balance >= amt
+    /\  accounts' = [accounts EXCEPT ![<<acct, c>>].balance = @ - amt]
+    /\  UNCHANGED << ask, bid, drops, limits, pools, stops >> 
 
 \* Optional syntax
 (* LET all_limit_orders == Add your stuff in here *)
@@ -161,8 +161,8 @@ Withdraw(a, c, amt) ==
 Open(a, askCoin, bidCoin, type, pos) == 
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
-        balance == accounts[a][bidCoin].balance
-        posSeqs == accounts[a][bidCoin].positions[askCoin]
+        balance == accounts[<<a, bidCoin>>].balance
+        posSeqs == accounts[<<a, bidCoin>>].positions[askCoin]
     IN 
     /\  IF  SumSeq(posSeqs[t]) + pos.amt <= balance
         THEN
@@ -264,7 +264,8 @@ IF Cardinality(pair) > 1 THEN
         /\ UNCHANGED << limits, stops >>
 ELSE UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
 
-Liquidate(acct, pair, amt) ==   
+Liquidate(acct, pair, amt) ==
+IF Cardinality(pair) > 1 THEN
     \* Qualifying condition
     /\  amt < drops[pair]
     /\  LET 
@@ -281,7 +282,8 @@ Liquidate(acct, pair, amt) ==
                 
                 /\ drops' = [ drops EXCEPT 
                     ![pair] = @ - amt ]
-                /\ UNCHANGED << limits, stops >> 
+                /\ UNCHANGED << limits, stops >>
+ELSE UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
                 
 -----------------------------------------------------------------------------
                
@@ -298,7 +300,11 @@ Next == \/ \E   acct \in ExchAccount,
             \E   bidCoin \in pair :
             \E   askCoin \in pair \ bidCoin :
             \E   type \in {"limit", "stop"} : 
-            \/  \E pos \in PositionType : 
+            \/  \E pos \in [
+                    acct: acct,
+                    amt: { 1 .. accounts[<<acct, bidCoin>>].balance },
+                    exchrate: ExchRateType
+                ] : 
                 /\  Open(
                             acct,
                             askCoin,
@@ -352,7 +358,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 24 13:14:04 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 24 21:48:15 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
