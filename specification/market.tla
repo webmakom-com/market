@@ -129,7 +129,7 @@ MarketInit ==
     /\  ask = NoCoin
     \*  Tracks the Current Bid Coin
     /\  bid = NoCoin
-    /\  drops = [ppp \in AccountPlusPair |-> 0]
+    /\  drops = [app \in AccountPlusPair |-> 0]
     /\  limits = [ppc \in PairPlusCoin |-> <<>>]
     /\  pools = [ppc \in PairPlusCoin |-> 0]
     /\  stops = [ppc \in PairPlusCoin |-> <<>>]
@@ -178,8 +178,9 @@ Open(acct, askCoin, bidCoin, type, pos) ==
     /\  IF  SumSeq(posSeqs[t]) + pos.amt <= balance
         THEN
         /\  ask' = askCoin
-        /\  bid' = bidCoin     
-        /\  IF  type = "limit"
+        /\  bid' = bidCoin   
+            \* IF type is limit?  
+        /\  IF  t = 0
             THEN
             /\  LET igt == IGT(posSeqs[0], pos) IN
                 IF igt = {} 
@@ -199,8 +200,8 @@ Open(acct, askCoin, bidCoin, type, pos) ==
                 ELSE    limits' =
                     [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Min(igt), pos)]
-            /\  UNCHANGED << stops >>
-            \* ELSE Stops
+            /\  UNCHANGED << drops, pools, stops >>
+            \* ELSE type is stops
             ELSE
             /\  LET ilt == ILT(posSeqs[1], pos) IN
                 IF ilt = {} 
@@ -220,8 +221,9 @@ Open(acct, askCoin, bidCoin, type, pos) ==
                 ELSE    stops' =
                     [stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Max(ilt), pos)]
-            /\  UNCHANGED << limits >>
-        ELSE    UNCHANGED <<>>
+            /\  UNCHANGED << drops, limits, pools >>
+        \* ELSE Balance is too low
+        ELSE    UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
 
 Close(acct, askCoin, bidCoin, type, i) ==
     LET 
@@ -231,23 +233,24 @@ Close(acct, askCoin, bidCoin, type, i) ==
         pos == posSeqs[i]
     IN  IF t = 0
         THEN       
-                /\  limits' =
-                        [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                        Remove(posSeqs[0], pos)]
-                /\  accounts' = [ 
-                        accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
-                        <<Remove(@[0], pos),@[1]>>
-                    ]
-                /\  UNCHANGED << stops, pools >> 
+            /\  limits' =
+                    [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                    Remove(posSeqs[0], pos)]
+            /\  accounts' = [ 
+                    accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] = 
+                    <<Remove(@[0], pos),@[1]>>
+                ]
+            /\  UNCHANGED << stops, pools >> 
         ELSE    
-                /\  stops' = [
-                        stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                        Remove(posSeqs[1], pos)
-                    ]
-                /\  accounts' = [ 
-                        accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
-                        <<@[0], Remove(@[1], pos)>>
-                    ]
+            /\  stops' = [
+                    stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                    Remove(posSeqs[1], pos)
+                ]
+            /\  accounts' = [ 
+                    accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] = 
+                    <<@[0], Remove(@[1], pos)>>
+                ]
+            /\  UNCHANGED << limits, pools >>
 
 
 Provision(acct, pair, amt) ==
@@ -375,7 +378,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Mon Jul 26 22:41:47 CDT 2021 by Charles Dusek
+\* Last modified Tue Jul 27 21:32:02 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
