@@ -18,13 +18,18 @@ message Balance {
 
 message Position {
   cosmos.base.v1beta1.Coin coin = 1;
-  repeated Order           limit_orders = 2;
-  repeated Order           stop_orders = 3;
+  repeated Order           limit_orders = 2; // Sorted ascending by exchange rate
+  repeated Order           stop_orders = 3;  // Sorted descending by exchange rate
 };
 
 message Order {
   string                       account_id = 1;
   cosmos.base.v1beta1.DecCoin  amount = 2;
-  cosmos.base.v1beta1.DecProto limit = 3;
-  cosmos.base.v1beta1.DecProto loss = 4;
+  cosmos.base.v1beta1.DecProto exchange_rate = 3;
+};
+
+enum OrderType {
+  ORDER_TYPE_UNSPECIFIED = 0;
+  ORDER_TYPE_LIMIT = 1;
+  ORDER_TYPE_STOP = 2;
 };
