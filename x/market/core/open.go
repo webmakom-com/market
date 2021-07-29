@@ -5,7 +5,8 @@ import (
 	"github.com/onomyprotocol/market/x/market/types"
 )
 
-func SubmitPosition(
+// Open —
+func Open(
 	account *types.ExchangeAccount,
 	askCoin, bidCoin *sdk.Coin,
 	orderType types.OrderType,
@@ -28,9 +29,9 @@ func SubmitPosition(
 
 	switch orderType {
 	case types.OrderType_ORDER_TYPE_LIMIT:
-		submitLimitOrder(pos, order)
+		openLimitOrder(pos, order)
 	case types.OrderType_ORDER_TYPE_STOP:
-		submitStopOrder(pos, order)
+		openStopOrder(pos, order)
 	case types.OrderType_ORDER_TYPE_UNSPECIFIED:
 		return ErrOrderTypeUnspecified
 	default:
@@ -42,10 +43,12 @@ func SubmitPosition(
 	return nil
 }
 
-func submitLimitOrder(position *types.Position, order *types.Order) {
+// openLimitOrder —
+func openLimitOrder(position *types.Position, order *types.Order) {
 	limitOrders := position.GetLimitOrders()
 	if len(limitOrders) == 0 {
 		position.LimitOrders = []*types.Order{order}
+		return
 	}
 
 	for i, limitOrder := range limitOrders {
@@ -58,10 +61,12 @@ func submitLimitOrder(position *types.Position, order *types.Order) {
 	}
 }
 
-func submitStopOrder(position *types.Position, order *types.Order) {
+// openStopOrder —
+func openStopOrder(position *types.Position, order *types.Order) {
 	stopOrders := position.GetStopOrders()
 	if len(stopOrders) == 0 {
 		position.StopOrders = []*types.Order{order}
+		return
 	}
 
 	for i, stopOrder := range stopOrders {

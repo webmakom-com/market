@@ -9,6 +9,7 @@ func ValidateMsgSendWithdraw(msg *types.MsgSendWithdraw) error {
 		return ValidationErr
 	}
 
+	// validate "coin"
 	coin := msg.GetCoin()
 	if coin == nil {
 		return ValidationErr

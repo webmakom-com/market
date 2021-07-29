@@ -8,12 +8,12 @@ import (
 )
 
 var (
+	ErrInvalidIndex           = errors.New("common.invalid_index")
+	ErrNotEnoughFunds         = errors.New("balance.not_enough_funds")
 	ErrBalanceNotFound        = errors.New("balance.not_found")
+	ErrOrderTypeUnspecified   = errors.New("order_type.unspecified")
+	ErrPositionNotFound       = errors.New("position.not_found")
 	ErrWithdrawNotEnoughFunds = errors.New("withdraw.not_enough_funds")
-
-	ErrNotEnoughFunds       = errors.New("balance.not_enough_funds")
-	ErrPositionNotFound     = errors.New("position.not_found")
-	ErrOrderTypeUnspecified = errors.New("order_type.unspecified")
 )
 
 func NewExchangeAccount(sender string) types.ExchangeAccount {

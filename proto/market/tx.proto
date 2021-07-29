@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package onomyprotocol.market.market;
 
+import "market/market.proto";
+
 import "cosmos/base/v1beta1/coin.proto";
 
 // this line is used by starport scaffolding # proto/tx/import
@@ -13,6 +15,9 @@ service Msg {
   // this line is used by starport scaffolding # proto/tx/rpc
   rpc SendDeposit(MsgSendDeposit) returns (MsgSendDepositResponse) {};
   rpc SendWithdraw(MsgSendWithdraw) returns (MsgSendWithdrawResponse) {};
+
+  rpc SendOpen(MsgSendOpen) returns (MsgSendOpenResponse) {};
+  rpc SendClose(MsgSendClose) returns (MsgSendCloseResponse) {};
 };
 
 // this line is used by starport scaffolding # proto/tx/message
@@ -39,3 +44,33 @@ message MsgSendWithdraw {
 };
 
 message MsgSendWithdrawResponse {};
+
+message MsgSendOpen {
+  string sender = 1;
+  string port = 2;
+  string channelID = 3;
+  uint64 timeoutTimestamp = 4;
+
+  // custom fields
+  cosmos.base.v1beta1.Coin ask_coin = 5;
+  cosmos.base.v1beta1.Coin bid_coin = 6;
+  market.OrderType         order_type = 7;
+  market.Order             order = 8;
+};
+
+message MsgSendOpenResponse {};
+
+message MsgSendClose {
+  string sender = 1;
+  string port = 2;
+  string channelID = 3;
+  uint64 timeoutTimestamp = 4;
+
+  // custom fields
+  cosmos.base.v1beta1.Coin ask_coin = 5;
+  cosmos.base.v1beta1.Coin bid_coin = 6;
+  market.OrderType         order_type = 7;
+  int32                    index = 8;
+};
+
+message MsgSendCloseResponse {};
