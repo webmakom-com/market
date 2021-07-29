@@ -32,20 +32,6 @@ NoCoin == CHOOSE c : c \notin Coin
 \* All exchange rates are represented as numerator/denominator tuples
 ExchRateType == {<<a, b>> : a \in Nat, b \in { 1 .. Denominator }}
 
-\* Pairs of coins are represented as couple sets
-\* { {{a, b}: b \in Coin \ {a}}: b \in Coin} 
-Pairs == { {a, b} : a \in Coin, b \in Coin }
-
-PairType == { pair \in Pairs : Cardinality(pair) > 1 }
-
-(**************************************************************************)
-(* Pair plus Coin Type                                                    *)
-(*                                                                        *)
-(* Each pair is a set with two coins.  Each pair may have variables that  *)
-(* depend on both the pair (set of two coins) as well as one of the coins *)
-(* associated with that particular pair                                   *)
-(**************************************************************************)
-PairPlusCoin == { <<pair, coin>> \in PairType \X Coin : coin \in pair }
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -89,13 +75,16 @@ PositionType == [
 (* The Exchange Account holds active exchange balances with their          *) 
 (* associated order positions.                                             *)
 (*                                                                         *)
+(* Each account has ordered sequences of stop and limit positions for each *)
+(* coin balance.  The sequence sums are limited to a maximum of the        *)
+(* bid coin account balance.                                               *) 
 (*                                                                         *)
 (* Cosmos-SDK type                                                         *)
 (*                                                                         *)
 (* https://docs.cosmos.network/v0.39/modules/auth/03_types.html#stdsigndoc *)
 (* type AccountType struct {                                               *) 
-(*      ExchAccount     uint64                                             *)
-(*      balances    Array                                                  *)
+(*      balance:    uint256                                                *)
+(*      poaitions:                                                         *)
 (* }                                                                       *)
 (***************************************************************************)
 AccountType ==
@@ -103,9 +92,13 @@ AccountType ==
     balance: Nat,
     positions: [Coin -> <<Seq(PositionType), Seq(PositionType)>>]
 ]
-
+ 
+Pairs == { {a, b} : a \in Coin, b \in Coin }
+PairType == { pair \in Pairs : Cardinality(pair) > 1 }
 AccountPlusCoin == {<<e, c>> : e \in ExchAccount, c \in Coin}
 AccountPlusPair == {<<e, p>> : e \in ExchAccount, p \in PairType}
+PairPlusCoin == { <<pair, coin>> \in PairType \X Coin : coin \in pair }
+
 
 TypeInvariant ==
     /\  accounts \in [AccountPlusCoin -> AccountType]
@@ -123,20 +116,20 @@ TypeInvariant ==
         
 MarketInit ==  
     /\  accounts = [
-            a \in AccountPlusCoin |-> 
+            apc \in AccountPlusCoin |-> 
                 [
                     balance |-> 0,
                     positions |-> 
-                        [ c \in Coin \ a[1] |-> 
+                        [ c \in Coin \ apc[1] |-> 
                         << <<>>, <<>> >>
                 ]
             ]   
         ]
-    \*  Tracks the Ask Coin
+    \*  Tracks the Current Ask Coin
     /\  ask = NoCoin
-    \*  Tracks the Bid Coin
+    \*  Tracks the Current Bid Coin
     /\  bid = NoCoin
-    /\  drops = [p \in PairType |-> 0]
+    /\  drops = [app \in AccountPlusPair |-> 0]
     /\  limits = [ppc \in PairPlusCoin |-> <<>>]
     /\  pools = [ppc \in PairPlusCoin |-> 0]
     /\  stops = [ppc \in PairPlusCoin |-> <<>>]
@@ -147,12 +140,12 @@ MarketInit ==
 
 (***************************** Step Functions ****************************)
 \* Deposit coin into exchange ExchAccount
-\* a: ExchAccount
+\* acct: ExchAccount
 \* c: Coin
 \* amt: amt of Coin
-Deposit(a, c, amt) ==    
-    /\  accounts' = [accounts EXCEPT ![<<a, c>>].balance = @ + amt]
-    /\  UNCHANGED << ask, bid, pools, drops, limits, stops >>
+Deposit(acct, c, amt) ==    
+    /\  accounts' = [accounts EXCEPT ![<<acct, c>>].balance = @ + amt]
+    /\  UNCHANGED << ask, bid, drops, limits, pools, stops >>
 
 \* Withdraw coin from exchange ExchAccount
 \* acct: ExchAccount
@@ -163,30 +156,41 @@ Withdraw(acct, c, amt) ==
     /\  accounts' = [accounts EXCEPT ![<<acct, c>>].balance = @ - amt]
     /\  UNCHANGED << ask, bid, drops, limits, pools, stops >> 
 
-\* Optional syntax
-(* LET all_limit_orders == Add your stuff in here *)
-(* IN {x \in all_limit_orders: x.bidCoin # x.askCoin} *)
-Open(a, askCoin, bidCoin, type, pos) == 
+(***************************************************************************)
+(* Open(acct, askCoin, bidCoin, pos)                                       *)
+(*                                                                         *)
+(* Open a position on the exchange.  The position is placed in the         *)
+(* corresponding user exchange account bid coin sequence and the exchange  *)
+(* order book defined by the type, bid coin and ask coin.                  *)
+(*                                                                         *) 
+(* Parameters                                                              *)
+(* acct<AccountType>: Exchange Account                                     *)
+(* askCoin<Coin>: Ask Coin                                                 *)
+(* bidCoin<Coin>: Bid Coin                                                 *)
+(* pos<PositionType>: Position                                             *)
+(***************************************************************************)
+Open(acct, askCoin, bidCoin, type, pos) == 
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
-        balance == accounts[<<a, bidCoin>>].balance
-        posSeqs == accounts[<<a, bidCoin>>].positions[askCoin]
+        balance == accounts[<<acct, bidCoin>>].balance
+        posSeqs == accounts[<<acct, bidCoin>>].positions[askCoin]
     IN 
     /\  IF  SumSeq(posSeqs[t]) + pos.amt <= balance
         THEN
         /\  ask' = askCoin
-        /\  bid' = bidCoin     
-        /\  IF  type = "limit"
+        /\  bid' = bidCoin   
+            \* IF type is limit?  
+        /\  IF  t = 0
             THEN
             /\  LET igt == IGT(posSeqs[0], pos) IN
                 IF igt = {} 
                 THEN 
                     accounts' = 
-                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
+                        [accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] =
                         <<Append(pos, @[0]),@[1]>>]
                 ELSE
                     accounts' =
-                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
+                        [accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] =
                         <<InsertAt(@[0], Min(igt), pos),@[1]>>]
             /\  LET igt == IGT(limits[<<{askCoin, bidCoin}, bidCoin>>], pos) IN
                 IF igt = {}
@@ -196,18 +200,18 @@ Open(a, askCoin, bidCoin, type, pos) ==
                 ELSE    limits' =
                     [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Min(igt), pos)]
-            /\  UNCHANGED << stops >>
-            \* ELSE Stops
+            /\  UNCHANGED << drops, pools, stops >>
+            \* ELSE type is stops
             ELSE
             /\  LET ilt == ILT(posSeqs[1], pos) IN
                 IF ilt = {} 
                 THEN 
                     accounts' = 
-                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
+                        [accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] =
                         <<@[0], Append(pos, @[1])>>]
                 ELSE
                     accounts' =
-                        [accounts EXCEPT ![a][bidCoin].positions[askCoin] =
+                        [accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] =
                         <<@[0], InsertAt(@[1], Max(ilt), pos)>>]
             /\  LET ilt == ILT(stops[<<{askCoin, bidCoin}, bidCoin>>], pos) IN
                 IF ilt = {}
@@ -217,8 +221,9 @@ Open(a, askCoin, bidCoin, type, pos) ==
                 ELSE    stops' =
                     [stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
                     InsertAt(@, Max(ilt), pos)]
-            /\  UNCHANGED << limits >>
-        ELSE    UNCHANGED <<>>
+            /\  UNCHANGED << drops, limits, pools >>
+        \* ELSE Balance is too low
+        ELSE    UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
 
 Close(acct, askCoin, bidCoin, type, i) ==
     LET 
@@ -228,23 +233,24 @@ Close(acct, askCoin, bidCoin, type, i) ==
         pos == posSeqs[i]
     IN  IF t = 0
         THEN       
-                /\  limits' =
-                        [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                        Remove(posSeqs[0], pos)]
-                /\  accounts' = [ 
-                        accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
-                        <<Remove(@[0], pos),@[1]>>
-                    ]
-                /\  UNCHANGED << stops, pools >> 
+            /\  limits' =
+                    [limits EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                    Remove(posSeqs[0], pos)]
+            /\  accounts' = [ 
+                    accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] = 
+                    <<Remove(@[0], pos),@[1]>>
+                ]
+            /\  UNCHANGED << stops, pools >> 
         ELSE    
-                /\  stops' = [
-                        stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
-                        Remove(posSeqs[1], pos)
-                    ]
-                /\  accounts' = [ 
-                        accounts EXCEPT ![acct][bidCoin].positions[askCoin] = 
-                        <<@[0], Remove(@[1], pos)>>
-                    ]
+            /\  stops' = [
+                    stops EXCEPT ![<<{askCoin, bidCoin}, bidCoin>>] =
+                    Remove(posSeqs[1], pos)
+                ]
+            /\  accounts' = [ 
+                    accounts EXCEPT ![<<acct, bidCoin>>].positions[askCoin] = 
+                    <<@[0], Remove(@[1], pos)>>
+                ]
+            /\  UNCHANGED << limits, pools >>
 
 
 Provision(acct, pair, amt) ==
@@ -372,7 +378,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Sun Jul 25 21:39:58 CDT 2021 by Charles Dusek
+\* Last modified Tue Jul 27 21:32:02 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
