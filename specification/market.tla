@@ -352,13 +352,11 @@ Next == \/ \E   acct \in ExchAccount,
                                 exchrate |-> exchrate
                             ]
                     )
-                /\  IF type = "limit"
-                    THEN    Limit!Limit
-                    ELSE    Stop!Stop
+               
             \/    
                 IF type = "limit" 
                 THEN 
-                    \E seq \in acct[{pair, bidCoin}][askCoin][0] :
+                    \E seq \in accounts[<<acct, bidCoin>>].positions[askCoin][0] :
                     /\  Len(seq) > 0
                     /\  \E  i \in Len(seq) :    
                         /\  Close(
@@ -368,11 +366,10 @@ Next == \/ \E   acct \in ExchAccount,
                                 type,
                                 i
                             )
-                        /\  Limit!Limit
-                            
+                        
                                  
                 ELSE 
-                    \E seq \in acct[{pair, bidCoin}][askCoin][1] :
+                    \E seq \in acct[<<pair, bidCoin>>].positions[askCoin][1] :
                     /\  Len(seq) > 0
                     /\  \E  i \in Len(seq) :   
                         /\  Close(
@@ -382,7 +379,7 @@ Next == \/ \E   acct \in ExchAccount,
                                 type,
                                 i
                             )
-                        /\  Stop!Stop
+                        
 
 Spec == /\  MarketInit 
         /\ [][Next]_<<
@@ -398,7 +395,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 31 17:24:17 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 31 18:41:12 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
