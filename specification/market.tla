@@ -322,7 +322,7 @@ Liquidate(acct, pair, amt) ==
         
         /\ drops' = [ drops EXCEPT 
             ![<<acct, pair>>] = @ - amt ]
-        /\ UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
+        /\ UNCHANGED << ask, bid, limits, stops >>
                 
 -----------------------------------------------------------------------------
                
@@ -347,9 +347,9 @@ Next == \/ \E   acct \in ExchAccount,
                             bidCoin,
                             type,
                             [
-                                acct: acct,
-                                amt: amount,
-                                exchrate: exchrate
+                                acct |-> acct,
+                                amt |-> amount,
+                                exchrate |-> exchrate
                             ]
                     )
                 /\  IF type = "limit"
@@ -398,7 +398,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 31 14:27:53 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 31 17:24:17 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
