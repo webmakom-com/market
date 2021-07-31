@@ -7,7 +7,7 @@ CONSTANT    ExchAccount,    \* Set of all accounts
             Denominator,    \* Set of all possible denominators. 
                             \* Precision of fractions is defined by 
                             \* denominator constant.
-            Amount          \* Amounts
+            Amount
            
 VARIABLE    accounts,       \* Exchange Accounts
             ask,            \* Ask Coin
@@ -22,7 +22,6 @@ Limit == INSTANCE Limit
 Stop == INSTANCE Stop
 
 ASSUME Denominator \in Nat
-ASSUME Amount \in SUBSET Nat
 -----------------------------------------------------------------------------
 (***************************** Type Declarations ***************************)
 
@@ -30,8 +29,7 @@ NoVal == CHOOSE v : v \notin Nat
 NoCoin == CHOOSE c : c \notin Coin
 
 \* All exchange rates are represented as numerator/denominator tuples
-ExchRateType == {<<a, b>> : a \in Nat, b \in { 1 .. Denominator }}
-
+ExchRateType == {<<a, b>> : a \in {1 .. 50}, b \in { 1 .. Denominator }}
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -92,18 +90,19 @@ AccountType ==
     balance: Nat,
     positions: [Coin -> <<Seq(PositionType), Seq(PositionType)>>]
 ]
- 
-Pairs == { {a, b} : a \in Coin, b \in Coin }
+
+CoinType == {{c} : c \in Coin}
+Pairs == { {a, b} : a \in CoinType, b \in CoinType }
 PairType == { pair \in Pairs : Cardinality(pair) > 1 }
-AccountPlusCoin == {<<e, c>> : e \in ExchAccount, c \in Coin}
+AccountPlusCoin == {<<e, c>> : e \in ExchAccount, c \in CoinType}
 AccountPlusPair == {<<e, p>> : e \in ExchAccount, p \in PairType}
-PairPlusCoin == { <<pair, coin>> \in PairType \X Coin : coin \in pair }
+PairPlusCoin == { <<pair, coin>> \in PairType \X CoinType : coin \in pair }
 
 
 TypeInvariant ==
     /\  accounts \in [AccountPlusCoin -> AccountType]
-    /\  ask \in Coin
-    /\  bid \in Coin
+    /\  ask \in CoinType
+    /\  bid \in CoinType
     /\  drops \in [AccountPlusPair -> Nat]
     \* Alternative Declaration
     \* [Pair \X Coin -> Sequences]
@@ -120,7 +119,7 @@ MarketInit ==
                 [
                     balance |-> 0,
                     positions |-> 
-                        [ c \in Coin \ apc[1] |-> 
+                        [ c \in Coin |-> 
                         << <<>>, <<>> >>
                 ]
             ]   
@@ -170,6 +169,9 @@ Withdraw(acct, c, amt) ==
 (* pos<PositionType>: Position                                             *)
 (***************************************************************************)
 Open(acct, askCoin, bidCoin, type, pos) == 
+    IF pos.amt > accounts[<<acct, bidCoin>>].balance
+    THEN UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
+    ELSE
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
         balance == accounts[<<acct, bidCoin>>].balance
@@ -228,8 +230,8 @@ Open(acct, askCoin, bidCoin, type, pos) ==
 Close(acct, askCoin, bidCoin, type, i) ==
     LET 
         t == IF type = "limit" THEN 0 ELSE 1
-        balance == accounts[acct][bidCoin].balance
-        posSeqs == accounts[acct][bidCoin].positions[askCoin][t]
+        balance == accounts[<<acct, bidCoin>>].balance
+        posSeqs == accounts[<<acct, bidCoin>>].positions[askCoin][t]
         pos == posSeqs[i]
     IN  IF t = 0
         THEN       
@@ -255,19 +257,31 @@ Close(acct, askCoin, bidCoin, type, i) ==
 
 Provision(acct, pair, amt) ==
 
-LET strong == Stronger(pair, pools)
-    weak == pair \ strong
+LET \* This is a hack below need to find out how to do this without making a set of 1 element
+    strong == CHOOSE strong \in pair : TRUE
+    weak == CHOOSE weak \in pair \ {strong} : TRUE
     poolExchrate == << pools[<<pair, weak>>], pools[<<pair, strong>>] >>
-    balStrong == accounts[acct][strong].balance
-    balWeak == accounts[acct][weak].balance
+    balStrong == accounts[<<acct, strong>>].balance
+    balWeak == accounts[<<acct, weak>>].balance
     bidStrong == 
         IF  amt > balStrong
             THEN    balStrong
             ELSE    amt
-    bidWeak ==
-        (bidStrong * pools[<<pair, weak>>]) \ pools[<<pair, strong>>]
+    bidWeak == 
+    IF  pools[<<pair, strong>>] > 0
+    THEN
+        (bidStrong * pools[<<pair, weak>>]) \div pools[<<pair, strong>>]
+    ELSE
+        IF amt <= balWeak
+            THEN    balWeak
+            ELSE    amt
+        
 IN
-    /\  pools' = [ pools EXCEPT 
+    IF bidWeak > 0
+    THEN
+        IF bidStrong > 0
+        THEN
+    /\  pools' = [ pools EXCEPT
             ![<<pair, weak>>] = @ + bidWeak,
             ![<<pair, strong>>] = @ + bidStrong
         ]
@@ -279,25 +293,30 @@ IN
             ![<<acct, strong>>].balance = @ - bidStrong
         ]
     /\ UNCHANGED << ask, bid, limits, stops >>
-
+    ELSE UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
+    ELSE UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
 
 Liquidate(acct, pair, amt) ==
-
 \* Qualifying condition
-/\  amt < drops[pair]
 /\  LET 
         pool == pools[pair]
-        strong == Stronger(pair, pools)
-        weak == pair \ strong
+        strong == CHOOSE strong \in pair : TRUE
+        weak == CHOOSE weak \in pair \ {strong} : TRUE
         bidStrong == amt
-        bidWeak == amt * pools[<<pair, weak>>] \ pools[<<pair, strong>>]
+        bidWeak == 
+        IF pools[<<pair, strong>>] > 0
+        THEN (amt * pools[<<pair, weak>>]) \div pools[<<pair, strong>>]
+        ELSE amt
     IN
+        IF  drops[<<acct, pair>>] < amt
+        THEN UNCHANGED << accounts, ask, bid, drops, limits, pools, stops >>
+        ELSE
         /\  accounts' = [ accounts EXCEPT
-                ![<<acct, bidWeak>>].balance = @ + bidWeak,
-                ![<<acct, bidStrong>>].balance = @ + bidStrong
+                ![<<acct, weak>>].balance = @ + bidWeak,
+                ![<<acct, strong>>].balance = @ + bidStrong
             ]
         /\  pools' = [ pools EXCEPT 
-                ![<<pair, strong>>] = @ - @ * (amt \ pools[<<pair, weak>>]),
+                ![<<pair, strong>>] = @ - @ * (amt \div pools[<<pair, weak>>]),
                 ![<<pair, weak>>] = @ - amt
             ]
         
@@ -312,26 +331,27 @@ Next == \/ \E   acct \in ExchAccount,
                 amt \in Amount :        \/  Provision(acct, pair, amt)
                                         \/  Liquidate(acct, pair, amt)
         \/ \E   acct \in ExchAccount,
-                coin \in Coin,
+                coin \in CoinType,
                 amt \in Amount :        \/  Deposit(acct, coin, amt)
                                         \/  Withdraw(acct, coin, amt)
-        \/  \E   acct \in ExchAccount : 
+        \/  \E   acct \in ExchAccount :
             \E   pair \in PairType : 
             \E   bidCoin \in pair :
+            \E   amount \in Amount : 
             \E   askCoin \in pair \ bidCoin :
-            \E   type \in {"limit", "stop"} : 
-            \/  \E pos \in [
-                    acct: acct,
-                    amt: { 1 .. accounts[<<acct, bidCoin>>].balance },
-                    exchrate: ExchRateType
-                ] : 
-                /\  Open(
+            \E   type \in {"limit", "stop"} :
+            \E   exchrate \in ExchRateType : 
+            \/  /\  Open(
                             acct,
                             askCoin,
                             bidCoin,
                             type,
-                            pos
-                        )
+                            [
+                                acct: acct,
+                                amt: amount,
+                                exchrate: exchrate
+                            ]
+                    )
                 /\  IF type = "limit"
                     THEN    Limit!Limit
                     ELSE    Stop!Stop
@@ -378,7 +398,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Tue Jul 27 21:32:02 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 31 14:27:53 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd

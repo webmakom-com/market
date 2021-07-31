@@ -62,5 +62,5 @@ SumSeq(s) ==    LET F[i \in 0..Len(s)] ==
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Jul 23 21:33:22 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 31 13:50:37 CDT 2021 by Charles Dusek
 \* Created Sat Jul 17 11:19:23 CDT 2021 by Charles Dusek
