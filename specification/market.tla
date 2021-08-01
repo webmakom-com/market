@@ -3,11 +3,9 @@ EXTENDS     FiniteSetsExt, FiniteSets, MarketHelpers, Naturals,
             Sequences, SequencesExt
 
 CONSTANT    ExchAccount,    \* Set of all accounts
-            Coin,           \* Set of all coins
-            Denominator,    \* Set of all possible denominators. 
-                            \* Precision of fractions is defined by 
-                            \* denominator constant.
-            Amount
+            NOM,           \* Set of all coins
+            Denom_A,
+            Denom_B
            
 VARIABLE    accounts,       \* Exchange Accounts
             ask,            \* Ask Coin
@@ -17,19 +15,14 @@ VARIABLE    accounts,       \* Exchange Accounts
             pools,          \* AMM pool Curves
             stops           \* Stop Loss Order Books
             
-
-Limit == INSTANCE Limit
-Stop == INSTANCE Stop
-
-ASSUME Denominator \in Nat
 -----------------------------------------------------------------------------
 (***************************** Type Declarations ***************************)
 
 NoVal == CHOOSE v : v \notin Nat
-NoCoin == CHOOSE c : c \notin Coin
+
 
 \* All exchange rates are represented as numerator/denominator tuples
-ExchRateType == {<<a, b>> : a \in {1 .. 50}, b \in { 1 .. Denominator }}
+ExchRateType == <<SUBSET Denom_A \/ SUBSET Denom_A, SUBSET Denom_A \/ SUBSET Denom_A>>
 
 (***************************************************************************)
 (* Position Type                                                           *)
@@ -395,7 +388,7 @@ Spec == /\  MarketInit
 THEOREM Spec => []TypeInvariant
 =============================================================================
 \* Modification History
-\* Last modified Sat Jul 31 18:41:12 CDT 2021 by Charles Dusek
+\* Last modified Sat Jul 31 19:30:46 CDT 2021 by Charles Dusek
 \* Last modified Tue Jul 06 15:21:40 CDT 2021 by cdusek
 \* Last modified Tue Apr 20 22:17:38 CDT 2021 by djedi
 \* Last modified Tue Apr 20 14:11:16 CDT 2021 by charlesd
