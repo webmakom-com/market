@@ -33,9 +33,29 @@ func getBalanceByCoin(balances []*types.Balance, coin *sdk.Coin) (*types.Balance
 	return nil, ErrBalanceNotFound
 }
 
+func getBalanceByDenom(balances []*types.Balance, denom string) (*types.Balance, error) {
+	for _, balance := range balances {
+		if denom == balance.GetCoin().GetDenom() {
+			return balance, nil
+		}
+	}
+
+	return nil, ErrBalanceNotFound
+}
+
 func getPositionByCoin(positions []*types.Position, coin *sdk.Coin) (*types.Position, error) {
 	for _, position := range positions {
 		if coin.GetDenom() == position.GetCoin().GetDenom() {
+			return position, nil
+		}
+	}
+
+	return nil, ErrPositionNotFound
+}
+
+func getPositionByDenom(positions []*types.Position, denom string) (*types.Position, error) {
+	for _, position := range positions {
+		if denom == position.GetCoin().GetDenom() {
 			return position, nil
 		}
 	}
