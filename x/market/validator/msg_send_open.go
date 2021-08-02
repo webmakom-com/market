@@ -11,19 +11,13 @@ func ValidateMsgSendOpen(msg *types.MsgSendOpen) error {
 
 	// validate "ask_coin"
 	askCoin := msg.GetAskCoin()
-	if askCoin == nil {
-		return ValidationErr
-	}
-	if !askCoin.IsValid() || !askCoin.IsZero() {
+	if askCoin == "" {
 		return ValidationErr
 	}
 
 	// validate "bid_coin"
 	bidCoin := msg.GetBidCoin()
-	if bidCoin == nil {
-		return ValidationErr
-	}
-	if !bidCoin.IsValid() || !bidCoin.IsZero() {
+	if bidCoin == "" {
 		return ValidationErr
 	}
 
