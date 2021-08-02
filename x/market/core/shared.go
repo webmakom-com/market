@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/onomyprotocol/market/x/market/types"
 )
 
@@ -23,9 +22,9 @@ func NewExchangeAccount(sender string) types.ExchangeAccount {
 	}
 }
 
-func getBalanceByCoin(balances []*types.Balance, coin *sdk.Coin) (*types.Balance, error) {
+func getBalanceByCoinDenom(balances []*types.Balance, coinDenom string) (*types.Balance, error) {
 	for _, balance := range balances {
-		if coin.GetDenom() == balance.GetCoin().GetDenom() {
+		if coinDenom == balance.GetCoin().GetDenom() {
 			return balance, nil
 		}
 	}
@@ -33,9 +32,9 @@ func getBalanceByCoin(balances []*types.Balance, coin *sdk.Coin) (*types.Balance
 	return nil, ErrBalanceNotFound
 }
 
-func getPositionByCoin(positions []*types.Position, coin *sdk.Coin) (*types.Position, error) {
+func getPositionByCoinDenom(positions []*types.Position, coinDenom string) (*types.Position, error) {
 	for _, position := range positions {
-		if coin.GetDenom() == position.GetCoin().GetDenom() {
+		if coinDenom == position.GetCoin().GetDenom() {
 			return position, nil
 		}
 	}

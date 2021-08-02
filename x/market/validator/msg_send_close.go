@@ -9,21 +9,13 @@ func ValidateMsgSendClose(msg *types.MsgSendClose) error {
 		return ValidationErr
 	}
 
-	// validate "ask_coin"
-	askCoin := msg.GetAskCoin()
-	if askCoin == nil {
-		return ValidationErr
-	}
-	if !askCoin.IsValid() || !askCoin.IsZero() {
+	// validate "ask_coin_denom"
+	if len(msg.GetAskCoinDenom()) == 0 {
 		return ValidationErr
 	}
 
-	// validate "bid_coin"
-	bidCoin := msg.GetBidCoin()
-	if bidCoin == nil {
-		return ValidationErr
-	}
-	if !bidCoin.IsValid() || !bidCoin.IsZero() {
+	// validate "bid_coin_denom"
+	if len(msg.GetBidCoinDenom()) == 0 {
 		return ValidationErr
 	}
 

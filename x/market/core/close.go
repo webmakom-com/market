@@ -8,16 +8,16 @@ import (
 // Close —
 func Close(
 	account *types.ExchangeAccount,
-	askCoin, bidCoin *sdk.Coin,
+	askCoinDenom, bidCoinDenom string,
 	orderType types.OrderType,
 	index int32,
 ) error {
-	balance, err := getBalanceByCoin(account.GetBalances(), bidCoin)
+	balance, err := getBalanceByCoinDenom(account.GetBalances(), bidCoinDenom)
 	if err != nil {
 		return err
 	}
 
-	pos, err := getPositionByCoin(balance.GetPositions(), askCoin)
+	pos, err := getPositionByCoinDenom(balance.GetPositions(), askCoinDenom)
 	if err != nil {
 		return err
 	}

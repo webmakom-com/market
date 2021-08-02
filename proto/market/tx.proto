@@ -24,8 +24,8 @@ service Msg {
 message MsgSendDeposit {
   string sender = 1;
   string port = 2;
-  string channelID = 3;
-  uint64 timeoutTimestamp = 4;
+  string channel_id = 3;
+  uint64 timeout_timestamp = 4;
 
   // custom fields
   cosmos.base.v1beta1.Coin coin = 5;
@@ -36,8 +36,8 @@ message MsgSendDepositResponse {};
 message MsgSendWithdraw {
   string sender = 1;
   string port = 2;
-  string channelID = 3;
-  uint64 timeoutTimestamp = 4;
+  string channel_id = 3;
+  uint64 timeout_timestamp = 4;
 
   // custom fields
   cosmos.base.v1beta1.Coin coin = 5;
@@ -48,14 +48,14 @@ message MsgSendWithdrawResponse {};
 message MsgSendOpen {
   string sender = 1;
   string port = 2;
-  string channelID = 3;
-  uint64 timeoutTimestamp = 4;
+  string channel_id = 3;
+  uint64 timeout_timestamp = 4;
 
   // custom fields
-  cosmos.base.v1beta1.Coin ask_coin = 5;
-  cosmos.base.v1beta1.Coin bid_coin = 6;
-  market.OrderType         order_type = 7;
-  market.Order             order = 8;
+  string           ask_coin_denom = 5;
+  string           bid_coin_denom = 6;
+  market.OrderType order_type = 7;
+  market.Order     order = 8;
 };
 
 message MsgSendOpenResponse {};
@@ -63,14 +63,14 @@ message MsgSendOpenResponse {};
 message MsgSendClose {
   string sender = 1;
   string port = 2;
-  string channelID = 3;
-  uint64 timeoutTimestamp = 4;
+  string channel_id = 3;
+  uint64 timeout_timestamp = 4;
 
   // custom fields
-  cosmos.base.v1beta1.Coin ask_coin = 5;
-  cosmos.base.v1beta1.Coin bid_coin = 6;
-  market.OrderType         order_type = 7;
-  int32                    index = 8;
+  string           ask_coin_denom = 5;
+  string           bid_coin_denom = 6;
+  market.OrderType order_type = 7;
+  int32            index = 8;
 };
 
 message MsgSendCloseResponse {};

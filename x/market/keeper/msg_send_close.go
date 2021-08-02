@@ -18,7 +18,7 @@ func (s msgServer) SendClose(ctx context.Context, msg *types.MsgSendClose) (*typ
 
 	account := s.GetOrCreateExchangeAccount(cctx, msg.GetSender())
 
-	if err := core.Close(&account, msg.GetAskCoin(), msg.GetBidCoin(), msg.GetOrderType(), msg.GetIndex()); err != nil {
+	if err := core.Close(&account, msg.GetAskCoinDenom(), msg.GetBidCoinDenom(), msg.GetOrderType(), msg.GetIndex()); err != nil {
 		return nil, err
 	}
 

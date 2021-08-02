@@ -7,7 +7,7 @@ import (
 
 // Withdraw —
 func Withdraw(account *types.ExchangeAccount, coin *sdk.Coin) error {
-	balance, err := getBalanceByCoin(account.GetBalances(), coin)
+	balance, err := getBalanceByCoinDenom(account.GetBalances(), coin.GetDenom())
 	if err != nil {
 		return err
 	}

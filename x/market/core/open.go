@@ -8,11 +8,11 @@ import (
 // Open —
 func Open(
 	account *types.ExchangeAccount,
-	askCoin, bidCoin *sdk.Coin,
+	askCoinDenom, bidCoinDenom string,
 	orderType types.OrderType,
 	order *types.Order,
 ) error {
-	balance, err := getBalanceByCoin(account.GetBalances(), bidCoin)
+	balance, err := getBalanceByCoinDenom(account.GetBalances(), bidCoinDenom)
 	if err != nil {
 		return err
 	}
@@ -22,7 +22,7 @@ func Open(
 		return ErrNotEnoughFunds
 	}
 
-	pos, err := getPositionByCoin(balance.GetPositions(), askCoin)
+	pos, err := getPositionByCoinDenom(balance.GetPositions(), askCoinDenom)
 	if err != nil {
 		return err
 	}

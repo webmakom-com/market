@@ -9,7 +9,7 @@ import (
 
 // Deposit —
 func Deposit(account *types.ExchangeAccount, coin *sdk.Coin) error {
-	balance, err := getBalanceByCoin(account.GetBalances(), coin)
+	balance, err := getBalanceByCoinDenom(account.GetBalances(), coin.GetDenom())
 	if errors.Is(err, ErrBalanceNotFound) {
 		account.Balances = append(account.GetBalances(), &types.Balance{
 			Coin:      coin,

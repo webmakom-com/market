@@ -18,7 +18,7 @@ func (s msgServer) SendOpen(ctx context.Context, msg *types.MsgSendOpen) (*types
 
 	account := s.GetOrCreateExchangeAccount(cctx, msg.GetSender())
 
-	if err := core.Open(&account, msg.GetAskCoin(), msg.GetBidCoin(), msg.GetOrderType(), msg.GetOrder()); err != nil {
+	if err := core.Open(&account, msg.GetAskCoinDenom(), msg.GetBidCoinDenom(), msg.GetOrderType(), msg.GetOrder()); err != nil {
 		return nil, err
 	}
 
