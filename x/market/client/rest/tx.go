@@ -21,9 +21,8 @@ type openRequest struct {
 	BidCoin          string       `json:"bid_coin"`
 	OrderType        string       `json:"order_type"`
 	AccountId        string       `json:"account_id"`
-	Denom            string       `json:"denom"`
-	Amount           string       `json:"amount"`
-	ExchangeRate     string       `json:"exchange_rate"`
+	Amount           sdk.Coin     `json:"amount"`
+	ExchangeRate     sdk.DecProto `json:"exchange_rate"`
 }
 
 func openHandler(clientCtx client.Context) http.HandlerFunc {
@@ -65,23 +64,7 @@ func openHandler(clientCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		parsedVal, flag := sdk.NewIntFromString(req.Amount)
-		if !flag {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "Invalid Order Amount")
-			return
-		}
-
-		parsedAmount := sdk.NewDecCoin(req.Denom, parsedVal)
-
-		parsedVal, flag = sdk.NewIntFromString(req.ExchangeRate)
-		if !flag {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "Invalid Order Amount")
-			return
-		}
-
-		parsedExchangeRate := &sdk.DecProto{
-			Dec: sdk.NewDec(parsedVal.Int64()),
-		}
+		parsedAmount := sdk.NewDecCoinFromCoin(req.Amount)
 
 		msg := types.NewMsgSendOpen(
 			req.Sender,
@@ -94,7 +77,7 @@ func openHandler(clientCtx client.Context) http.HandlerFunc {
 			&types.Order{
 				AccountId:    req.AccountId,
 				Amount:       &parsedAmount,
-				ExchangeRate: parsedExchangeRate,
+				ExchangeRate: &req.ExchangeRate,
 			},
 		)
 
@@ -168,6 +151,106 @@ func closeHandler(clientCtx client.Context) http.HandlerFunc {
 			parsedBidCoin,
 			types.OrderType(parsedOrderType),
 			int32(parsedIndex),
+		)
+
+		tx.WriteGeneratedTxResponse(clientCtx, w, req.BaseReq, msg)
+	}
+}
+
+type depositRequest struct {
+	BaseReq          rest.BaseReq `json:"base_req"`
+	Sender           string       `json:"sender"`
+	Port             string       `json:"port"`
+	ChannelId        string       `json:"channel_id"`
+	TimeoutTimestamp string       `json:"timeout_timestamp"`
+	Coin             sdk.Coin     `json:"coin"`
+}
+
+func depositHandler(clientCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req depositRequest
+		if !rest.ReadRESTReq(w, r, clientCtx.LegacyAmino, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		_, err := sdk.AccAddressFromBech32(req.Sender)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		parsedPort := req.Port
+
+		parsedChannelId := req.ChannelId
+
+		parsedTimeoutTimestamp, err := strconv.ParseUint(string(req.TimeoutTimestamp), 10, 64)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewMsgSendDeposit(
+			req.Sender,
+			parsedPort,
+			parsedChannelId,
+			parsedTimeoutTimestamp,
+			&req.Coin,
+		)
+
+		tx.WriteGeneratedTxResponse(clientCtx, w, req.BaseReq, msg)
+	}
+}
+
+type withdrawRequest struct {
+	BaseReq          rest.BaseReq `json:"base_req"`
+	Sender           string       `json:"sender"`
+	Port             string       `json:"port"`
+	ChannelId        string       `json:"channel_id"`
+	TimeoutTimestamp string       `json:"timeout_timestamp"`
+	Coin             sdk.Coin     `json:"coin"`
+}
+
+func withdrawHandler(clientCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req withdrawRequest
+		if !rest.ReadRESTReq(w, r, clientCtx.LegacyAmino, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		_, err := sdk.AccAddressFromBech32(req.Sender)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		parsedPort := req.Port
+
+		parsedChannelId := req.ChannelId
+
+		parsedTimeoutTimestamp, err := strconv.ParseUint(string(req.TimeoutTimestamp), 10, 64)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewMsgSendWithdraw(
+			req.Sender,
+			parsedPort,
+			parsedChannelId,
+			parsedTimeoutTimestamp,
+			&req.Coin,
 		)
 
 		tx.WriteGeneratedTxResponse(clientCtx, w, req.BaseReq, msg)
