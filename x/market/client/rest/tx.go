@@ -101,3 +101,75 @@ func openHandler(clientCtx client.Context) http.HandlerFunc {
 		tx.WriteGeneratedTxResponse(clientCtx, w, req.BaseReq, msg)
 	}
 }
+
+type closeRequest struct {
+	BaseReq          rest.BaseReq `json:"base_req"`
+	Sender           string       `json:"sender"`
+	Port             string       `json:"port"`
+	ChannelId        string       `json:"channel_id"`
+	TimeoutTimestamp string       `json:"timeout_timestamp"`
+	AskCoin          string       `json:"ask_coin"`
+	BidCoin          string       `json:"bid_coin"`
+	OrderType        string       `json:"order_type"`
+	Index            string       `json:"index"`
+}
+
+func closeHandler(clientCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req closeRequest
+		if !rest.ReadRESTReq(w, r, clientCtx.LegacyAmino, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		_, err := sdk.AccAddressFromBech32(req.Sender)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		parsedPort := req.Port
+
+		parsedChannelId := req.ChannelId
+
+		parsedTimeoutTimestamp, err := strconv.ParseUint(string(req.TimeoutTimestamp), 10, 64)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		parsedAskCoin := req.AskCoin
+
+		parsedBidCoin := req.BidCoin
+
+		parsedOrderType, err := strconv.ParseInt(req.OrderType, 10, 32)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		parsedIndex, err := strconv.ParseInt(req.Index, 10, 32)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewMsgSendClose(
+			req.Sender,
+			parsedPort,
+			parsedChannelId,
+			parsedTimeoutTimestamp,
+			parsedAskCoin,
+			parsedBidCoin,
+			types.OrderType(parsedOrderType),
+			int32(parsedIndex),
+		)
+
+		tx.WriteGeneratedTxResponse(clientCtx, w, req.BaseReq, msg)
+	}
+}

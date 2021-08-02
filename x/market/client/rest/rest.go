@@ -27,5 +27,5 @@ func registerTxHandlers(clientCtx client.Context, r *mux.Router) {
 	// r.HandleFunc("/market/deposit", depositHandler(clientCtx)).Methods("POST")
 	// r.HandleFunc("/market/withdraw", withdrawHandler(clientCtx)).Methods("POST")
 	r.HandleFunc("/market/open", openHandler(clientCtx)).Methods("POST")
-	// r.HandleFunc("/market/close", closeHandler(clientCtx)).Methods("POST")
+	r.HandleFunc("/market/close", closeHandler(clientCtx)).Methods("POST")
 }
