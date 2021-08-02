@@ -14,7 +14,7 @@ Action: Removed Denom
 ```
 ---
 
-17: You have 
+17: You have
 
 ```
 ASSUME Denominator \in Nat
@@ -65,7 +65,7 @@ Identical limit orders are allowed, but each order will be tied to a specific ba
 Action: Added Invariate to Type
 ```
 
-* Potential channel invariant: 
+* Potential channel invariant:
 
 ```tla
 \A p \in Pair: 
@@ -84,7 +84,7 @@ Action: Added Invariate to Type
 
 ---
 
-225-238: 
+225-238:
 
 * `Weaker` is not defined.
 
@@ -223,4 +223,3 @@ IN
 ```
 
 And then handle the actual priming in `ProcessOrder`. We'll probably need to work out the details in person.
-
