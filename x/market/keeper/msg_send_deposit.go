@@ -9,20 +9,14 @@ import (
 	"github.com/onomyprotocol/market/x/market/validator"
 )
 
-func (s msgServer) SendDeposit(ctx context.Context, msg *types.MsgSendDeposit) (*types.MsgSendDepositResponse, error) {
-	if err := validator.ValidateMsgSendDeposit(msg); err != nil {
+func (s msgServer) SendOpenAccount(ctx context.Context, msg *types.MsgSendOpenAccount) (*types.MsgSendOpenAccountResponse, error) {
+	if err := validator.ValidateMsgSendOpenAccount(msg); err != nil {
 		return nil, err
 	}
 
 	cctx := sdk.UnwrapSDKContext(ctx)
 
-	account := s.GetOrCreateAccount(cctx, msg.GetSender())
+	s.SetAccount(cctx, core.NewAccount(msg.GetSender()))
 
-	if err := core.Deposit(account.GetId(), msg.GetCoin()); err != nil {
-		return nil, err
-	}
-
-	s.SetAccount(cctx, account)
-
-	return &types.MsgSendDepositResponse{}, nil
+	return &types.MsgSendOpenAccountResponse{}, nil
 }

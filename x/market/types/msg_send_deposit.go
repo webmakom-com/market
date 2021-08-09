@@ -26,7 +26,7 @@ func (m *MsgSendDeposit) Route() string {
 }
 
 func (m *MsgSendDeposit) Type() string {
-	return "Open"
+	return "Deposit"
 }
 
 func (m *MsgSendDeposit) GetSigners() []sdk.AccAddress {

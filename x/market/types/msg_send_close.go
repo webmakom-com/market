@@ -26,7 +26,7 @@ func (m *MsgSendClose) Route() string {
 }
 
 func (m *MsgSendClose) Type() string {
-	return "Open"
+	return "Close"
 }
 
 func (m *MsgSendClose) GetSigners() []sdk.AccAddress {

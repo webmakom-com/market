@@ -1,0 +1,21 @@
+// account
+{
+  "internal_id": "",
+  "wallet_address": "",
+  "balances": {
+    "BTC": 0.1,
+    "USTD": 2
+  },
+  "cr_time": 1628191982
+}
+
+// order
+{
+  "internal_id": "",
+  "account_wallet_address": "",
+  "bid_coin": "", // denom
+  "ask_coin": "", // denom
+  "amount": 0.1,
+  "exchange_rate": 1.3,
+  "cr_time": 1628191982
+}

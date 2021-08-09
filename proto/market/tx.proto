@@ -13,6 +13,8 @@ option go_package = "github.com/onomyprotocol/market/x/market/types";
 // Msg defines the Msg service.
 service Msg {
   // this line is used by starport scaffolding # proto/tx/rpc
+  rpc SendOpenAccount(MsgSendOpenAccount) returns (MsgSendOpenAccountResponse) {};
+
   rpc SendDeposit(MsgSendDeposit) returns (MsgSendDepositResponse) {};
   rpc SendWithdraw(MsgSendWithdraw) returns (MsgSendWithdrawResponse) {};
 
@@ -21,6 +23,15 @@ service Msg {
 };
 
 // this line is used by starport scaffolding # proto/tx/message
+message MsgSendOpenAccount {
+  string sender = 1;
+  string port = 2;
+  string channel_id = 3;
+  uint64 timeout_timestamp = 4;
+};
+
+message MsgSendOpenAccountResponse {};
+
 message MsgSendDeposit {
   string sender = 1;
   string port = 2;

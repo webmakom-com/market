@@ -4,7 +4,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/onomyprotocol/market/storage"
-	"github.com/onomyprotocol/market/x/market/core"
 	"github.com/onomyprotocol/market/x/market/types"
 )
 
@@ -53,15 +52,4 @@ func (k Keeper) GetAllAccount(ctx sdk.Context) (list []types.Account) {
 	}
 
 	return
-}
-
-// GetOrCreateAccount — returns an account (if account doesn't exist it will create an account and return it)
-func (k Keeper) GetOrCreateAccount(ctx sdk.Context, index string) types.Account {
-	account, ok := k.GetAccount(ctx, index)
-	if !ok {
-		account = core.NewAccount(index)
-		k.SetAccount(ctx, account)
-	}
-
-	return account
 }
