@@ -12,15 +12,12 @@ import (
 )
 
 type closeRequest struct {
-	BaseReq          rest.BaseReq    `json:"base_req"`
-	Sender           string          `json:"sender"`
-	Port             string          `json:"port"`
-	ChannelId        string          `json:"channel_id"`
-	TimeoutTimestamp uint64          `json:"timeout_timestamp"`
-	AskCoinDenom     string          `json:"ask_coin_denom"`
-	BidCoinDenom     string          `json:"bid_coin_denom"`
-	OrderType        types.OrderType `json:"order_type"`
-	Index            int32           `json:"index"`
+	BaseReq          rest.BaseReq `json:"base_req"`
+	Sender           string       `json:"sender"`
+	Port             string       `json:"port"`
+	ChannelId        string       `json:"channel_id"`
+	TimeoutTimestamp uint64       `json:"timeout_timestamp"`
+	OrderId          string       `json:"order_id"`
 }
 
 func closeHandler(clientCtx client.Context) http.HandlerFunc {
@@ -45,10 +42,7 @@ func closeHandler(clientCtx client.Context) http.HandlerFunc {
 			req.Port,
 			req.ChannelId,
 			req.TimeoutTimestamp,
-			req.AskCoinDenom,
-			req.BidCoinDenom,
-			req.OrderType,
-			req.Index,
+			req.OrderId,
 		)
 		if err := validator.ValidateMsgSendClose(msg); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

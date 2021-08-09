@@ -10,8 +10,6 @@ var _ sdk.Msg = &MsgSendOpen{}
 func NewMsgSendOpen(
 	sender, port, channelId string,
 	timeoutTimestamp uint64,
-	askCoinDenom, bidCoinDenom string,
-	orderType OrderType,
 	order *Order,
 ) *MsgSendOpen {
 	return &MsgSendOpen{
@@ -19,9 +17,6 @@ func NewMsgSendOpen(
 		Port:             port,
 		ChannelId:        channelId,
 		TimeoutTimestamp: timeoutTimestamp,
-		AskCoinDenom:     askCoinDenom,
-		BidCoinDenom:     bidCoinDenom,
-		OrderType:        orderType,
 		Order:            order,
 	}
 }

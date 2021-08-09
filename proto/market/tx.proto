@@ -52,10 +52,7 @@ message MsgSendOpen {
   uint64 timeout_timestamp = 4;
 
   // custom fields
-  string           ask_coin_denom = 5;
-  string           bid_coin_denom = 6;
-  market.OrderType order_type = 7;
-  market.Order     order = 8;
+  market.Order order = 5;
 };
 
 message MsgSendOpenResponse {};
@@ -67,10 +64,7 @@ message MsgSendClose {
   uint64 timeout_timestamp = 4;
 
   // custom fields
-  string           ask_coin_denom = 5;
-  string           bid_coin_denom = 6;
-  market.OrderType order_type = 7;
-  int32            index = 8;
+  string order_id = 5;
 };
 
 message MsgSendCloseResponse {};

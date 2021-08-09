@@ -9,23 +9,8 @@ func ValidateMsgSendClose(msg *types.MsgSendClose) error {
 		return ValidationErr
 	}
 
-	// validate "ask_coin_denom"
-	if len(msg.GetAskCoinDenom()) == 0 {
-		return ValidationErr
-	}
-
-	// validate "bid_coin_denom"
-	if len(msg.GetBidCoinDenom()) == 0 {
-		return ValidationErr
-	}
-
-	// validate "order_type"
-	if msg.GetOrderType() == types.OrderType_ORDER_TYPE_UNSPECIFIED {
-		return ValidationErr
-	}
-
-	// validate "index"
-	if msg.GetIndex() < 0 {
+	// validate "order_id"
+	if len(msg.GetOrderId()) == 0 {
 		return ValidationErr
 	}
 

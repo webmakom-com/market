@@ -13,8 +13,10 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tendermint/tendermint v0.34.9
 	github.com/tendermint/tm-db v0.6.4
+	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced // indirect
 	google.golang.org/grpc v1.38.0
+	google.golang.org/protobuf v1.26.0
 )
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2

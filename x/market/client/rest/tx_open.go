@@ -12,15 +12,12 @@ import (
 )
 
 type openRequest struct {
-	BaseReq          rest.BaseReq    `json:"base_req"`
-	Sender           string          `json:"sender"`
-	Port             string          `json:"port"`
-	ChannelId        string          `json:"channel_id"`
-	TimeoutTimestamp uint64          `json:"timeout_timestamp"`
-	AskCoinDenom     string          `json:"ask_coin_denom"`
-	BidCoinDenom     string          `json:"bid_coin_denom"`
-	OrderType        types.OrderType `json:"order_type"`
-	Order            *types.Order    `json:"order"`
+	BaseReq          rest.BaseReq `json:"base_req"`
+	Sender           string       `json:"sender"`
+	Port             string       `json:"port"`
+	ChannelId        string       `json:"channel_id"`
+	TimeoutTimestamp uint64       `json:"timeout_timestamp"`
+	Order            *types.Order `json:"order"`
 }
 
 func openHandler(clientCtx client.Context) http.HandlerFunc {
@@ -45,9 +42,6 @@ func openHandler(clientCtx client.Context) http.HandlerFunc {
 			req.Port,
 			req.ChannelId,
 			req.TimeoutTimestamp,
-			req.AskCoinDenom,
-			req.BidCoinDenom,
-			req.OrderType,
 			req.Order,
 		)
 		if err := validator.ValidateMsgSendOpen(msg); err != nil {

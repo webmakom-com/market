@@ -16,13 +16,13 @@ func (s msgServer) SendDeposit(ctx context.Context, msg *types.MsgSendDeposit) (
 
 	cctx := sdk.UnwrapSDKContext(ctx)
 
-	account := s.GetOrCreateExchangeAccount(cctx, msg.GetSender())
+	account := s.GetOrCreateAccount(cctx, msg.GetSender())
 
-	if err := core.Deposit(&account, msg.GetCoin()); err != nil {
+	if err := core.Deposit(account.GetId(), msg.GetCoin()); err != nil {
 		return nil, err
 	}
 
-	s.SetExchangeAccount(cctx, account)
+	s.SetAccount(cctx, account)
 
 	return &types.MsgSendDepositResponse{}, nil
 }

@@ -1,0 +1,46 @@
+{
+  "http_server": {
+    "host": "0.0.0.0",
+    "port": 8818
+  },
+  "db": {
+    "local": {
+      "config": {
+        "username": "sai_user",
+        "password": "maxdata123",
+        "database": "sai"
+      },
+      "host": "127.0.0.1:27017",
+      "enabled": true
+    }
+  },
+  "auth": {
+    "super_admin": {
+      "email": "admin@saistorage.com",
+      "password": "123"
+    },
+    "enabled": true,
+    "default_roles": [
+      {
+        "name": "user",
+        "permissions": [
+          {
+            "url": "/get",
+            "params": [
+              {
+                "name": "collection",
+                "rules": [
+                  "!tokens"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "super_admin",
+        "permissions": []
+      }
+    ]
+  }
+}

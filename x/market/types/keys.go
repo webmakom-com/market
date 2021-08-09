@@ -22,5 +22,5 @@ func KeyPrefix(p string) []byte {
 }
 
 const (
-	ExchangeAccountKey = "ExchangeAccount-value-"
+	AccountKey = "Account-value-"
 )

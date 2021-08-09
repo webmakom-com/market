@@ -10,19 +10,14 @@ var _ sdk.Msg = &MsgSendClose{}
 func NewMsgSendClose(
 	sender, port, channelId string,
 	timeoutTimestamp uint64,
-	askCoinDenom, bidCoinDenom string,
-	orderType OrderType,
-	index int32,
+	orderId string,
 ) *MsgSendClose {
 	return &MsgSendClose{
 		Sender:           sender,
 		Port:             port,
 		ChannelId:        channelId,
 		TimeoutTimestamp: timeoutTimestamp,
-		AskCoinDenom:     askCoinDenom,
-		BidCoinDenom:     bidCoinDenom,
-		OrderType:        orderType,
-		Index:            index,
+		OrderId:          orderId,
 	}
 }
 

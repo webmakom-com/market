@@ -16,13 +16,13 @@ func (s msgServer) SendClose(ctx context.Context, msg *types.MsgSendClose) (*typ
 
 	cctx := sdk.UnwrapSDKContext(ctx)
 
-	account := s.GetOrCreateExchangeAccount(cctx, msg.GetSender())
+	account := s.GetOrCreateAccount(cctx, msg.GetSender())
 
-	if err := core.Close(&account, msg.GetAskCoinDenom(), msg.GetBidCoinDenom(), msg.GetOrderType(), msg.GetIndex()); err != nil {
+	if err := core.Close(account.GetId(), msg.GetOrderId()); err != nil {
 		return nil, err
 	}
 
-	s.SetExchangeAccount(cctx, account)
+	s.SetAccount(cctx, account)
 
 	return &types.MsgSendCloseResponse{}, nil
 }

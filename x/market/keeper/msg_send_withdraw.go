@@ -16,13 +16,13 @@ func (s msgServer) SendWithdraw(ctx context.Context, msg *types.MsgSendWithdraw)
 
 	cctx := sdk.UnwrapSDKContext(ctx)
 
-	account := s.GetOrCreateExchangeAccount(cctx, msg.GetSender())
+	account := s.GetOrCreateAccount(cctx, msg.GetSender())
 
-	if err := core.Withdraw(&account, msg.GetCoin()); err != nil {
+	if err := core.Withdraw(account.GetId(), msg.GetCoin()); err != nil {
 		return nil, err
 	}
 
-	s.SetExchangeAccount(cctx, account)
+	s.SetAccount(cctx, account)
 
 	return &types.MsgSendWithdrawResponse{}, nil
 }
