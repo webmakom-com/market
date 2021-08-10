@@ -23,19 +23,12 @@ func (s msgServer) SendClose(ctx context.Context, msg *types.MsgSendClose) (*typ
 		return nil, status.Error(codes.Unauthenticated, "")
 	}
 
-	// TODO:
-	if err := core.Close(account.GetId(), msg.GetOrderId()); err != nil {
+	order, err := core.Close(account.GetId(), msg.GetOrderId())
+	if err != nil {
 		return nil, err
 	}
 
-	order, ok := s.GetOrder(cctx, msg.GetOrderId())
-	if !ok {
-		return nil, status.Error(codes.InvalidArgument, "")
-	}
-
-	order.Status = types.OrderStatus_ORDER_TYPE_CLOSE
-
-	s.SetOrder(cctx, order)
+	s.SetOrder(cctx, *order)
 
 	return &types.MsgSendCloseResponse{}, nil
 }
