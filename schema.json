@@ -19,3 +19,8 @@
   "exchange_rate": 1.3,
   "cr_time": 1628191982
 }
+
+func UpsertDataFromJson(collection string, jsonCriteria string,jsonData string) string {
+jsonToSend := {"collection":"+collection+","select":+jsonCriteria+,"options":"set","data":+jsonData+}
+return CallSaiStrorage(StorageUpsertURL, jsonToSend)
+}

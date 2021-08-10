@@ -18,7 +18,10 @@ func (s msgServer) SendOpen(ctx context.Context, msg *types.MsgSendOpen) (*types
 
 	cctx := sdk.UnwrapSDKContext(ctx)
 
-	account := s.GetOrCreateAccount(cctx, msg.GetSender())
+	account, ok := s.GetAccount(cctx, msg.GetSender())
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "")
+	}
 	if account.GetId() != msg.GetOrder().GetAccountId() {
 		return nil, status.Error(codes.PermissionDenied, "")
 	}
