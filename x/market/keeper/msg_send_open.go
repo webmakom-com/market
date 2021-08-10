@@ -9,6 +9,7 @@ import (
 	"github.com/onomyprotocol/market/x/market/validator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s msgServer) SendOpen(ctx context.Context, msg *types.MsgSendOpen) (*types.MsgSendOpenResponse, error) {
@@ -22,15 +23,22 @@ func (s msgServer) SendOpen(ctx context.Context, msg *types.MsgSendOpen) (*types
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "")
 	}
-	if account.GetId() != msg.GetOrder().GetAccountId() {
+
+	order := msg.GetOrder()
+	if account.GetId() != order.GetAccountId() {
 		return nil, status.Error(codes.PermissionDenied, "")
 	}
 
+	// TODO:
 	if err := core.Open(msg.GetOrder()); err != nil {
 		return nil, err
 	}
 
-	s.SetAccount(cctx, account)
+	// TODO: exchange rate
+	order.Status = types.OrderStatus_ORDER_TYPE_OPEN
+	order.Created = timestamppb.Now().AsTime()
+
+	s.SetOrder(cctx, *order)
 
 	return &types.MsgSendOpenResponse{}, nil
 }

@@ -11,23 +11,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s msgServer) SendDeposit(ctx context.Context, msg *types.MsgSendDeposit) (*types.MsgSendDepositResponse, error) {
-	if err := validator.ValidateMsgSendDeposit(msg); err != nil {
+func (s msgServer) SendOpenAccount(ctx context.Context, msg *types.MsgSendOpenAccount) (*types.MsgSendOpenAccountResponse, error) {
+	if err := validator.ValidateMsgSendOpenAccount(msg); err != nil {
 		return nil, err
 	}
 
 	cctx := sdk.UnwrapSDKContext(ctx)
 
-	account, ok := s.GetAccount(cctx, msg.GetSender())
-	if !ok {
-		return nil, status.Error(codes.Unauthenticated, "")
+	if _, ok := s.GetAccount(cctx, msg.GetSender()); ok {
+		return nil, status.Error(codes.InvalidArgument, "")
 	}
 
-	if err := core.Deposit(account.GetId(), msg.GetCoin()); err != nil {
-		return nil, err
-	}
+	s.SetAccount(cctx, core.NewAccount(msg.GetSender()))
 
-	s.SetAccount(cctx, account)
-
-	return &types.MsgSendDepositResponse{}, nil
+	return &types.MsgSendOpenAccountResponse{}, nil
 }

@@ -23,4 +23,6 @@ func KeyPrefix(p string) []byte {
 
 const (
 	AccountKey = "Account-value-"
+	MarketKey  = "Market-value-"
+	OrderKey   = "Order-value-"
 )

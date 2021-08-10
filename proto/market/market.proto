@@ -2,44 +2,19 @@ syntax = "proto3";
 
 package onomyprotocol.market.market;
 
-//import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/onomyprotocol/market/x/market/types";
 
-//message ExchangeAccount {
-//  string           id = 1;
-//  repeated Balance balances = 2;
-//};
-//
-//message Balance {
-//  cosmos.base.v1beta1.Coin coin = 1;
-//  repeated Position        positions = 2;
-//};
-//
-//message Position {
-//  cosmos.base.v1beta1.Coin coin = 1;
-//  repeated Order           limit_orders = 2; // Sorted ascending by exchange rate
-//  repeated Order           stop_orders = 3;  // Sorted descending by exchange rate
-//};
-//
-//message Order {
-//  string                       account_id = 1;
-//  cosmos.base.v1beta1.DecCoin  amount = 2;
-//  cosmos.base.v1beta1.DecProto exchange_rate = 3;
-//};
-
-
+message Market {
+  string pair = 1;
+  double exchange_rate = 2;
+}
 
 message Account {
   string           id = 1;
-  repeated Balance balances = 2;
-}
-
-message Balance {
-  string coin = 1;
-  double amount = 2;
+  map<string, double> balance = 2;
 }
 
 message Order {
@@ -49,7 +24,8 @@ message Order {
   string                    ask_coin = 4;
   double                    amount = 5;
   double                    exchange_rate = 6;
-  google.protobuf.Timestamp created = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  OrderStatus               status = 7;
+  google.protobuf.Timestamp created = 8 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 }
 
 enum OrderStatus {
