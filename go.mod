@@ -14,6 +14,7 @@ require (
 	github.com/tendermint/tendermint v0.34.9
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
+	go.mongodb.org/mongo-driver v1.7.1
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced // indirect
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
