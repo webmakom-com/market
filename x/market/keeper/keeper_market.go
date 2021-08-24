@@ -1,6 +1,9 @@
 package keeper
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/onomyprotocol/market/storage"
@@ -14,9 +17,12 @@ func (k Keeper) SetMarket(ctx sdk.Context, market types.Market) {
 		Data:       market,
 	})
 
+	coins := []string{market.GetCoinA(), market.GetCoinB()}
+	sort.Strings(coins)
+
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.MarketKey))
 	b := k.cdc.MustMarshalBinaryBare(&market)
-	store.Set(types.KeyPrefix(market.GetPair()), b)
+	store.Set(types.KeyPrefix(strings.Join(coins, "_")), b)
 }
 
 // GetMarket returns a market from its index

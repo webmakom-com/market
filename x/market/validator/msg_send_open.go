@@ -40,8 +40,8 @@ func ValidateMsgSendOpen(msg *types.MsgSendOpen) error {
 		return ValidationErr
 	}
 
-	// validate "order.created" // TODO: improve validation
-	if created := order.GetCreated(); created.IsZero() {
+	// validate "order.cr_time" // TODO: improve validation
+	if created := order.GetCrTime(); !(created > 0) {
 		return ValidationErr
 	}
 

@@ -23,7 +23,7 @@ func (s msgServer) SendClose(ctx context.Context, msg *types.MsgSendClose) (*typ
 		return nil, status.Error(codes.Unauthenticated, "")
 	}
 
-	order, err := core.Close(account.GetId(), msg.GetOrderId())
+	order, err := core.Close(account.GetInternalId(), msg.GetOrderId())
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ func (s msgServer) SendOpen(ctx context.Context, msg *types.MsgSendOpen) (*types
 	}
 
 	order := msg.GetOrder()
-	if account.GetId() != order.GetAccountId() {
+	if account.GetInternalId() != order.GetAccountId() {
 		return nil, status.Error(codes.PermissionDenied, "")
 	}
 
@@ -36,7 +36,7 @@ func (s msgServer) SendOpen(ctx context.Context, msg *types.MsgSendOpen) (*types
 
 	// TODO: exchange rate
 	order.Status = types.OrderStatus_ORDER_TYPE_OPEN
-	order.Created = timestamppb.Now().AsTime()
+	order.CrTime = timestamppb.Now().AsTime().Unix()
 
 	s.SetOrder(cctx, *order)
 

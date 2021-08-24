@@ -6,7 +6,7 @@ import (
 
 func NewAccount(sender string) types.Account {
 	return types.Account{
-		Id:      sender,
-		Balance: make(map[string]float64),
+		InternalId: sender,
+		Balance:    make(map[string]float64),
 	}
 }

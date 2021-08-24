@@ -23,7 +23,7 @@ func (s msgServer) SendDeposit(ctx context.Context, msg *types.MsgSendDeposit) (
 		return nil, status.Error(codes.Unauthenticated, "")
 	}
 
-	if err := core.Deposit(account.GetId(), msg.GetCoin()); err != nil {
+	if err := core.Deposit(account.GetInternalId(), msg.GetCoin()); err != nil {
 		return nil, err
 	}
 

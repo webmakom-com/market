@@ -24,7 +24,7 @@ func (s msgServer) SendWithdraw(ctx context.Context, msg *types.MsgSendWithdraw)
 	}
 
 	// TODO:
-	if err := core.Withdraw(account.GetId(), msg.GetCoin()); err != nil {
+	if err := core.Withdraw(account.GetInternalId(), msg.GetCoin()); err != nil {
 		return nil, err
 	}
 

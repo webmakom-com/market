@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/onomyprotocol/market/storage"
@@ -19,14 +20,13 @@ var accounts AccountsType
 // SetOrder set a specific order in the store from its index
 func (k Keeper) SetOrder(ctx sdk.Context, order types.Order) {
 	order, err := k.processOrder(order)
-
 	if err != nil {
 		return
 	}
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.OrderKey))
 	b := k.cdc.MustMarshalBinaryBare(&order)
-	store.Set(types.KeyPrefix(order.GetId()), b)
+	store.Set(types.KeyPrefix(order.GetInternalId()), b)
 }
 
 // GetOrder returns an order from its index
@@ -75,7 +75,7 @@ func (k Keeper) RemoveOrder(ctx sdk.Context, index string) {
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.OrderKey))
 	b := k.cdc.MustMarshalBinaryBare(&order)
-	store.Set(types.KeyPrefix(order.GetId()), b)
+	store.Set(types.KeyPrefix(order.GetInternalId()), b)
 }
 
 // GetOrdersBy returns all orders by select criteria

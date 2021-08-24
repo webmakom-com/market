@@ -16,7 +16,7 @@ func (k Keeper) SetAccount(ctx sdk.Context, account types.Account) {
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.AccountKey))
 	b := k.cdc.MustMarshalBinaryBare(&account)
-	store.Set(types.KeyPrefix(account.GetId()), b)
+	store.Set(types.KeyPrefix(account.GetInternalId()), b)
 }
 
 // GetAccount returns an account from its index
