@@ -9,8 +9,13 @@ import (
 // Close — TODO:
 func Close(accountId, orderId string) (*types.Order, error) {
 	// Get order by order ID
-	// TODO: set request
-	resp := storage.CallSaiStorage("get", storage.Request{})
+	resp := storage.CallSaiStorage("get", storage.Request{
+		Collection: "Orders",
+		SelectString: map[string]string{
+			"AccountId": accountId,
+			"Id":        orderId,
+		},
+	})
 
 	// TODO: parse resp
 
@@ -28,7 +33,14 @@ func Close(accountId, orderId string) (*types.Order, error) {
 	_ = doc
 
 	// TODO: set request
-	resp = storage.CallSaiStorage("save", storage.Request{})
+	resp = storage.CallSaiStorage("update", storage.Request{
+		Collection: "Orders",
+		SelectString: map[string]string{
+			"AccountId": accountId,
+			"Id":        orderId,
+		},
+		Data: order,
+	})
 	_ = resp
 
 	return &order, nil
