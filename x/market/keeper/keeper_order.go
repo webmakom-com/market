@@ -11,11 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type OrdersType []types.Order
-type AccountsType []types.Account
-
-var orders OrdersType
-var accounts AccountsType
+var orders types.OrdersType
 
 // SetOrder set a specific order in the store from its index
 func (k Keeper) SetOrder(ctx sdk.Context, order types.Order) {

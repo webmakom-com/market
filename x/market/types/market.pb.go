@@ -26,6 +26,10 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type OrderStatus int32
 
+type OrdersType []Order
+type AccountsType []Account
+type MarketsType []Market
+
 const (
 	OrderStatus_ORDER_STATUS_UNSPECIFIED OrderStatus = 0
 	OrderStatus_ORDER_TYPE_OPEN          OrderStatus = 1
